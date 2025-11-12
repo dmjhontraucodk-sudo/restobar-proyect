@@ -4,7 +4,6 @@ import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { Toaster } from 'react-hot-toast';
 import { type TipoCategoria } from './types';
-
 // --- Páginas Globales (SaaS) ---
 import { Landing } from './pages/Landing'; // ← Ahora es la landing del restobar demo
 import RegisterPage from './pages/Register';
