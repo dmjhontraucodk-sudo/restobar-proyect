@@ -30,6 +30,13 @@ export default function OverviewPage() {
           <p className="text-sm text-gray-500 mt-2">0% de ocupación</p>
         </div>
 
+        {/* Card de Ejemplo 3 */}
+        <div className="bg-white p-6 rounded-xl shadow-md">
+          <h3 className="text-lg font-semibold text-gray-700">Mesas No Ocupadas</h3>
+          <p className="text-4xl font-extrabold text-gray-900 mt-2">4 / 20</p>
+          <p className="text-sm text-gray-500 mt-2">20% de ocupación</p>
+        </div>
+
       </div>
     </div>
   );
