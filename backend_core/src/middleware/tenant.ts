@@ -128,6 +128,9 @@ export const tenantMiddleware = async (
     console.log('✅ TENANT MIDDLEWARE - Tenant configurado desde subdominio:', req.tenant.nombre_empresa);
     next();
 
+
+
+    
   } catch (error) {
     console.error("❌ TENANT MIDDLEWARE - Error:", error);
     return res.status(500).json({ error: 'Error interno del servidor al procesar el tenant.' });
