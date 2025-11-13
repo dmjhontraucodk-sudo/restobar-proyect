@@ -66,10 +66,16 @@ export const getDashboardInfo = async (req: AuthRequest, res: Response) => {
 
 export const getProducts = async (req: AuthRequest, res: Response) => {
   try {
-    const tenantId = req.user?.tenant_id;
+    // ✨ PEGA AQUÍ EL CÓDIGO DE DEBUG ✨
+    console.log('🔍 DEBUG USER:', req.user);
+    console.log('🔍 DEBUG TENANT:', req.tenant);
+    
+    const tenantId = req.user?.tenant_id;
     if (!tenantId || tenantId !== req.tenant?.id) {
-      return res.status(403).json({ error: 'Acceso prohibido.' });
-    }
+      console.log('❌ ACCESS DENIED - User tenant:', tenantId, 'Request tenant:', req.tenant?.id);
+      return res.status(403).json({ error: 'Acceso prohibido.' });
+    }
+    // ✨ FIN DEL CÓDIGO DE DEBUG ✨
 
     // 1. Validar el query param 'tipo'
     const tipoSchema = z.nativeEnum(TipoCategoria).optional(); // Acepta COMIDA, BEBIDA o undefined
@@ -379,10 +385,16 @@ export const createCategory = async (req: AuthRequest, res: Response) => {
 // --- Obtener Categorías ---
 export const getCategories = async (req: AuthRequest, res: Response) => {
   try {
-    const tenantId = req.user?.tenant_id;
-    if (!tenantId || tenantId !== req.tenant?.id) {
-      return res.status(403).json({ error: 'Acceso prohibido.' });
-    }
+  // ✨ AGREGAR TAMBIÉN EN getCategories ✨
+    console.log('🔍 DEBUG USER (Categories):', req.user);
+    console.log('🔍 DEBUG TENANT (Categories):', req.tenant);
+    
+    const tenantId = req.user?.tenant_id;
+    if (!tenantId || tenantId !== req.tenant?.id) {
+      console.log('❌ ACCESS DENIED (Categories) - User tenant:', tenantId, 'Request tenant:', req.tenant?.id);
+      return res.status(403).json({ error: 'Acceso prohibido.' });
+    }
+    // ✨ FIN DEL DEBUG ✨
 
     // 1. Validar el query param 'tipo'
     const tipoSchema = z.nativeEnum(TipoCategoria); // Acepta COMIDA o BEBIDA
