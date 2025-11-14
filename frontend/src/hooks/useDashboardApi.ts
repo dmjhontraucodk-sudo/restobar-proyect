@@ -5,8 +5,12 @@ import {
   type TipoCategoria,
   type ApiOrden, 
   type CreateOrdenData, 
-  type OrdenEstado, 
-  type GetOrdenesFilters } from '../types';
+  type OrdenEstado,
+  type GetOrdenesFilters, 
+  type ApiReservation, 
+  type reservas_estado,
+  type ApiMesa
+} from '../types';
 
 const API_BASE = '/api/dashboard';
 
@@ -302,9 +306,23 @@ export const useDashboardApi = () => {
     });
   }, [makeRequest]);
   
+  const getMesasConOrdenes = useCallback((): Promise<ApiMesa[]> => { // ✨ CORRECCIÓN
+    return makeRequest<ApiMesa[]>('/mesas-con-ordenes'); // ✨ CORRECCIÓN
+  }, [makeRequest]);
+
+  const getReservations = useCallback((estado?: reservas_estado | 'all'): Promise<ApiReservation[]> => {
+    const query = estado && estado !== 'all' ? `?estado=${estado}` : '';
+    return makeRequest<ApiReservation[]>(`/reservations${query}`);
   const getMesasConOrdenes = useCallback((): Promise<any[]> => {
     return makeRequest<any[]>('/mesas-con-ordenes');
   }, [makeRequest]);
+
+  const updateReservationStatus = useCallback((id: number, nuevo_estado: reservas_estado, mesa_id?: number): Promise<{ message: string, reservation: ApiReservation }> => {
+    return makeRequest<{ message: string, reservation: ApiReservation }>(`/reservations/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ nuevo_estado, mesa_id })
+    });
+  },[makeRequest]);
 
   return {
     isLoading,
@@ -323,6 +341,10 @@ export const useDashboardApi = () => {
     getOrdenes,
     createOrden,
     updateOrdenEstado,
-    getMesasConOrdenes
+    getMesasConOrdenes,
+    getReservations,
+    updateReservationStatus
   };
+
+
 };

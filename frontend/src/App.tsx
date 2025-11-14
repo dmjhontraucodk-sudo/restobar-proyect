@@ -28,6 +28,9 @@ import Checkout from './pages/public/Checkout';
 import ProtectedRoute from './components/ProtectedRoute';
 import TenantGuard from './components/TenantGuard';
 
+// --- Reservas---
+import ReservationForm from './pages/public/components/ReservationForm';
+
 // --- Lógica de Subdominio ---
 const getTenantId = () => {
   const host = window.location.host; 
@@ -48,6 +51,7 @@ const GlobalRoutes = () => (
         <Route path="/" element={<Landing />} /> {/* ← Landing del restobar DEMO */}
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/cart" element={<CartDemo />} />
+        <Route path="/reservar" element={<ReservationForm />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </CartProvider>
@@ -67,6 +71,9 @@ const TenantPublicRoutes = () => (
       {/* Carrito y Checkout - Ya incluyen Header y Footer */}
       <Route path="/cart" element={<Cart />} />
       <Route path="/checkout" element={<Checkout />} />
+
+      {/* Ruta de Reservas */}
+      <Route path="/reservar" element={<ReservationForm />} />
 
       {/* Redirección para rutas no encontradas */}
       <Route path="*" element={<Navigate to="/" />} />
