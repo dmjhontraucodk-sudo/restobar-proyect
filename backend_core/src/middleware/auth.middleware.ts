@@ -1,11 +1,20 @@
-// src/middleware/auth.middleware.ts
+// src/middleware/auth.middleware.ts (VERSIÓN CORREGIDA)
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-// Extendemos el tipo 'Request' de Express para añadir nuestra propiedad 'user'
-// Esto es para que TypeScript sepa que 'req.user' existe.
+// Interfaz extendida para el payload del JWT
+interface JwtPayload {
+  id: number;
+  email: string;
+  tenant_id: number;
+  rol_id: number;
+  iat?: number;
+  exp?: number;
+}
+
+// Extendemos el tipo 'Request' de Express
 interface AuthRequest extends Request {
-  user?: string | jwt.JwtPayload; // 'user' contendrá el payload del token decodificado
+  user?: JwtPayload;
 }
 
 export const validateToken = (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -25,16 +34,25 @@ export const validateToken = (req: AuthRequest, res: Response, next: NextFunctio
     const payload = jwt.verify(
       token,
       process.env.JWT_SECRET as string
-    );
+    ) as JwtPayload;
 
     // 4. Si el token es válido, guardamos el payload (info del usuario) en req.user
     req.user = payload;
+    
+    console.log('🔐 AUTH MIDDLEWARE - User authenticated:', {
+      id: payload.id,
+      email: payload.email,
+      tenant_id: payload.tenant_id,
+      rol_id: payload.rol_id
+    });
     
     // 5. ¡Dejar pasar! Continuar al siguiente controlador
     next();
 
   } catch (error) {
-    // 4. Si el token es inválido o expiró
+    console.error('❌ AUTH MIDDLEWARE - Error:', error);
+    
+    // Manejar diferentes tipos de errores
     if (error instanceof jwt.TokenExpiredError) {
       return res.status(401).json({ error: 'Token expirado. Por favor, inicie sesión de nuevo.' });
     }

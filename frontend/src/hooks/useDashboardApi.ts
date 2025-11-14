@@ -125,7 +125,7 @@ export interface UpdateProductWithRecipeData {
 export const useDashboardApi = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { logout } = useAuth();
+  const { logout, currentTenant } = useAuth(); // ← AGREGADO currentTenant
 
   const makeRequest = useCallback(async <T>(
     endpoint: string,
@@ -149,7 +149,25 @@ export const useDashboardApi = () => {
     
     headers.append('Authorization', `Bearer ${token}`);
     
+    // ✨✨✨ AGREGAR ESTE HEADER CRUCIAL ✨✨✨
+    if (currentTenant) {
+      headers.append('X-Tenant-Subdomain', currentTenant);
+      console.log('🔍 [API DEBUG] Enviando header X-Tenant-Subdomain:', currentTenant);
+    } else {
+      console.log('🔍 [API DEBUG] No hay currentTenant, usando lógica por defecto');
+    }
+    
     try {
+      console.log(`🔍 [API DEBUG] Iniciando request: ${options.method || 'GET'} ${endpoint}`);
+
+       // ✨✨✨ PEGA AQUÍ EL NUEVO CONSOLE.LOG ✨✨✨
+    console.log('🔍 [API DEBUG] Headers que se enviarán:', {
+      'Authorization': `Bearer ${token?.substring(0, 20)}...`, // Mostrar solo parte del token por seguridad
+      'X-Tenant-Subdomain': currentTenant,
+      'Content-Type': headers.get('Content-Type'),
+      'Todos los headers': Object.fromEntries(headers.entries()) // ← Esto muestra TODOS los headers
+    });
+      
       const response = await fetch(`${API_BASE}${endpoint}`, {
         ...options,
         headers: headers,
@@ -161,20 +179,28 @@ export const useDashboardApi = () => {
         throw new Error('No autorizado.');
       }
       
+      // ✨ MEJORAR LOGGING PARA DEBUG
+      console.log(`🔍 [API DEBUG] ${options.method || 'GET'} ${endpoint} - Status:`, response.status);
+      
       const data = await response.json();
+      
       if (!response.ok) {
+        console.error(`❌ [API DEBUG] Error ${response.status}:`, data);
         throw new Error(data.error || 'Error en la petición');
       }
+      
+      console.log(`✅ [API DEBUG] Request exitosa:`, data);
       return data as T;
+      
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error desconocido';
       setError(message);
-      console.error(`Error en API Dashboard (${endpoint}):`, message);
+      console.error(`❌ Error en API Dashboard (${endpoint}):`, message);
       throw err;
     } finally {
       setIsLoading(false);
     }
-  }, [logout]);
+  }, [logout, currentTenant]); // ← AGREGADO currentTenant como dependencia
 
   const getOverviewData = useCallback((): Promise<{ totalOrders: number; totalSales: number; }> => {
     return makeRequest<{ totalOrders: number; totalSales: number; }>('/overview');
@@ -261,10 +287,10 @@ export const useDashboardApi = () => {
     }
     
     const queryString = params.toString();
-    const endpoint = queryString ? `/ordenes?${queryString}` : '/ordenes';
-    
+    const endpoint = queryString ? `/ordenes?${queryString}` : '/ordenes';
+    
     return makeRequest<ApiOrden[]>(endpoint);
-  }, [makeRequest]);
+  }, [makeRequest]);
 
   const createOrden = useCallback((ordenData: CreateOrdenData): Promise<ApiOrden> => {
     return makeRequest<ApiOrden>('/ordenes', {
@@ -287,6 +313,8 @@ export const useDashboardApi = () => {
   const getReservations = useCallback((estado?: reservas_estado | 'all'): Promise<ApiReservation[]> => {
     const query = estado && estado !== 'all' ? `?estado=${estado}` : '';
     return makeRequest<ApiReservation[]>(`/reservations${query}`);
+  const getMesasConOrdenes = useCallback((): Promise<any[]> => {
+    return makeRequest<any[]>('/mesas-con-ordenes');
   }, [makeRequest]);
 
   const updateReservationStatus = useCallback((id: number, nuevo_estado: reservas_estado, mesa_id?: number): Promise<{ message: string, reservation: ApiReservation }> => {
