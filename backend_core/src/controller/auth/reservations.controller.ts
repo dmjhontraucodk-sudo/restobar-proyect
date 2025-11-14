@@ -18,12 +18,17 @@ interface AuthRequest extends Request {
 }
 
 const createReservationSchema = z.object({
- cliente_nombre: z.string().min(1, "El nombre es requerido."),
- cliente_email: z.string().email("Email inválido.").optional().or(z.literal('')),
- cliente_telefono: z.string().min(6, "El teléfono es requerido."),
- fecha_hora: z.string().datetime("Formato de fecha y hora inválido."),
- cantidad_personas: z.number().int().min(1, "Debe reservar para al menos una persona."),
- notas: z.string().optional(),
+  cliente_nombre: z.string().min(1, "El nombre es requerido."),
+  cliente_email: z.string().email("Email inválido.").optional().or(z.literal('')),
+  cliente_telefono: z.string().min(6, "El teléfono es requerido."),
+  // 🔧 CORREGIR ESTA LÍNEA:
+  fecha_hora: z.string().refine((val) => {
+    // Validar tanto formato datetime-local como ISO completo
+    const date = new Date(val);
+    return !isNaN(date.getTime()); // Verificar que sea una fecha válida
+  }, "Formato de fecha y hora inválido."),
+  cantidad_personas: z.number().int().min(1, "Debe reservar para al menos una persona."),
+  notas: z.string().optional(),
 });
 
 export const reservationsController = {
