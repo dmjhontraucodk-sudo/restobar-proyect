@@ -2,6 +2,7 @@
 import { Router } from 'express';
 import { webCatalogController } from '../controller/web-catalog.controller';
 import { webOrdersController } from '../controller/web-orders.controller';
+import { reservationsController } from '../controller/auth/reservations.controller';
 import { validateToken } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -17,7 +18,7 @@ router.post('/check-availability', webCatalogController.checkAvailability);
 
 // Pedidos web (creación desde la web pública)
 router.post('/orders', webOrdersController.createWebOrder);
-
+router.post('/reservations', reservationsController.createReservation); 
 // ==================== RUTAS PRIVADAS (Requieren autenticación) ====================
 // Estas rutas son para el panel administrativo del tenant
 

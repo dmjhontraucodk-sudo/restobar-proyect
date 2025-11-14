@@ -1,2 +1,0 @@
--- AlterTable
-ALTER TABLE `categoriasmenu` ADD COLUMN `tipo` ENUM('COMIDA', 'BEBIDA') NOT NULL DEFAULT 'COMIDA';

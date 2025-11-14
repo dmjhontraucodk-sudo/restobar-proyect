@@ -1,7 +1,6 @@
 // src/hooks/useWebApi.ts
 import { useState } from 'react';
-import type { CatalogResponse, PedidoData, OrderResponse, Producto } from '../types';
-
+import type { CatalogResponse, PedidoData, OrderResponse, Producto, CreateReservationData } from '../types';
 const API_BASE = '/api/web';
 
 export const useWebApi = () => {
@@ -59,6 +58,12 @@ export const useWebApi = () => {
       body: JSON.stringify(orderData),
     });
 
+    const createReservation = (reservationData: CreateReservationData): Promise<{ message: string, reservationId: number }> =>
+    makeRequest<{ message: string, reservationId: number }>('/reservations', {
+      method: 'POST',
+      body: JSON.stringify(reservationData),
+    });
+
   return {
     isLoading,
     error,
@@ -67,5 +72,6 @@ export const useWebApi = () => {
     getProduct,
     checkAvailability,
     createOrder,
+    createReservation,
   };
 };

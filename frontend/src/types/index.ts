@@ -148,4 +148,37 @@ export interface CreateOrdenData {
   items: CreateOrdenItem[];
 }
 
+// --- AGREGAR ESTADOS DE RESERVA ---
+export type reservas_estado = 'Pendiente' | 'Confirmada' | 'Cancelada' | 'Completada';
+export type mesas_estado = 'Libre' | 'Ocupada' | 'Reservada';
+
+export interface ApiMesa {
+    id: number;
+    nombre_o_numero: string;
+    capacidad: number;
+    estado: mesas_estado;
+    ordenActiva?: any; // Añadido para compatibilidad con getMesasConOrdenes
+}
+
+export interface ApiReservation {
+    id: number;
+    cliente_nombre: string;
+    cliente_email: string;
+    cliente_telefono: string;
+    fecha_hora: string; // ISO string
+    cantidad_personas: number;
+    estado: reservas_estado;
+    mesa_id: number | null;
+    mesas: { nombre_o_numero: string } | null;
+}
+
+export interface CreateReservationData {
+  cliente_nombre: string;
+  cliente_email?: string;
+  cliente_telefono: string;
+  fecha_hora: string; // ISO string o formato de fecha válido
+  cantidad_personas: number;
+  notas?: string;
+}
+
 //export * from '../hooks/useDashboardApi';

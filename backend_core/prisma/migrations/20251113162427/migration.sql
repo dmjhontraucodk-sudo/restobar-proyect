@@ -3,6 +3,7 @@ CREATE TABLE `categoriasmenu` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `tenant_id` INTEGER NOT NULL,
     `nombre` VARCHAR(100) NOT NULL,
+    `tipo` ENUM('COMIDA', 'BEBIDA') NOT NULL DEFAULT 'COMIDA',
     `slug` VARCHAR(100) NULL,
     `descripcion` TEXT NULL,
     `orden` INTEGER NULL DEFAULT 0,

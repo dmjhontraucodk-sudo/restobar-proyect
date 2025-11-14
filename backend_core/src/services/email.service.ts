@@ -244,10 +244,77 @@ const sendOrderReady = async (order: any, tenantConfig: any) => {
   }
 };
 
-// 3. Exportar el servicio COMPLETO
+
+// NUEVAS FUNCIONES PARA RESERVAS
+const sendReservationConfirmation = async (reservation: any) => {
+    const { cliente_email, cliente_nombre, fecha_hora, cantidad_personas, mesas } = reservation;
+    
+    if (!cliente_email) return;
+
+    const formattedDate = new Date(fecha_hora).toLocaleDateString('es-ES', { 
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
+
+    const mesaAsignada = mesas ? mesas.nombre_o_numero : 'no asignada aún';
+
+    const html = `
+        <h1>✅ ¡Reserva Confirmada!</h1>
+        <p>Hola <strong>${cliente_nombre}</strong>,</p>
+        <p>Tu reserva ha sido confirmada con los siguientes detalles:</p>
+        <ul>
+            <li><strong>Fecha y Hora:</strong> ${formattedDate}</li>
+            <li><strong>Personas:</strong> ${cantidad_personas}</li>
+            <li><strong>Mesa Asignada:</strong> ${mesaAsignada}</li>
+        </ul>
+        <p>¡Te esperamos!</p>
+    `;
+
+    try {
+        await resend.emails.send({
+            from: 'Tu Restaurante <onboarding@resend.dev>',
+            to: [cliente_email],
+            subject: 'Confirmación de Reserva en RestoBar',
+            html
+        });
+        console.log(`✅ Email de confirmación de reserva enviado a ${cliente_email}`);
+    } catch (error) {
+        console.error('Error al enviar email de confirmación de reserva:', error);
+    }
+};
+
+const sendReservationCancellation = async (reservation: any) => {
+    const { cliente_email, cliente_nombre, fecha_hora } = reservation;
+    
+    if (!cliente_email) return;
+
+    const formattedDate = new Date(fecha_hora).toLocaleDateString('es-ES');
+
+    const html = `
+        <h1>❌ Reserva Cancelada</h1>
+        <p>Hola <strong>${cliente_nombre}</strong>,</p>
+        <p>Lamentamos informarte que tu reserva para el ${formattedDate} ha sido cancelada.</p>
+        <p>Si tienes alguna pregunta, por favor contáctanos.</p>
+    `;
+
+    try {
+        await resend.emails.send({
+            from: 'Tu Restaurante <onboarding@resend.dev>',
+            to: [cliente_email],
+            subject: 'Actualización: Tu Reserva ha sido Cancelada',
+            html
+        });
+        console.log(`✅ Email de cancelación de reserva enviado a ${cliente_email}`);
+    } catch (error) {
+        console.error('Error al enviar email de cancelación de reserva:', error);
+    }
+};
+
+// 3. Exportar el servicio COMPLETO 
 export const emailService = {
-  sendRegistrationEmail,
-  sendOrderConfirmation,
-  sendOrderCancellation,
-  sendOrderReady
+ sendRegistrationEmail,
+ sendOrderConfirmation,
+ sendOrderCancellation,
+ sendOrderReady,
+ sendReservationConfirmation, 
+ sendReservationCancellation, 
 };

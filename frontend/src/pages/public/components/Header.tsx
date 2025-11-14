@@ -1,17 +1,17 @@
 // src/pages/public/components/Header.tsx
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ShoppingBag, Phone, Clock, UserPlus } from 'lucide-react';
+import { ShoppingBag, Phone, Clock, UserPlus, CalendarCheck} from 'lucide-react';
 import { useCart } from '../../../context/CartContext';
 
 interface HeaderProps {
-  tenantName?: string;
-  isDemo?: boolean; // Nueva prop para identificar si es demo
+  tenantName?: string;
+  isDemo?: boolean; 
 }
 
 export default function Header({ 
-  tenantName = 'RestoBar Premium', 
-  isDemo = false // Por defecto no es demo
+  tenantName = 'RestoBar Premium', 
+  isDemo = false,
 }: HeaderProps) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -38,17 +38,16 @@ export default function Header({
     }
   };
 
+// La función handleMenuClick ahora solo navega a /menu si no está en raíz
   const handleMenuClick = () => {
     if (location.pathname !== '/') {
-      navigate('/');
-      setTimeout(() => {
-        scrollToMenu();
-      }, 100);
+      navigate('/menu'); 
     } else {
+      // Si ya está en la Landing (raíz), hace scroll al menú
       scrollToMenu();
     }
   };
-
+  
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
@@ -70,7 +69,7 @@ export default function Header({
     }
   };
 
-  return (
+return (
     <>
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg shadow-lg border-b border-blue-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -92,6 +91,7 @@ export default function Header({
 
             {/* Navegación Desktop */}
             <nav className="hidden md:flex items-center space-x-4">
+              {/* Botón INICIO (sin cambios) */}
               <button
                 onClick={handleInicioClick}
                 className={`px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300 ${
@@ -103,6 +103,7 @@ export default function Header({
                 Inicio
               </button>
               
+              {/* Botón MENÚ (sin cambios) */}
               <button
                 onClick={handleMenuClick}
                 className="px-6 py-3 rounded-xl text-sm font-semibold text-gray-600 hover:text-blue-700 hover:bg-blue-50 border border-transparent hover:border-blue-200 transition-all duration-300"
@@ -110,6 +111,21 @@ export default function Header({
                 Menú
               </button>
               
+              {/* ✨ BOTÓN RESERVAR (NUEVO COMPORTAMIENTO: Navegación de Ruta) */}
+              <button
+                // Navega a la ruta /reservar, que contendrá el formulario.
+                onClick={() => navigate('/reservar')}
+                className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300 ${
+                  isActive('/reservar') // Usa isActive para el estilo
+                    ? 'text-white bg-gradient-to-r from-blue-600 to-blue-700 shadow-lg shadow-blue-500/25'
+                    : 'text-gray-600 hover:text-blue-700 hover:bg-blue-50 border border-transparent hover:border-blue-200'
+                }`}
+              >
+                <CalendarCheck size={20} />
+                Reservar
+              </button>
+
+              {/* Botón CARRITO (Activo/Inactivo) */}
               <button
                 onClick={() => navigate('/cart')}
                 className={`flex items-center gap-3 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300 relative ${
@@ -138,7 +154,6 @@ export default function Header({
                 </Link>
               )}
             </nav>
-
             {/* Información de Contacto Desktop */}
             <div className="hidden lg:flex items-center space-x-8 text-sm">
               <div className="flex items-center space-x-3 bg-blue-50 px-4 py-2 rounded-xl border border-blue-200">

@@ -18,6 +18,8 @@ import { getDashboardInfo,
               } from '../controller/app/dashboard.controller';
 import { validateToken } from '../middleware/auth.middleware'; // El guardia que creamos
 import upload from '../middleware/upload.middleware';
+import { reservationsController } from '../controller/auth/reservations.controller';
+
 
 const router = Router();
 
@@ -53,5 +55,9 @@ router.patch('/ordenes/:id/estado', validateToken, updateOrdenEstado);
 
 // --- Rutas de Mesas ---
 router.get('/mesas-con-ordenes', validateToken, getMesasConOrdenes);
+
+// --- Rutas de Reservas ---
+router.get('/reservations', validateToken, reservationsController.getReservations);
+router.patch('/reservations/:id/status', validateToken, reservationsController.updateReservationStatus);
 
 export default router;
