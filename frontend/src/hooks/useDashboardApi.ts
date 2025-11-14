@@ -125,7 +125,7 @@ export interface UpdateProductWithRecipeData {
 export const useDashboardApi = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { logout, currentTenant } = useAuth(); // ← AGREGADO currentTenant
+  const { logout, currentTenant } = useAuth();
 
   const makeRequest = useCallback(async <T>(
     endpoint: string,
@@ -160,13 +160,12 @@ export const useDashboardApi = () => {
     try {
       console.log(`🔍 [API DEBUG] Iniciando request: ${options.method || 'GET'} ${endpoint}`);
 
-       // ✨✨✨ PEGA AQUÍ EL NUEVO CONSOLE.LOG ✨✨✨
-    console.log('🔍 [API DEBUG] Headers que se enviarán:', {
-      'Authorization': `Bearer ${token?.substring(0, 20)}...`, // Mostrar solo parte del token por seguridad
-      'X-Tenant-Subdomain': currentTenant,
-      'Content-Type': headers.get('Content-Type'),
-      'Todos los headers': Object.fromEntries(headers.entries()) // ← Esto muestra TODOS los headers
-    });
+      console.log('🔍 [API DEBUG] Headers que se enviarán:', {
+        'Authorization': `Bearer ${token?.substring(0, 20)}...`,
+        'X-Tenant-Subdomain': currentTenant,
+        'Content-Type': headers.get('Content-Type'),
+        'Todos los headers': Object.fromEntries(headers.entries())
+      });
       
       const response = await fetch(`${API_BASE}${endpoint}`, {
         ...options,
@@ -179,7 +178,6 @@ export const useDashboardApi = () => {
         throw new Error('No autorizado.');
       }
       
-      // ✨ MEJORAR LOGGING PARA DEBUG
       console.log(`🔍 [API DEBUG] ${options.method || 'GET'} ${endpoint} - Status:`, response.status);
       
       const data = await response.json();
@@ -200,7 +198,7 @@ export const useDashboardApi = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [logout, currentTenant]); // ← AGREGADO currentTenant como dependencia
+  }, [logout, currentTenant]);
 
   const getOverviewData = useCallback((): Promise<{ totalOrders: number; totalSales: number; }> => {
     return makeRequest<{ totalOrders: number; totalSales: number; }>('/overview');
@@ -245,7 +243,6 @@ export const useDashboardApi = () => {
     return makeRequest<{ url: string }>('/upload-image', {
       method: 'POST',
       body: formData,
-      // NO ponemos 'Content-Type', se establece automáticamente
     });
   }, [makeRequest]);
 
@@ -274,7 +271,6 @@ export const useDashboardApi = () => {
   }, [makeRequest]);
 
   const getOrdenes = useCallback((filters: GetOrdenesFilters = {}): Promise<ApiOrden[]> => {
-    // Construir los query params dinámicamente
     const params = new URLSearchParams();
     if (filters.estado) {
       params.append('estado', filters.estado);
@@ -305,24 +301,22 @@ export const useDashboardApi = () => {
       body: JSON.stringify({ estado }),
     });
   }, [makeRequest]);
-  
-  const getMesasConOrdenes = useCallback((): Promise<ApiMesa[]> => { // ✨ CORRECCIÓN
-    return makeRequest<ApiMesa[]>('/mesas-con-ordenes'); // ✨ CORRECCIÓN
-  }, [makeRequest]);
+
+  const getMesasConOrdenes = useCallback((): Promise<ApiMesa[]> => {
+    return makeRequest<ApiMesa[]>('/mesas-con-ordenes');
+  }, [makeRequest]);
 
   const getReservations = useCallback((estado?: reservas_estado | 'all'): Promise<ApiReservation[]> => {
     const query = estado && estado !== 'all' ? `?estado=${estado}` : '';
     return makeRequest<ApiReservation[]>(`/reservations${query}`);
-  const getMesasConOrdenes = useCallback((): Promise<any[]> => {
-    return makeRequest<any[]>('/mesas-con-ordenes');
-  }, [makeRequest]);
+  }, [makeRequest]); // ← CORREGIDO: Esta llave estaba mal ubicada
 
   const updateReservationStatus = useCallback((id: number, nuevo_estado: reservas_estado, mesa_id?: number): Promise<{ message: string, reservation: ApiReservation }> => {
     return makeRequest<{ message: string, reservation: ApiReservation }>(`/reservations/${id}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ nuevo_estado, mesa_id })
     });
-  },[makeRequest]);
+  }, [makeRequest]);
 
   return {
     isLoading,
@@ -345,6 +339,4 @@ export const useDashboardApi = () => {
     getReservations,
     updateReservationStatus
   };
-
-
 };
