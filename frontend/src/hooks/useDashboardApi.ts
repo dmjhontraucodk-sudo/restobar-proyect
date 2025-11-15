@@ -318,6 +318,30 @@ export const useDashboardApi = () => {
     });
   }, [makeRequest]);
 
+  const getMesas = useCallback((): Promise<ApiMesa[]> => { 
+    return makeRequest<ApiMesa[]>('/mesas'); 
+  }, [makeRequest]);
+
+  const createMesa = useCallback((data: any): Promise<ApiMesa> => { 
+    return makeRequest<ApiMesa>('/mesas', { 
+        method: 'POST', 
+        body: JSON.stringify(data) 
+    });
+  }, [makeRequest]);
+
+  const updateMesa = useCallback((mesaId: number, data: any): Promise<ApiMesa> => { 
+      return makeRequest<ApiMesa>(`/mesas/${mesaId}`, { 
+          method: 'PATCH', 
+          body: JSON.stringify(data) 
+      });
+  }, [makeRequest]);
+
+    const deleteMesa = useCallback((mesaId: number): Promise<{ message: string }> => { 
+      return makeRequest<{ message: string }>(`/mesas/${mesaId}`, { 
+          method: 'DELETE',
+      });
+  }, [makeRequest]);
+
   return {
     isLoading,
     error,
@@ -337,6 +361,10 @@ export const useDashboardApi = () => {
     updateOrdenEstado,
     getMesasConOrdenes,
     getReservations,
-    updateReservationStatus
+    updateReservationStatus,
+    getMesas,
+    createMesa,
+    updateMesa,
+    deleteMesa
   };
 };

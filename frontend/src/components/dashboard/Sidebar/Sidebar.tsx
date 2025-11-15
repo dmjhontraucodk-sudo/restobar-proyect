@@ -110,7 +110,7 @@ const FlyoutNavigationContent: React.FC<{ onLinkClick?: () => void; user: any }>
             onClick={onLinkClick} 
           />
           <SidebarLink 
-            to="/dashboard/reservations" 
+            to="/dashboard/reservas" 
             icon={<Icons.CalendarIcon />} 
             label="Reservas" 
             isCollapsed={false} 

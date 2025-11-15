@@ -97,4 +97,5 @@ export const mesasService = {
         orderBy: { capacidad: 'asc' },
     });
 }
+    }
 };
