@@ -7,12 +7,9 @@ import {
   ChevronsLeftIcon,
 } from '../Sidebar/icons';
 import { type Location } from 'react-router-dom';
+import { type User } from '../../../context/AuthContext';
 
-interface User {
-  name: string;
-  email: string;
-  avatarUrl: string;
-}
+
 
 interface HeaderProps {
   isPinned: boolean;

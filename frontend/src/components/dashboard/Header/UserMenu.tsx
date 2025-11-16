@@ -2,12 +2,8 @@
 import React, { forwardRef } from 'react';
 import { Link } from 'react-router-dom';
 import { UserCircleIcon, SettingsIcon, LogOutIcon } from '../Sidebar/icons';
+import { type User } from '../../../context/AuthContext';
 
-interface User {
-  name: string;
-  email: string;
-  role: string;
-}
 
 interface UserMenuProps {
   user: User;

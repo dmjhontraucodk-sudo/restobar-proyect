@@ -1,4 +1,5 @@
-// src/components/dashboard/Sidebar/NavigationContent.tsx
+// src/components/dashboard/Sidebar/NavigationContent.tsx - ACTUALIZADO CON INVENTARIO
+
 import React from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { SidebarLink } from './SidebarLink';
@@ -88,14 +89,14 @@ export const NavigationContent: React.FC<NavigationContentProps> = ({
           </div>
         </div>
 
-        {/* Grupo 2: Gestión de Menú y Cocina - AJUSTE ESPECÍFICO */}
-        <div className={`${isCollapsed ? 'pt-0' : 'pt-2'}`}> {/* ✅ pt-0 en modo contraído */}
+        {/* Grupo 2: Gestión de Menú y Cocina */}
+        <div className={`${isCollapsed ? 'pt-0' : 'pt-2'}`}>
           {!isCollapsed && (
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 px-3">
               Menú & Cocina
             </h3>
           )}
-          <div className="space-y-0"> {/* ✅ Cero espacio entre botones */}
+          <div className="space-y-0">
             <SidebarLink 
               to="/dashboard/menu" 
               icon={<Icons.UtensilsIcon />} 
@@ -117,18 +118,57 @@ export const NavigationContent: React.FC<NavigationContentProps> = ({
               isCollapsed={isCollapsed} 
               onClick={onLinkClick} 
             />
+          </div>
+        </div>
+
+        {/* ✨ GRUPO 3: INVENTARIO DINÁMICO (NUEVO) ✨ */}
+        <div className={`${isCollapsed ? 'pt-0' : 'pt-2'}`}>
+          {!isCollapsed && (
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 px-3">
+              Inventario
+            </h3>
+          )}
+          <div className="space-y-1">
             <SidebarLink 
-              to="/dashboard/inventory" 
+              to="/dashboard/productos-inventario" 
               icon={<Icons.PackageIcon />} 
-              label="Inventario" 
+              label="Productos" 
+              isCollapsed={isCollapsed} 
+              onClick={onLinkClick}
+            />
+            <SidebarLink 
+              to="/dashboard/compras" 
+              icon={<Icons.ShoppingCartIcon />} 
+              label="Compras & Gastos" 
+              isCollapsed={isCollapsed} 
+              onClick={onLinkClick}
+            />
+            <SidebarLink 
+              to="/dashboard/categorias-inventario" 
+              icon={<Icons.TagIcon />} 
+              label="Categorías" 
+              isCollapsed={isCollapsed} 
+              onClick={onLinkClick}
+            />
+            <SidebarLink 
+              to="/dashboard/tipos-gasto" 
+              icon={<Icons.DollarSignIcon />} 
+              label="Tipos de Gasto" 
+              isCollapsed={isCollapsed} 
+              onClick={onLinkClick}
+            />
+            <SidebarLink 
+              to="/dashboard/unidades-medida" 
+              icon={<Icons.RulerIcon />} 
+              label="Unidades" 
               isCollapsed={isCollapsed} 
               onClick={onLinkClick}
             />
           </div>
         </div>
 
-        {/* Grupo 3: Gestión y Reportes */}
-        <div className={`${isCollapsed ? 'pt-0' : 'pt-2'}`}> {/* ✅ pt-0 en modo contraído */}
+        {/* Grupo 4: Gestión y Reportes */}
+        <div className={`${isCollapsed ? 'pt-0' : 'pt-2'}`}>
           {!isCollapsed && (
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 px-3">
               Gestión

@@ -1,4 +1,7 @@
-// src/types/index.ts
+// src/types/index.ts - ACTUALIZADO CON INVENTARIO DINÁMICO
+
+// ========== TIPOS EXISTENTES (SIN CAMBIOS) ==========
+
 export interface Producto {
   id: number;
   nombre: string;
@@ -68,7 +71,6 @@ export interface OrderResponse {
   };
 }
 
-// Creado para manejar logica del Menu Principal del dashboard 
 export interface MenuItem {
   id: string;
   name: string;
@@ -95,36 +97,30 @@ export interface RecetaItemUI {
 
 export type TipoCategoria = 'COMIDA' | 'BEBIDA';
 
-// --- ✨ NUEVOS TIPOS PARA EL MÓDULO DE PEDIDOS ---
-
-// ✨ MOVIDO DESDE useDashboardApi.ts
 export interface GetOrdenesFilters {
   estado?: OrdenEstado;
-  fechaInicio?: string; // String en formato ISO (ej: "2025-11-12T00:00:00Z")
+  fechaInicio?: string;
   fechaFin?: string;
 }
 
-// El estado de la orden (debe coincidir con tu Enum de Prisma)
 export type OrdenEstado = 'Abierta' | 'Cerrada' | 'Pagada' | 'Cancelada';
 
-// El detalle de un producto dentro de una orden
 export interface ApiOrdenDetalle {
   id: number;
   cantidad: number;
-  precio_unitario: string; // Prisma devuelve Decimal como string
+  precio_unitario: string;
   notas: string | null;
   productos: {
     nombre: string;
   };
 }
 
-// La orden completa (como la devuelve la API)
 export interface ApiOrden {
   id: number;
   estado: OrdenEstado;
   subtotal: string;
   total: string;
-  created_at: string; // Prisma devuelve DateTime como string (ISO)
+  created_at: string;
   mesas: {
     nombre_o_numero: string;
   };
@@ -135,7 +131,6 @@ export interface ApiOrden {
   ordendetalles: ApiOrdenDetalle[];
 }
 
-// Para crear una nueva orden (desde la app de Mesas)
 export interface CreateOrdenItem {
   producto_id: number;
   cantidad: number;
@@ -148,28 +143,27 @@ export interface CreateOrdenData {
   items: CreateOrdenItem[];
 }
 
-// --- AGREGAR ESTADOS DE RESERVA ---
 export type reservas_estado = 'Pendiente' | 'Confirmada' | 'Cancelada' | 'Completada';
 export type mesas_estado = 'Libre' | 'Ocupada' | 'Reservada';
 
 export interface ApiMesa {
-    id: number;
-    nombre_o_numero: string;
-    capacidad: number;
-    estado: mesas_estado;
-    ordenActiva?: any; // Añadido para compatibilidad con getMesasConOrdenes
+  id: number;
+  nombre_o_numero: string;
+  capacidad: number;
+  estado: mesas_estado;
+  ordenActiva?: any;
 }
 
 export interface ApiReservation {
-    id: number;
-    cliente_nombre: string;
-    cliente_email: string;
-    cliente_telefono: string;
-    fecha_hora: string; // ISO string
-    cantidad_personas: number;
-    estado: reservas_estado;
-    mesa_id: number | null;
-    mesas: { nombre_o_numero: string } | null;
+  id: number;
+  cliente_nombre: string;
+  cliente_email: string;
+  cliente_telefono: string;
+  fecha_hora: string;
+  cantidad_personas: number;
+  estado: reservas_estado;
+  mesa_id: number | null;
+  mesas: { nombre_o_numero: string } | null;
 }
 
 export interface CreateReservationData {
@@ -184,3 +178,204 @@ export interface CreateReservationData {
 
 
 //export * from '../hooks/useDashboardApi';
+  cliente_nombre: string;
+  cliente_email?: string;
+  cliente_telefono: string;
+  fecha_hora: string;
+  cantidad_personas: number;
+  notas?: string;
+}
+
+// ========== ✨ NUEVOS TIPOS - INVENTARIO DINÁMICO ✨ ==========
+
+// --- CATEGORÍAS DE INVENTARIO (Dinámicas) ---
+export interface CategoriaInventario {
+  id: number;
+  tenant_id: number;
+  nombre: string;
+  descripcion: string | null;
+  color: string | null;
+  icono: string | null;
+  orden: number | null;
+  activa: boolean;
+  created_at: string;
+}
+
+export interface CreateCategoriaInventarioData {
+  nombre: string;
+  descripcion?: string;
+  color?: string;
+  icono?: string;
+  orden?: number;
+}
+
+export interface UpdateCategoriaInventarioData {
+  nombre?: string;
+  descripcion?: string;
+  color?: string;
+  icono?: string;
+  orden?: number;
+  activa?: boolean;
+}
+
+// --- TIPOS DE GASTO (Dinámicos) ---
+export interface TipoGasto {
+  id: number;
+  tenant_id: number;
+  nombre: string;
+  descripcion: string | null;
+  afecta_inventario: boolean;
+  color: string | null;
+  icono: string | null;
+  orden: number | null;
+  activo: boolean;
+  created_at: string;
+}
+
+export interface CreateTipoGastoData {
+  nombre: string;
+  descripcion?: string;
+  afecta_inventario?: boolean;
+  color?: string;
+  icono?: string;
+  orden?: number;
+}
+
+// --- UNIDADES DE MEDIDA (Dinámicas) ---
+export interface UnidadMedida {
+  id: number;
+  tenant_id: number;
+  nombre: string;
+  abreviatura: string;
+  tipo: string | null;
+  activa: boolean;
+  created_at: string;
+}
+
+export interface CreateUnidadMedidaData {
+  nombre: string;
+  abreviatura: string;
+  tipo?: string;
+}
+
+// --- PRODUCTOS DE INVENTARIO (Antes "Insumos") ---
+export interface ProductoInventario {
+  id: number;
+  tenant_id: number;
+  categoria_inventario_id: number | null;
+  unidad_medida_id: number | null;
+  nombre: string;
+  codigo_barras: string | null;
+  stock_actual: number;
+  costo_unitario: number;
+  stock_minimo: number;
+  stock_maximo: number | null;
+  ultimo_conteo: string | null;
+  stock_anterior: number;
+  activo: boolean;
+  created_at: string;
+  categorias_inventario?: {
+    nombre: string;
+    color: string | null;
+    icono: string | null;
+  };
+  unidades_medida?: {
+    nombre: string;
+    abreviatura: string;
+  };
+}
+
+export interface CreateProductoInventarioData {
+  nombre: string;
+  categoria_inventario_id?: number;
+  unidad_medida_id?: number;
+  codigo_barras?: string;
+  stock_actual?: number;
+  costo_unitario?: number;
+  stock_minimo?: number;
+  stock_maximo?: number;
+}
+
+export interface UpdateProductoInventarioData {
+  nombre?: string;
+  categoria_inventario_id?: number;
+  unidad_medida_id?: number;
+  codigo_barras?: string;
+  stock_actual?: number;
+  costo_unitario?: number;
+  stock_minimo?: number;
+  stock_maximo?: number;
+  activo?: boolean;
+}
+
+// --- COMPRAS/GASTOS ---
+export interface CompraDetalle {
+  id: number;
+  cantidad: number;
+  costo_unitario: number;
+  productos_inventario: {
+    nombre: string;
+    unidades_medida: {
+      abreviatura: string;
+    } | null;
+  };
+}
+
+export interface Compra {
+  id: number;
+  tenant_id: number;
+  tipo_gasto_id: number;
+  proveedor_id: number | null;
+  fecha: string;
+  total: number;
+  numero_documento: string | null;
+  descripcion: string | null;
+  estado_compra: string;
+  created_at: string;
+  tipos_gasto: {
+    nombre: string;
+    afecta_inventario: boolean;
+    color: string | null;
+    icono: string | null;
+  };
+  proveedores?: {
+    nombre_empresa: string;
+  };
+  compras_detalles: CompraDetalle[];
+}
+
+export interface CreateCompraDetalleData {
+  producto_inventario_id: number;
+  cantidad: number;
+  costo_unitario: number;
+}
+
+export interface CreateCompraData {
+  tipo_gasto_id: number;
+  fecha: string;
+  total: number;
+  descripcion?: string;
+  numero_documento?: string;
+  proveedor_id?: number;
+  items?: CreateCompraDetalleData[];
+}
+
+export interface GetComprasFilters {
+  tipo_gasto_id?: number;
+  fechaInicio?: string;
+  fechaFin?: string;
+}
+
+// --- PROVEEDORES ---
+export interface Proveedor {
+  id: number;
+  tenant_id: number;
+  nombre_empresa: string;
+  contacto_nombre: string | null;
+  email: string | null;
+  telefono: string | null;
+  direccion: string | null;
+  ruc: string | null;
+  activo: boolean;
+  created_at: string;
+}

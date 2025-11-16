@@ -1,3 +1,5 @@
+// src/hooks/useDashboardApi.ts - ACTUALIZADO CON INVENTARIO DINÁMICO
+
 import { useState, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
@@ -9,12 +11,26 @@ import {
   type GetOrdenesFilters, 
   type ApiReservation, 
   type reservas_estado,
-  type ApiMesa
+  type ApiMesa,
+  // ✨ NUEVOS IMPORTS
+  type CategoriaInventario,
+  type CreateCategoriaInventarioData,
+  type UpdateCategoriaInventarioData,
+  type TipoGasto,
+  type CreateTipoGastoData,
+  type UnidadMedida,
+  type CreateUnidadMedidaData,
+  type ProductoInventario,
+  type CreateProductoInventarioData,
+  type UpdateProductoInventarioData,
+  type Compra,
+  type CreateCompraData,
+  type GetComprasFilters,
 } from '../types';
 
 const API_BASE = '/api/dashboard';
 
-// --- Tipos de Insumos ---
+// --- Tipos de Insumos (DEPRECADOS - Mantener por compatibilidad) ---
 export interface Insumo {
   id: number;
   tenant_id: number;
@@ -23,6 +39,7 @@ export interface Insumo {
   stock_actual: number | null;
   costo_unitario: number | null;
 }
+
 export interface CreateInsumoData {
   nombre: string;
   unidad_medida: string;
@@ -30,11 +47,12 @@ export interface CreateInsumoData {
   costo_unitario?: number;
 }
 
-// --- Tipos de Producto con Receta ---
+// --- Tipos de Producto ---
 export interface RecipeItem {
   insumoId: number;
   cantidad: number;
 }
+
 export interface CreateProductData {
   nombre: string;
   precio: number;
@@ -44,10 +62,9 @@ export interface CreateProductData {
   foto_url?: string | null;
   disponible?: boolean;
   visible_en_web?: boolean;
-  receta: RecipeItem[];
+  receta?: RecipeItem[];
 }
 
-// --- TIPO ApiProduct MEJORADO ---
 export interface ApiProductWithRecipe {
   id: number;
   nombre: string;
@@ -59,18 +76,10 @@ export interface ApiProductWithRecipe {
   categoriasmenu: {
     id: number;
     nombre: string;
+    tipo: TipoCategoria;
   };
-  recetas: {
-    cantidad_usada: number;
-    insumos: {
-      id: number;
-      nombre: string;
-      unidad_medida: string;
-    }
-  }[];
 }
 
-// Este tipo es para la LISTA de productos (más ligero)
 export interface ApiProduct {
   id: number;
   tenant_id: number;
@@ -96,6 +105,7 @@ export interface ApiCategory {
   visible_en_web: boolean | null;
   tipo: TipoCategoria;
 }
+
 export interface CreateCategoryData {
   nombre: string;
   tipo: TipoCategoria;
@@ -115,6 +125,7 @@ export interface UpdateProductWithRecipeData {
   nombre?: string;
   precio?: number;
   categoriaNombre?: string;
+  tipo?: TipoCategoria;
   descripcion?: string | null;
   foto_url?: string | null;
   disponible?: boolean;
@@ -142,31 +153,17 @@ export const useDashboardApi = () => {
     
     const headers = new Headers(options.headers || {});
     
-    // ✨ CORRECCIÓN: Solo añadir Content-Type si NO es FormData
     if (!(options.body instanceof FormData)) {
       headers.append('Content-Type', 'application/json');
     }
     
     headers.append('Authorization', `Bearer ${token}`);
     
-    // ✨✨✨ AGREGAR ESTE HEADER CRUCIAL ✨✨✨
     if (currentTenant) {
       headers.append('X-Tenant-Subdomain', currentTenant);
-      console.log('🔍 [API DEBUG] Enviando header X-Tenant-Subdomain:', currentTenant);
-    } else {
-      console.log('🔍 [API DEBUG] No hay currentTenant, usando lógica por defecto');
     }
     
     try {
-      console.log(`🔍 [API DEBUG] Iniciando request: ${options.method || 'GET'} ${endpoint}`);
-
-      console.log('🔍 [API DEBUG] Headers que se enviarán:', {
-        'Authorization': `Bearer ${token?.substring(0, 20)}...`,
-        'X-Tenant-Subdomain': currentTenant,
-        'Content-Type': headers.get('Content-Type'),
-        'Todos los headers': Object.fromEntries(headers.entries())
-      });
-      
       const response = await fetch(`${API_BASE}${endpoint}`, {
         ...options,
         headers: headers,
@@ -178,16 +175,13 @@ export const useDashboardApi = () => {
         throw new Error('No autorizado.');
       }
       
-      console.log(`🔍 [API DEBUG] ${options.method || 'GET'} ${endpoint} - Status:`, response.status);
-      
       const data = await response.json();
       
       if (!response.ok) {
-        console.error(`❌ [API DEBUG] Error ${response.status}:`, data);
+        console.error(`❌ Error ${response.status}:`, data);
         throw new Error(data.error || 'Error en la petición');
       }
       
-      console.log(`✅ [API DEBUG] Request exitosa:`, data);
       return data as T;
       
     } catch (err) {
@@ -204,7 +198,8 @@ export const useDashboardApi = () => {
     return makeRequest<{ totalOrders: number; totalSales: number; }>('/overview');
   }, [makeRequest]);
 
-  // --- Funciones de Productos ---
+  // ========== FUNCIONES EXISTENTES (SIN CAMBIOS) ==========
+
   const getProducts = useCallback((tipo: TipoCategoria): Promise<ApiProduct[]> => {
     return makeRequest<ApiProduct[]>(`/products?tipo=${tipo}`);
   }, [makeRequest]);
@@ -223,7 +218,6 @@ export const useDashboardApi = () => {
     });
   }, [makeRequest]);
 
-  // --- FUNCIONES DE EDITAR ---
   const getProductById = useCallback((productId: number | string): Promise<ApiProductWithRecipe> => {
     return makeRequest<ApiProductWithRecipe>(`/products/${productId}`);
   }, [makeRequest]);
@@ -235,22 +229,72 @@ export const useDashboardApi = () => {
     });
   }, [makeRequest]);
 
-  // --- ✨ FUNCIÓN UPLOAD IMAGE CORREGIDA ---
-  const uploadImage = useCallback((file: File): Promise<{ url: string }> => {
+  const uploadImage = useCallback(async (file: File): Promise<{ url: string }> => {
     const formData = new FormData();
     formData.append('image', file);
 
-    return makeRequest<{ url: string }>('/upload-image', {
-      method: 'POST',
-      body: formData,
-    });
+    try {
+      console.log('📤 Subiendo imagen a Cloudinary...', {
+        name: file.name,
+        size: file.size,
+        type: file.type
+      });
+
+      const response = await makeRequest<{ 
+        url: string; 
+        public_id?: string;
+        secure_url?: string;
+      }>('/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      let finalUrl = response.url;
+
+      if (response.secure_url) {
+        finalUrl = response.secure_url;
+      }
+
+      if (!finalUrl || !finalUrl.includes('cloudinary.com')) {
+        console.error('❌ URL de Cloudinary inválida:', finalUrl);
+        throw new Error('La URL de la imagen no es válida');
+      }
+
+      if (finalUrl.startsWith('http://')) {
+        finalUrl = finalUrl.replace('http://', 'https://');
+      }
+
+      console.log('✅ Imagen subida exitosamente:', {
+        url: finalUrl,
+        public_id: response.public_id
+      });
+
+      return { url: finalUrl };
+
+    } catch (err: any) {
+      console.error('❌ Error en uploadImage:', err);
+      
+      let errorMessage = err.message;
+      
+      if (err.message.includes('network') || err.message.includes('Network')) {
+        errorMessage = 'Error de conexión al subir la imagen';
+      } else if (err.message.includes('cloudinary')) {
+        errorMessage = 'Error del servicio de imágenes';
+      } else if (err.message.includes('URL')) {
+        errorMessage = 'La imagen subida no es válida';
+      }
+      
+      toast.error(`Error al subir imagen: ${errorMessage}`);
+      throw new Error(errorMessage);
+    }
   }, [makeRequest]);
 
-  // --- Funciones de Insumos ---
+  // DEPRECADO: Usar getProductosInventario
   const getInsumos = useCallback((): Promise<Insumo[]> => {
     return makeRequest<Insumo[]>('/insumos');
   }, [makeRequest]);
 
+  // DEPRECADO: Usar createProductoInventario
   const createInsumo = useCallback((insumoData: CreateInsumoData): Promise<Insumo> => {
     return makeRequest<Insumo>('/insumos', {
       method: 'POST',
@@ -258,7 +302,6 @@ export const useDashboardApi = () => {
     });
   }, [makeRequest]);
 
-  // --- Funciones de Categoría ---
   const createCategory = useCallback((categoryData: CreateCategoryData): Promise<ApiCategory> => {
     return makeRequest<ApiCategory>('/categories', {
       method: 'POST',
@@ -309,7 +352,7 @@ export const useDashboardApi = () => {
   const getReservations = useCallback((estado?: reservas_estado | 'all'): Promise<ApiReservation[]> => {
     const query = estado && estado !== 'all' ? `?estado=${estado}` : '';
     return makeRequest<ApiReservation[]>(`/reservations${query}`);
-  }, [makeRequest]); // ← CORREGIDO: Esta llave estaba mal ubicada
+  }, [makeRequest]);
 
   const updateReservationStatus = useCallback((id: number, nuevo_estado: reservas_estado, mesa_id?: number): Promise<{ message: string, reservation: ApiReservation }> => {
     return makeRequest<{ message: string, reservation: ApiReservation }>(`/reservations/${id}/status`, {
@@ -340,11 +383,112 @@ export const useDashboardApi = () => {
       return makeRequest<{ message: string }>(`/mesas/${mesaId}`, { 
           method: 'DELETE',
       });
+  // ========== ✨ NUEVAS FUNCIONES - INVENTARIO DINÁMICO ✨ ==========
+
+  // --- CATEGORÍAS DE INVENTARIO ---
+  const getCategoriasInventario = useCallback((): Promise<CategoriaInventario[]> => {
+    return makeRequest<CategoriaInventario[]>('/categorias-inventario');
+  }, [makeRequest]);
+
+  const createCategoriaInventario = useCallback((data: CreateCategoriaInventarioData): Promise<CategoriaInventario> => {
+    return makeRequest<CategoriaInventario>('/categorias-inventario', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }, [makeRequest]);
+
+  const updateCategoriaInventario = useCallback((id: number, data: UpdateCategoriaInventarioData): Promise<CategoriaInventario> => {
+    return makeRequest<CategoriaInventario>(`/categorias-inventario/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }, [makeRequest]);
+
+  // --- TIPOS DE GASTO ---
+  const getTiposGasto = useCallback((): Promise<TipoGasto[]> => {
+    return makeRequest<TipoGasto[]>('/tipos-gasto');
+  }, [makeRequest]);
+
+  const createTipoGasto = useCallback((data: CreateTipoGastoData): Promise<TipoGasto> => {
+    return makeRequest<TipoGasto>('/tipos-gasto', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }, [makeRequest]);
+
+  // --- UNIDADES DE MEDIDA ---
+  const getUnidadesMedida = useCallback((): Promise<UnidadMedida[]> => {
+    return makeRequest<UnidadMedida[]>('/unidades-medida');
+  }, [makeRequest]);
+
+  const createUnidadMedida = useCallback((data: CreateUnidadMedidaData): Promise<UnidadMedida> => {
+    return makeRequest<UnidadMedida>('/unidades-medida', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }, [makeRequest]);
+
+  // --- PRODUCTOS DE INVENTARIO ---
+  const getProductosInventario = useCallback((categoria_id?: number): Promise<ProductoInventario[]> => {
+    const query = categoria_id ? `?categoria_id=${categoria_id}` : '';
+    return makeRequest<ProductoInventario[]>(`/productos-inventario${query}`);
+  }, [makeRequest]);
+
+  const createProductoInventario = useCallback((data: CreateProductoInventarioData): Promise<ProductoInventario> => {
+    return makeRequest<ProductoInventario>('/productos-inventario', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }, [makeRequest]);
+
+  const updateProductoInventario = useCallback((id: number, data: UpdateProductoInventarioData): Promise<ProductoInventario> => {
+    return makeRequest<ProductoInventario>(`/productos-inventario/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }, [makeRequest]);
+
+  // --- COMPRAS/GASTOS ---
+  const getGastos = useCallback((filters: GetComprasFilters = {}): Promise<Compra[]> => {
+    const params = new URLSearchParams();
+    if (filters.tipo_gasto_id) {
+      params.append('tipo_gasto_id', filters.tipo_gasto_id.toString());
+    }
+    if (filters.fechaInicio) {
+      params.append('fechaInicio', filters.fechaInicio);
+    }
+    if (filters.fechaFin) {
+      params.append('fechaFin', filters.fechaFin);
+    }
+    
+    const queryString = params.toString();
+    const endpoint = queryString ? `/gastos?${queryString}` : '/gastos';
+    
+    return makeRequest<Compra[]>(endpoint);
+  }, [makeRequest]);
+
+  const getGastoById = useCallback((id: number): Promise<Compra> => {
+    return makeRequest<Compra>(`/gastos/${id}`);
+  }, [makeRequest]);
+
+  const createGasto = useCallback((data: CreateCompraData): Promise<Compra> => {
+    return makeRequest<Compra>('/gastos', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }, [makeRequest]);
+
+  const receiveCompra = useCallback((id: number): Promise<{ message: string }> => {
+    return makeRequest<{ message: string }>(`/gastos/${id}/recibir`, {
+      method: 'POST',
+    });
   }, [makeRequest]);
 
   return {
     isLoading,
     error,
+    
+    // Funciones existentes
     getOverviewData,
     getProducts,
     createProductWithRecipe,
@@ -352,8 +496,8 @@ export const useDashboardApi = () => {
     getProductById,
     updateProductWithRecipe,
     uploadImage,
-    getInsumos,
-    createInsumo,
+    getInsumos, // DEPRECADO
+    createInsumo, // DEPRECADO
     createCategory,
     getCategories,
     getOrdenes,
@@ -366,5 +510,21 @@ export const useDashboardApi = () => {
     createMesa,
     updateMesa,
     deleteMesa
+    
+    // ✨ Nuevas funciones de inventario
+    getCategoriasInventario,
+    createCategoriaInventario,
+    updateCategoriaInventario,
+    getTiposGasto,
+    createTipoGasto,
+    getUnidadesMedida,
+    createUnidadMedida,
+    getProductosInventario,
+    createProductoInventario,
+    updateProductoInventario,
+    getGastos,
+    getGastoById,
+    createGasto,
+    receiveCompra,
   };
 };

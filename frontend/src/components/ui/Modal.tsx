@@ -21,7 +21,7 @@ const Modal: React.FC<ModalProps> = ({ title, onClose, children, size = 'md' }) 
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className={`bg-white rounded-2xl shadow-2xl w-full ${sizeClasses[size]} transform transition-all`}>
         <div className="flex justify-between items-center p-6 border-b border-gray-100">
           <h2 className="text-xl font-bold text-gray-900">{title}</h2>

@@ -1,14 +1,10 @@
-// src/components/dashboard/Sidebar/Sidebar.tsx
+// src/components/dashboard/Sidebar/Sidebar.tsx - ACTUALIZADO CON ICONOS CORRECTOS
+
 import React from 'react';
 import { NavigationContent } from './NavigationContent';
 import { SidebarLink } from './SidebarLink';
 import * as Icons from './icons';
-
-interface User {
-  name: string;
-  tenantName: string;
-  role: string;
-}
+import { type User } from '../../../context/AuthContext';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -51,7 +47,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         onMouseLeave={onFlyoutLeave}
       >
         <div className="flex flex-col h-full overflow-hidden">
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <div className="flex items-center h-16 px-4 border-b border-gray-200">
               <div className="flex items-center space-x-2">
                 <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg shadow-lg">
@@ -79,7 +75,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 };
 
 // Componente para el contenido del flyout
-const FlyoutNavigationContent: React.FC<{ onLinkClick?: () => void; user: any }> = ({ onLinkClick, user }) => {
+const FlyoutNavigationContent: React.FC<{ onLinkClick?: () => void; user: User }> = ({ onLinkClick, user }) => {
   return (
     <nav className="mt-2 flex-1 flex flex-col space-y-1 px-2 pb-4">
       {/* Grupo 1: Operaciones en Tiempo Real */}
@@ -146,17 +142,54 @@ const FlyoutNavigationContent: React.FC<{ onLinkClick?: () => void; user: any }>
             isCollapsed={false} 
             onClick={onLinkClick} 
           />
+        </div>
+      </div>
+
+      {/* ✨ GRUPO 3: INVENTARIO DINÁMICO (NUEVO) ✨ */}
+      <div className="pt-2">
+        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 px-3">
+          Inventario
+        </h3>
+        <div className="space-y-1">
           <SidebarLink 
-            to="/dashboard/inventory" 
+            to="/dashboard/productos-inventario" 
             icon={<Icons.PackageIcon />} 
-            label="Inventario" 
+            label="Productos" 
+            isCollapsed={false} 
+            onClick={onLinkClick}
+          />
+          <SidebarLink 
+            to="/dashboard/compras" 
+            icon={<Icons.ShoppingCartIcon />} 
+            label="Compras & Gastos" 
+            isCollapsed={false} 
+            onClick={onLinkClick}
+          />
+          <SidebarLink 
+            to="/dashboard/categorias-inventario" 
+            icon={<Icons.TagIcon />} 
+            label="Categorías" 
+            isCollapsed={false} 
+            onClick={onLinkClick}
+          />
+          <SidebarLink 
+            to="/dashboard/tipos-gasto" 
+            icon={<Icons.DollarSignIcon />} 
+            label="Tipos de Gasto" 
+            isCollapsed={false} 
+            onClick={onLinkClick}
+          />
+          <SidebarLink 
+            to="/dashboard/unidades-medida" 
+            icon={<Icons.RulerIcon />} 
+            label="Unidades" 
             isCollapsed={false} 
             onClick={onLinkClick}
           />
         </div>
       </div>
 
-      {/* Grupo 3: Gestión y Reportes */}
+      {/* Grupo 4: Gestión y Reportes */}
       <div className="pt-2">
         <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 px-3">
           Gestión

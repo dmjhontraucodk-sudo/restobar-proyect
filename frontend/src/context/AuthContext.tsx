@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import toast from 'react-hot-toast'; // ✅ AÑADIR ESTA IMPORTACIÓN
 
 // Definir interfaces
-interface User {
+export interface User {
   id: string;
   name: string;
   email: string;

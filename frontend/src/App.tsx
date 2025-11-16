@@ -1,11 +1,11 @@
-// src/App.tsx - VERSIÓN CORREGIDA
+// src/App.tsx - CON RUTAS DE INVENTARIO
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { Toaster } from 'react-hot-toast';
-import { type TipoCategoria } from './types';
+
 // --- Páginas Globales (SaaS) ---
-import { Landing } from './pages/Landing'; // ← Ahora es la landing del restobar demo
+import { Landing } from './pages/Landing';
 import RegisterPage from './pages/Register';
 import CartDemo from './pages/public/components/CartDemo';
 
@@ -15,11 +15,17 @@ import DashboardLayout from './layouts/DashboardLayout';
 import OverviewPage from './pages/Overview';
 import MenuManagementPage from './pages/MenuManagement';
 import InventoryManagementPage from './pages/InventoryManagement';
-
 import OrdersManagementPage from './pages/OrdersManagement';
 
+// ✨ NUEVAS PÁGINAS DE INVENTARIO
+import CategoriasInventario from './pages/dashboard/inventario/CategoriasInventario';
+import TiposGasto from './pages/dashboard/inventario/TiposGasto';
+import UnidadesMedida from './pages/dashboard/inventario/UnidadesMedida';
+import ProductosInventario from './pages/dashboard/inventario/ProductosInventario';
+import Compras from './pages/dashboard/inventario/Compras';
+
 // --- Páginas Públicas del Tenant (Restobar) ---
-import RestobarLanding from './pages/public/RestobarLanding'; // ← Landing real con datos de BD
+import RestobarLanding from './pages/public/RestobarLanding';
 import ProductCatalog from './pages/public/ProductCatalog';
 import Cart from './pages/public/Cart';
 import Checkout from './pages/public/Checkout';
@@ -28,7 +34,7 @@ import Checkout from './pages/public/Checkout';
 import ProtectedRoute from './components/ProtectedRoute';
 import TenantGuard from './components/TenantGuard';
 
-// --- Reservas---
+// --- Reservas ---
 import ReservationForm from './pages/public/components/ReservationForm';
 import ReservationsManagementPage from './pages/ReservationsManagement';
 
@@ -49,37 +55,26 @@ const getTenantId = () => {
 
 // --- Rutas Globales (Landing Demo, Registro) ---
 const GlobalRoutes = () => (
-  <AuthProvider>
-    <CartProvider> {/* ← AGREGA CartProvider AQUÍ */}
-      <Routes>
-        <Route path="/" element={<Landing />} /> {/* ← Landing del restobar DEMO */}
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/cart" element={<CartDemo />} />
-        <Route path="/reservar" element={<ReservationForm />} />
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    </CartProvider>
-  </AuthProvider>
+  <CartProvider>
+    <Routes>
+      <Route path="/" element={<Landing />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/cart" element={<CartDemo />} />
+      <Route path="/reservar" element={<ReservationForm />} />
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
+  </CartProvider>
 );
 
 // --- Rutas Públicas del Tenant (Restobar Real) ---
 const TenantPublicRoutes = () => (
   <CartProvider>
     <Routes>
-      {/* Landing del Restobar REAL - Con datos de BD */}
       <Route path="/" element={<RestobarLanding />} />
-      
-      {/* Catálogo de productos - Ya incluye Header y Footer */}
       <Route path="/catalog" element={<ProductCatalog />} />
-      
-      {/* Carrito y Checkout - Ya incluyen Header y Footer */}
       <Route path="/cart" element={<Cart />} />
       <Route path="/checkout" element={<Checkout />} />
-
-      {/* Ruta de Reservas */}
-      <Route path="/reservar" element={<ReservationForm />} />
-
-      {/* Redirección para rutas no encontradas */}
+      <Route path="/reservar" element={<ReservationForm />} />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   </CartProvider>
@@ -87,9 +82,8 @@ const TenantPublicRoutes = () => (
 
 // --- Rutas Privadas del Tenant (Dashboard Admin) ---
 const TenantPrivateRoutes = () => (
-  <AuthProvider>
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
+  <Routes>
+    <Route path="/login" element={<LoginPage />} />
 
       {/* Rutas protegidas */}
       <Route element={<ProtectedRoute />}>
@@ -103,14 +97,33 @@ const TenantPrivateRoutes = () => (
             <Route path="tables" element={<TablesManagementPage />} />
             <Route path="reservas" element={<ReservationsManagementPage />} />
           </Route>
+    {/* Rutas protegidas */}
+    <Route element={<ProtectedRoute />}>
+      <Route element={<TenantGuard />}>
+        <Route path="/dashboard" element={<DashboardLayout />}>
+          <Route index element={<OverviewPage />} /> 
+          
+          {/* Rutas Existentes */}
+          <Route path="menu" element={<MenuManagementPage tipo="COMIDA" />} />
+          <Route path="bebidas" element={<MenuManagementPage tipo="BEBIDA" />} />
+          <Route path="inventory" element={<InventoryManagementPage />} />
+          <Route path="orders" element={<OrdersManagementPage />} />
+          <Route path="tables" element={<div className="p-4">Página de Mesas (Próximamente)</div>} />
+          
+          {/* ✨ NUEVAS RUTAS DE INVENTARIO DINÁMICO ✨ */}
+          <Route path="categorias-inventario" element={<CategoriasInventario />} />
+          <Route path="tipos-gasto" element={<TiposGasto />} />
+          <Route path="unidades-medida" element={<UnidadesMedida />} />
+          <Route path="productos-inventario" element={<ProductosInventario />} />
+          <Route path="compras" element={<Compras />} />
         </Route>
       </Route>
+    </Route>
 
-      {/* Redirecciones */}
-      <Route path="/" element={<Navigate to="/dashboard" />} />
-      <Route path="*" element={<Navigate to="/dashboard" />} />
-    </Routes>
-  </AuthProvider>
+    {/* Redirecciones */}
+    <Route path="/" element={<Navigate to="/dashboard" />} />
+    <Route path="*" element={<Navigate to="/dashboard" />} />
+  </Routes>
 );
 
 // --- Componente Principal ---
@@ -119,7 +132,7 @@ export default function App() {
 
   const getRoutesToRender = () => {
     if (!tenantId) {
-      return <GlobalRoutes />; // Sin tenant = Landing DEMO del restobar
+      return <GlobalRoutes />;
     }
 
     const currentPath = window.location.pathname;
@@ -134,7 +147,7 @@ export default function App() {
   };
 
   return (
-    <>
+    <AuthProvider>
       <Toaster
         position="top-right"
         toastOptions={{
@@ -166,6 +179,6 @@ export default function App() {
       <BrowserRouter>
         {getRoutesToRender()}
       </BrowserRouter>
-    </>
+    </AuthProvider>
   );
 }

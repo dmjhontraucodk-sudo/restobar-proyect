@@ -19,8 +19,6 @@ const MenuManagementPage: React.FC<MenuManagementPageProps> = ({ tipo }) => {
     apiError,
     categories,
     filteredCategories,
-    allInsumos,
-    isLoadingInsumos,
     isSubmitting,
     isSubmittingCategory,
     isUploading,
@@ -33,34 +31,32 @@ const MenuManagementPage: React.FC<MenuManagementPageProps> = ({ tipo }) => {
     itemPrice,
     itemDescription,
     itemImagePreview,
-    currentReceta,
-    insumoSearch,
-    insumoCantidad,
     inactiveItemsCount,
     hasActiveFilters,
-    // Setters (incluyendo setShowItemModal que faltaba)
+    
+    // Setters
     setCategoryName,
     setShowCategoryModal,
-    setShowItemModal, // ✨ AÑADE ESTA LÍNEA
+    setShowItemModal,
     setItemName,
     setItemPrice,
     setItemDescription,
-    setInsumoSearch,
-    setInsumoCantidad,
+    setItemImagePreview,
+    
     // Objeto de Handlers de Filtros
     filterHandlers,
+    
     // Funciones
     handleAddCategory,
     handleSaveCategory,
     handleAddItem,
     handleEditItem,
-    handleAddInsumoToReceta,
-    handleRemoveInsumo,
     handleImageChange,
     handleRemoveImage,
     handleSaveItem,
     handleToggleItemStatus,
     handleToggleWebVisibility,
+    handleCloseModal,
   } = useMenuManagement(tipo);
 
   const pageTitle = tipo === 'COMIDA' ? 'Gestión de Menú' : 'Gestión de Bebidas & Bar';
@@ -82,7 +78,7 @@ const MenuManagementPage: React.FC<MenuManagementPageProps> = ({ tipo }) => {
     return (
       <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-4 rounded-xl mx-4" role="alert">
         <strong className="font-bold">¡Error!</strong>
-        <span className="block sm:inline"> No se pudo cargar el menú: {apiError as string}</span>
+        <span className="block sm:inline"> No se pudo cargar el menú: {apiError}</span>
       </div>
     );
   }
@@ -158,7 +154,7 @@ const MenuManagementPage: React.FC<MenuManagementPageProps> = ({ tipo }) => {
 
       <AddPlatoModal
         isOpen={showItemModal}
-        onClose={() => setShowItemModal(false)}
+        onClose={handleCloseModal}
         editingCategory={editingCategory}
         isEditing={!!editingItem}
         isUploading={isUploading}
@@ -171,15 +167,6 @@ const MenuManagementPage: React.FC<MenuManagementPageProps> = ({ tipo }) => {
         itemImagePreview={itemImagePreview}
         onImageChange={handleImageChange}
         onRemoveImage={handleRemoveImage}
-        currentReceta={currentReceta}
-        insumoSearch={insumoSearch}
-        onInsumoSearchChange={setInsumoSearch}
-        insumoCantidad={insumoCantidad}
-        onInsumoCantidadChange={setInsumoCantidad}
-        onAddInsumoToReceta={handleAddInsumoToReceta}
-        onRemoveInsumo={handleRemoveInsumo}
-        allInsumos={allInsumos}
-        isLoadingInsumos={isLoadingInsumos}
         isSubmitting={isSubmitting}
         onSubmit={handleSaveItem}
       />
