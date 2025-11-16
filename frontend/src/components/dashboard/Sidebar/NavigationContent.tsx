@@ -79,7 +79,7 @@ export const NavigationContent: React.FC<NavigationContentProps> = ({
               onClick={onLinkClick} 
             />
             <SidebarLink 
-              to="/dashboard/reservations" 
+              to="/dashboard/reservas" 
               icon={<Icons.CalendarIcon />} 
               label="Reservas" 
               isCollapsed={isCollapsed} 

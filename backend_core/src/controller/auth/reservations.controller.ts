@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
 import { reservationsService, reservas_estado } from '../../services/reservations.service';
+import { mesasService } from '../../services/mesas.service'; // ✅ IMPORTAR mesasService
 import { emailService } from '../../services/email.service';
-import { z } from 'zod'; // Necesario para validación
+import { z } from 'zod';
 
 interface AuthRequest extends Request {
  user?: {
@@ -17,10 +18,15 @@ interface AuthRequest extends Request {
  };
 }
 
+// ✅ ACTUALIZADO: Agregar mesa_id al esquema de validación
 const createReservationSchema = z.object({
   cliente_nombre: z.string().min(1, "El nombre es requerido."),
   cliente_email: z.string().email("Email inválido.").optional().or(z.literal('')),
   cliente_telefono: z.string().min(6, "El teléfono es requerido."),
+  mesa_id: z.number().int().nullable().optional(), // ✅ NUEVO: Acepta mesa_id
+  fecha_hora: z.string().refine((val) => {
+    const date = new Date(val);
+    return !isNaN(date.getTime());
   // 🔧 CORREGIR ESTA LÍNEA:
   fecha_hora: z.string().refine((val) => {
     // Validar tanto formato datetime-local como ISO completo
@@ -55,8 +61,15 @@ export const reservationsController = {
         });
       }
 
+      // ✅ ACTUALIZADO: Desestructurar mesa_id del resto de los datos
+      const { mesa_id, ...reservationData } = validation.data;
+
       // Creación en el servicio (automáticamente en estado 'Pendiente')
-      const newReservation = await reservationsService.createReservation(tenant.id, validation.data);
+      const newReservation = await reservationsService.createReservation(
+        tenant.id, 
+        reservationData,
+        mesa_id // ✅ NUEVO: Pasar mesa_id como tercer argumento
+      );
 
       res.status(201).json({
         success: true,
@@ -68,6 +81,33 @@ export const reservationsController = {
       console.error('Error en createReservation:', error);
       res.status(500).json({ error: error.message || 'Error interno del servidor.' });
     }
+  },
+
+  /**
+   * ✅ NUEVO: Obtiene mesas disponibles (estado "Libre")
+   * GET /api/web/mesas/disponibles
+   */
+  async getAvailableMesas(req: Request, res: Response) {
+      try {
+          const tenant = (req as AuthRequest).tenant;
+          
+          if (!tenant) {
+              return res.status(404).json({ error: 'Servicio no disponible. Tenant requerido.' });
+          }
+
+          // Obtener mesas disponibles
+          const availableMesas = await mesasService.getAvailableMesas(tenant.id);
+
+          console.log(`✅ Mesas libres encontradas para tenant ${tenant.id}:`, availableMesas.length);
+          console.log('Mesas:', JSON.stringify(availableMesas, null, 2)); // ✅ Debug
+
+          // ✅ IMPORTANTE: Retornar SOLO el array, sin envolver en objeto
+          return res.json(availableMesas);
+
+      } catch (error: any) {
+          console.error('❌ Error en getAvailableMesas:', error);
+          return res.status(500).json({ error: error.message || 'Error interno del servidor.' });
+      }
   },
 
   async getReservations(req: AuthRequest, res: Response) {
@@ -134,4 +174,9 @@ export const reservationsController = {
       res.status(500).json({ error: error.message || 'Error interno del servidor.' });
     }
   },
+};
+
+  
+
+};
 };

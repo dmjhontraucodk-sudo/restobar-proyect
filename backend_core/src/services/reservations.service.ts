@@ -16,20 +16,22 @@ export interface CreateReservationData {
  fecha_hora: string; // ISO string o formato de fecha válido
  cantidad_personas: number;
  notas?: string;
+ // ✅ NOTA: mesa_id NO va aquí porque se pasa como parámetro separado
 }
 
 export const reservationsService = {
   /**
   * 1. Crea una nueva solicitud de reserva desde el formulario público.
+  * ✅ ACTUALIZADO: Ahora acepta mesa_id como tercer parámetro opcional
   */
-  async createReservation(tenantId: number, data: CreateReservationData) {
+  async createReservation(
+    tenantId: number, 
+    data: CreateReservationData,
+    mesaId?: number | null // ✅ NUEVO: Tercer parámetro para mesa_id
+  ) {
     const { cliente_nombre, cliente_email, cliente_telefono, fecha_hora, cantidad_personas, notas } = data;
     
-    // Paso 1: Intentar encontrar o crear el cliente
-    // Si no tienes un módulo de clientes activo, puedes omitir esta búsqueda e insertar NULL en cliente_id
-    // Por ahora, lo dejamos simple y solo guardamos los datos de contacto en la reserva
-    
-    // Paso 2: Crear la reserva en estado Pendiente
+    // Crear la reserva en estado Pendiente
     return await prisma.reservas.create({
       data: {
         tenant_id: tenantId,
@@ -39,6 +41,7 @@ export const reservationsService = {
         fecha_hora: new Date(fecha_hora),
         cantidad_personas,
         notas,
+        mesa_id: mesaId, // ✅ NUEVO: Asignar mesa_id si se proporciona
         estado: reservas_estado.Pendiente,
       }
     });
@@ -103,4 +106,4 @@ export const reservationsService = {
       include: { mesas: true }
     });
   },
-}
+};

@@ -4,6 +4,15 @@ import type { CatalogResponse, PedidoData, OrderResponse, Producto, CreateReserv
 
 const API_BASE = '/api/web';
 
+// ✅ EXPORTAR la interfaz ApiMesa para usarla en otros hooks
+export interface ApiMesa {
+    id: number;
+    tenant_id: number;
+    nombre_o_numero: string;
+    capacidad: number;
+    estado: 'Libre' | 'Ocupada' | 'Reservada'; 
+}
+
 export const useWebApi = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -88,11 +97,16 @@ export const useWebApi = () => {
     });
 
   // Reservas - CORREGIDO
+  // Reservas
   const createReservation = (reservationData: CreateReservationData): Promise<{ message: string, reservationId: number }> =>
     makeRequest<{ message: string, reservationId: number }>('/reservations', {
       method: 'POST',
       body: JSON.stringify(reservationData),
     });
+
+  // ✅ NUEVO: Obtener mesas disponibles (estado "Libre")
+  const getAvailableMesas = (): Promise<ApiMesa[]> => 
+    makeRequest<ApiMesa[]>(`/mesas/disponibles`);
 
   return {
     isLoading,
@@ -103,5 +117,6 @@ export const useWebApi = () => {
     checkAvailability,
     createOrder,
     createReservation,
+    getAvailableMesas, // ✅ NUEVO: Exportar la función
   };
 };

@@ -30,6 +30,10 @@ import TenantGuard from './components/TenantGuard';
 
 // --- Reservas---
 import ReservationForm from './pages/public/components/ReservationForm';
+import ReservationsManagementPage from './pages/ReservationsManagement';
+
+// --- Mesas---
+import TablesManagementPage from './pages/TablesManagement';
 
 // --- Lógica de Subdominio ---
 const getTenantId = () => {
@@ -96,7 +100,8 @@ const TenantPrivateRoutes = () => (
             <Route path="bebidas" element={<MenuManagementPage tipo="BEBIDA" />} />
             <Route path="inventory" element={<InventoryManagementPage />} />
             <Route path="orders" element={<OrdersManagementPage />} />
-            <Route path="tables" element={<div className="p-4">Página de Mesas (Próximamente)</div>} />
+            <Route path="tables" element={<TablesManagementPage />} />
+            <Route path="reservas" element={<ReservationsManagementPage />} />
           </Route>
         </Route>
       </Route>

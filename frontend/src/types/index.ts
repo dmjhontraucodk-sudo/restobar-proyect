@@ -173,12 +173,14 @@ export interface ApiReservation {
 }
 
 export interface CreateReservationData {
-  cliente_nombre: string;
-  cliente_email?: string;
-  cliente_telefono: string;
-  fecha_hora: string; // ISO string o formato de fecha válido
-  cantidad_personas: number;
-  notas?: string;
+   cliente_nombre: string;
+   cliente_email?: string;
+   cliente_telefono: string;
+   fecha_hora: string; // ISO string o formato de fecha válido
+   cantidad_personas: number;
+   notas?: string;
+   mesa_id?: number | null; // ✅ NUEVO: Campo opcional para mesa seleccionada
 }
+
 
 //export * from '../hooks/useDashboardApi';
