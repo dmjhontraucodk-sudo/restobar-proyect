@@ -32,4 +32,9 @@ router.post('/admin/orders/:id/convert-to-pos', validateToken, webOrdersControll
 router.get('/admin/order-config', validateToken, webOrdersController.getOrderConfig);
 router.put('/admin/order-config', validateToken, webOrdersController.updateOrderConfig);
 
+// Reservas
+router.get('/mesas/disponibles', reservationsController.getAvailableMesas);
+
+
 export default router;
+
