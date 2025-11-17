@@ -379,10 +379,12 @@ export const useDashboardApi = () => {
       });
   }, [makeRequest]);
 
-    const deleteMesa = useCallback((mesaId: number): Promise<{ message: string }> => { 
+  const deleteMesa = useCallback((mesaId: number): Promise<{ message: string }> => { 
       return makeRequest<{ message: string }>(`/mesas/${mesaId}`, { 
           method: 'DELETE',
       });
+  }, [makeRequest]);
+
   // ========== ✨ NUEVAS FUNCIONES - INVENTARIO DINÁMICO ✨ ==========
 
   // --- CATEGORÍAS DE INVENTARIO ---
@@ -509,7 +511,7 @@ export const useDashboardApi = () => {
     getMesas,
     createMesa,
     updateMesa,
-    deleteMesa
+    deleteMesa,
     
     // ✨ Nuevas funciones de inventario
     getCategoriasInventario,

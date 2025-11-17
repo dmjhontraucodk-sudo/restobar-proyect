@@ -85,18 +85,6 @@ const TenantPrivateRoutes = () => (
   <Routes>
     <Route path="/login" element={<LoginPage />} />
 
-      {/* Rutas protegidas */}
-      <Route element={<ProtectedRoute />}>
-        <Route element={<TenantGuard />}>
-          <Route path="/dashboard" element={<DashboardLayout />}>
-            <Route index element={<OverviewPage />} /> 
-            <Route path="menu" element={<MenuManagementPage tipo="COMIDA" />} />
-            <Route path="bebidas" element={<MenuManagementPage tipo="BEBIDA" />} />
-            <Route path="inventory" element={<InventoryManagementPage />} />
-            <Route path="orders" element={<OrdersManagementPage />} />
-            <Route path="tables" element={<TablesManagementPage />} />
-            <Route path="reservas" element={<ReservationsManagementPage />} />
-          </Route>
     {/* Rutas protegidas */}
     <Route element={<ProtectedRoute />}>
       <Route element={<TenantGuard />}>
@@ -108,7 +96,8 @@ const TenantPrivateRoutes = () => (
           <Route path="bebidas" element={<MenuManagementPage tipo="BEBIDA" />} />
           <Route path="inventory" element={<InventoryManagementPage />} />
           <Route path="orders" element={<OrdersManagementPage />} />
-          <Route path="tables" element={<div className="p-4">Página de Mesas (Próximamente)</div>} />
+          <Route path="tables" element={<TablesManagementPage />} />
+          <Route path="reservas" element={<ReservationsManagementPage />} />
           
           {/* ✨ NUEVAS RUTAS DE INVENTARIO DINÁMICO ✨ */}
           <Route path="categorias-inventario" element={<CategoriasInventario />} />

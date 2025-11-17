@@ -88,14 +88,13 @@ export const mesasService = {
     },
 
     async getAvailableMesas(tenantId: number): Promise<MesaType[]> {
-    // Solo traer mesas en estado "Libre"
-    return await prisma.mesas.findMany({
-        where: {
-            tenant_id: tenantId,
-            estado: 'Libre' 
-        },
-        orderBy: { capacidad: 'asc' },
-    });
-}
+        // Solo traer mesas en estado "Libre"
+        return await prisma.mesas.findMany({
+            where: {
+                tenant_id: tenantId,
+                estado: 'Libre' 
+            },
+            orderBy: { capacidad: 'asc' },
+        });
     }
 };

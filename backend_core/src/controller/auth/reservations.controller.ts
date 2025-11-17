@@ -27,12 +27,7 @@ const createReservationSchema = z.object({
   fecha_hora: z.string().refine((val) => {
     const date = new Date(val);
     return !isNaN(date.getTime());
-  // 🔧 CORREGIR ESTA LÍNEA:
-  fecha_hora: z.string().refine((val) => {
-    // Validar tanto formato datetime-local como ISO completo
-    const date = new Date(val);
-    return !isNaN(date.getTime()); // Verificar que sea una fecha válida
-  }, "Formato de fecha y hora inválido."),
+  }, "Formato de fecha y hora inválido."), // ✅ CORREGIDO: Cerrar correctamente el refine
   cantidad_personas: z.number().int().min(1, "Debe reservar para al menos una persona."),
   notas: z.string().optional(),
 });
@@ -174,9 +169,4 @@ export const reservationsController = {
       res.status(500).json({ error: error.message || 'Error interno del servidor.' });
     }
   },
-};
-
-  
-
-};
 };

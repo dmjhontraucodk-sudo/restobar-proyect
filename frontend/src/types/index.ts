@@ -176,15 +176,7 @@ export interface CreateReservationData {
    mesa_id?: number | null; // ✅ NUEVO: Campo opcional para mesa seleccionada
 }
 
-
 //export * from '../hooks/useDashboardApi';
-  cliente_nombre: string;
-  cliente_email?: string;
-  cliente_telefono: string;
-  fecha_hora: string;
-  cantidad_personas: number;
-  notas?: string;
-}
 
 // ========== ✨ NUEVOS TIPOS - INVENTARIO DINÁMICO ✨ ==========
 
