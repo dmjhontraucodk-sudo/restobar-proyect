@@ -1,6 +1,6 @@
 // src/context/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import toast from 'react-hot-toast'; // ✅ AÑADIR ESTA IMPORTACIÓN
+import toast from 'react-hot-toast';
 
 // Definir interfaces
 export interface User {
@@ -13,7 +13,7 @@ export interface User {
   tenantSubdomain: string;
 }
 
-interface AuthContextType {
+export interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   user: User | null;
@@ -23,8 +23,8 @@ interface AuthContextType {
   validateTenantAccess: () => boolean;
 }
 
-// Crear contexto
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// Crear contexto - ¡EXPORTARLO!
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Función para detectar tenant del subdominio
 const getCurrentTenantFromHostname = (): string => {
@@ -72,7 +72,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (tenant && userData.tenantSubdomain !== tenant) {
           console.log('🚫 [TENANT DEBUG] Tenant mismatch - User:', userData.tenantSubdomain, 'Current:', tenant);
           
-          // ✅ MOSTRAR TOAST AL USUARIO
           toast.error(
             `🔐 Acceso Denegado\n\nTu cuenta pertenece a: ${userData.tenantSubdomain}.localhost\nEstás intentando acceder a: ${tenant}.localhost\n\nPor favor, accede a través del subdominio correcto.`,
             {
@@ -105,7 +104,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (tenant && userData.tenantSubdomain !== tenant) {
       console.log('🚫 [TENANT DEBUG] Login attempt to wrong tenant:', userData.tenantSubdomain, 'vs', tenant);
       
-      // ✅ MOSTRAR TOAST AL USUARIO
       toast.error(
         `🔐 Acceso Denegado\n\nTu cuenta pertenece a: ${userData.tenantSubdomain}.localhost\nEstás intentando acceder a: ${tenant}.localhost\n\nPor favor, accede a través del subdominio correcto.`,
         {
@@ -123,7 +121,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(userData);
     setCurrentTenant(tenant);
     
-    // ✅ MOSTRAR TOAST DE BIENVENIDA
     toast.success(`¡Bienvenido ${userData.name}!`, {
       duration: 3000,
       position: 'top-right',
@@ -136,7 +133,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsAuthenticated(false);
     setUser(null);
     
-    // ✅ MOSTRAR TOAST DE LOGOUT
     toast.success('Sesión cerrada correctamente', {
       duration: 3000,
       position: 'top-right',

@@ -17,7 +17,7 @@ export default function Cart() {
 
   const handleQuantityChange = (productId: number, newQuantity: number) => {
     if (newQuantity < 1) return;
-    updateQuantity(productId, newQuantity);
+    updateQuantity(productId, newQuantity);scroll
     // Forzar re-render después de actualizar la cantidad
     setForceUpdate(prev => prev + 1);
   };

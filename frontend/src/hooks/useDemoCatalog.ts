@@ -1,6 +1,30 @@
 // src/hooks/useDemoCatalog.ts
 import { useState, useMemo } from 'react';
-import type { Producto, CategoriaMenu } from '../types';
+
+// Definir tipos locales si no existen en ../types
+export interface Producto {
+  id: number;
+  nombre: string;
+  descripcion: string;
+  precio: number;
+  foto_url?: string;
+  disponible: boolean;
+  visible_en_web: boolean;
+  es_vegetariano: boolean;
+  es_vegano: boolean;
+  sin_gluten: boolean;
+  es_picante: boolean;
+  es_recomendado: boolean;
+  es_nuevo: boolean;
+  categoria_id: number;
+}
+
+export interface CategoriaMenu {
+  id: number;
+  nombre: string;
+  descripcion: string;
+  productos: Producto[];
+}
 
 // Datos de ejemplo para el demo
 const demoCategories: CategoriaMenu[] = [
@@ -38,6 +62,22 @@ const demoCategories: CategoriaMenu[] = [
         sin_gluten: true,
         es_picante: false,
         es_recomendado: true,
+        es_nuevo: true,
+        categoria_id: 1
+      },
+      {
+        id: 7,
+        nombre: "Tequeños Veganos",
+        descripcion: "Palitos de masa rellenos de vegetales y especias",
+        precio: 18.90,
+        foto_url: "https://images.pexels.com/photos/12393209/pexels-photo-12393209.jpeg",
+        disponible: true,
+        visible_en_web: true,
+        es_vegetariano: true,
+        es_vegano: true,
+        sin_gluten: false,
+        es_picante: false,
+        es_recomendado: false,
         es_nuevo: true,
         categoria_id: 1
       }
@@ -79,6 +119,22 @@ const demoCategories: CategoriaMenu[] = [
         es_recomendado: false,
         es_nuevo: true,
         categoria_id: 2
+      },
+      {
+        id: 8,
+        nombre: "Tallarines Saltados",
+        descripcion: "Fideos salteados con verduras y salsa de soja",
+        precio: 26.90,
+        foto_url: "https://images.pexels.com/photos/12737656/pexels-photo-12737656.jpeg",
+        disponible: true,
+        visible_en_web: true,
+        es_vegetariano: true,
+        es_vegano: true,
+        sin_gluten: false,
+        es_picante: false,
+        es_recomendado: true,
+        es_nuevo: false,
+        categoria_id: 2
       }
     ]
   },
@@ -118,6 +174,22 @@ const demoCategories: CategoriaMenu[] = [
         es_recomendado: true,
         es_nuevo: false,
         categoria_id: 3
+      },
+      {
+        id: 9,
+        nombre: "Limonada de Hierbabuena",
+        descripcion: "Refrescante limonada con hierbabuena natural",
+        precio: 7.50,
+        foto_url: "https://images.pexels.com/photos/6607539/pexels-photo-6607539.jpeg",
+        disponible: true,
+        visible_en_web: true,
+        es_vegetariano: true,
+        es_vegano: true,
+        sin_gluten: true,
+        es_picante: false,
+        es_recomendado: false,
+        es_nuevo: true,
+        categoria_id: 3
       }
     ]
   }
@@ -130,7 +202,25 @@ interface Filters {
   spicy: boolean;
 }
 
-export function useDemoCatalog() {
+interface UseDemoCatalogReturn {
+  categories: CategoriaMenu[];
+  tenantInfo: { nombre_empresa: string };
+  searchTerm: string;
+  selectedCategory: number | null;
+  filters: Filters;
+  sortBy: 'popular' | 'price-asc' | 'name';
+  showFilters: boolean;
+  filteredProducts: Producto[];
+  loading: boolean;
+  setSearchTerm: (term: string) => void;
+  setSelectedCategory: (categoryId: number | null) => void;
+  setFilters: (filters: Filters) => void;
+  setSortBy: (sort: 'popular' | 'price-asc' | 'name') => void;
+  setShowFilters: (show: boolean) => void;
+  handleSearch: (e: React.FormEvent) => void;
+}
+
+export function useDemoCatalog(): UseDemoCatalogReturn {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [filters, setFilters] = useState<Filters>({
@@ -194,6 +284,8 @@ export function useDemoCatalog() {
         filtered = [...filtered].sort((a, b) => {
           if (a.es_recomendado && !b.es_recomendado) return -1;
           if (!a.es_recomendado && b.es_recomendado) return 1;
+          if (a.es_nuevo && !b.es_nuevo) return -1;
+          if (!a.es_nuevo && b.es_nuevo) return 1;
           return 0;
         });
         break;
@@ -204,6 +296,7 @@ export function useDemoCatalog() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    // La búsqueda se maneja automáticamente por el estado searchTerm
   };
 
   return {

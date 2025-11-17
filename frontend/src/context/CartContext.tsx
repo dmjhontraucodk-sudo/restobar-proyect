@@ -1,7 +1,8 @@
 // src/context/CartContext.tsx
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useContext } from 'react';
 
-interface CartItem {
+// Exporta las interfaces para que estén disponibles
+export interface CartItem {
   id: number;
   nombre: string;
   precio: number;
@@ -10,7 +11,7 @@ interface CartItem {
   disponible: boolean;
 }
 
-interface CartContextType {
+export interface CartContextType {
   items: CartItem[];
   addToCart: (product: Omit<CartItem, 'cantidad'>) => void;
   removeFromCart: (productId: number) => void;
@@ -20,7 +21,8 @@ interface CartContextType {
   getTotalPrice: () => number;
 }
 
-const CartContext = createContext<CartContextType | undefined>(undefined);
+// Exporta el contexto para que el hook pueda usarlo
+export const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [items, setItems] = useState<CartItem[]>([]);
@@ -106,6 +108,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
+// ✅ AGREGA ESTE HOOK - ES LO QUE FALTABA
 export const useCart = (): CartContextType => {
   const context = useContext(CartContext);
   if (context === undefined) {
@@ -113,3 +116,5 @@ export const useCart = (): CartContextType => {
   }
   return context;
 };
+
+export default CartProvider;
