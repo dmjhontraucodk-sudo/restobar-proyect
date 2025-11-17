@@ -35,7 +35,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import TenantGuard from './components/TenantGuard';
 
 // --- Reservas ---
-import ReservationForm from './pages/public/components/ReservationForm';
+import ReservationForm from './pages/public/ReservationForm';
 import ReservationsManagementPage from './pages/ReservationsManagement';
 
 // --- Mesas---

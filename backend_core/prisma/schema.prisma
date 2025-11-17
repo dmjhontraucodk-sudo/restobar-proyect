@@ -1,7 +1,7 @@
 // prisma/schema.prisma - VERSIÓN 100% DINÁMICA - COMPLETO
 
 generator client {
-  provider = "prisma-client-js" 
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -12,19 +12,19 @@ datasource db {
 // ========== TABLAS DE CONFIGURACIÓN DINÁMICA ==========
 
 model categorias_inventario {
-  id            Int      @id @default(autoincrement())
-  tenant_id     Int
-  nombre        String   @db.VarChar(100)
-  descripcion   String?  @db.Text
-  color         String?  @db.VarChar(7)
-  icono         String?  @db.VarChar(50)
-  orden         Int?     @default(0)
-  activa        Boolean  @default(true)
-  created_at    DateTime @default(now()) @db.Timestamp(0)
-  
-  tenants              tenants @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  id          Int      @id @default(autoincrement())
+  tenant_id   Int
+  nombre      String   @db.VarChar(100)
+  descripcion String?  @db.Text
+  color       String?  @db.VarChar(7)
+  icono       String?  @db.VarChar(50)
+  orden       Int?     @default(0)
+  activa      Boolean  @default(true)
+  created_at  DateTime @default(now()) @db.Timestamp(0)
+
+  tenants              tenants                @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
   productos_inventario productos_inventario[]
-  
+
   @@unique([tenant_id, nombre], map: "tenant_categoria_inventario")
   @@index([tenant_id])
   @@index([activa], map: "activa_idx")
@@ -41,27 +41,27 @@ model tipos_gasto {
   orden             Int?     @default(0)
   activo            Boolean  @default(true)
   created_at        DateTime @default(now()) @db.Timestamp(0)
-  
-  tenants  tenants  @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  compras  compras[]
-  
+
+  tenants tenants   @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  compras compras[]
+
   @@unique([tenant_id, nombre], map: "tenant_tipo_gasto")
   @@index([tenant_id])
   @@index([activo], map: "activo_idx")
 }
 
 model unidades_medida {
-  id           Int      @id @default(autoincrement())
-  tenant_id    Int
-  nombre       String   @db.VarChar(50)
-  abreviatura  String   @db.VarChar(10)
-  tipo         String?  @db.VarChar(50)
-  activa       Boolean  @default(true)
-  created_at   DateTime @default(now()) @db.Timestamp(0)
-  
-  tenants              tenants @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  id          Int      @id @default(autoincrement())
+  tenant_id   Int
+  nombre      String   @db.VarChar(50)
+  abreviatura String   @db.VarChar(10)
+  tipo        String?  @db.VarChar(50)
+  activa      Boolean  @default(true)
+  created_at  DateTime @default(now()) @db.Timestamp(0)
+
+  tenants              tenants                @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
   productos_inventario productos_inventario[]
-  
+
   @@unique([tenant_id, nombre], map: "tenant_unidad_medida")
   @@index([tenant_id])
 }
@@ -81,13 +81,14 @@ model productos_inventario {
   stock_anterior          Decimal?  @default(0.000) @db.Decimal(10, 3)
   activo                  Boolean   @default(true)
   created_at              DateTime  @default(now()) @db.Timestamp(0)
-  
-  tenants               tenants                 @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Restrict)
-  categorias_inventario categorias_inventario?  @relation(fields: [categoria_inventario_id], references: [id], onUpdate: Restrict)
-  unidades_medida       unidades_medida?        @relation(fields: [unidad_medida_id], references: [id], onUpdate: Restrict)
+
+  tenants               tenants                       @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Restrict)
+  categorias_inventario categorias_inventario?        @relation(fields: [categoria_inventario_id], references: [id], onUpdate: Restrict)
+  unidades_medida       unidades_medida?              @relation(fields: [unidad_medida_id], references: [id], onUpdate: Restrict)
   compras_detalles      compras_detalles[]
   conteos_detalles      conteos_detalles[]
-  
+  cierres_detalles      cierres_inventario_detalles[]
+
   @@unique([tenant_id, nombre], map: "tenant_producto_inventario")
   @@index([tenant_id])
   @@index([categoria_inventario_id], map: "categoria_inventario_id")
@@ -107,9 +108,9 @@ model compras {
   estado_compra    String?  @default("Pendiente") @db.VarChar(50)
   created_at       DateTime @default(now()) @db.Timestamp(0)
 
-  tenants          tenants          @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Restrict)
-  tipos_gasto      tipos_gasto      @relation(fields: [tipo_gasto_id], references: [id], onUpdate: Restrict)
-  proveedores      proveedores?     @relation(fields: [proveedor_id], references: [id], onUpdate: Restrict)
+  tenants          tenants            @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Restrict)
+  tipos_gasto      tipos_gasto        @relation(fields: [tipo_gasto_id], references: [id], onUpdate: Restrict)
+  proveedores      proveedores?       @relation(fields: [proveedor_id], references: [id], onUpdate: Restrict)
   compras_detalles compras_detalles[]
 
   @@index([proveedor_id], map: "proveedor_id")
@@ -136,18 +137,18 @@ model compras_detalles {
 }
 
 model conteos_fisicos {
-  id               Int       @id @default(autoincrement())
+  id               Int      @id @default(autoincrement())
   tenant_id        Int
-  fecha_conteo     DateTime  @default(now()) @db.Timestamp(0)
-  realizado_por    String?   @db.VarChar(255)
-  notas            String?   @db.Text
+  fecha_conteo     DateTime @default(now()) @db.Timestamp(0)
+  realizado_por    String?  @db.VarChar(255)
+  notas            String?  @db.Text
   total_productos  Int?
-  valor_total      Decimal?  @db.Decimal(10, 2)
-  diferencia_total Decimal?  @db.Decimal(10, 2)
-  
-  tenants  tenants           @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  valor_total      Decimal? @db.Decimal(10, 2)
+  diferencia_total Decimal? @db.Decimal(10, 2)
+
+  tenants  tenants            @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
   detalles conteos_detalles[]
-  
+
   @@index([tenant_id])
   @@index([fecha_conteo], map: "fecha_conteo_idx")
 }
@@ -163,11 +164,11 @@ model conteos_detalles {
   costo_unitario         Decimal @db.Decimal(10, 2)
   valor_diferencia       Decimal @db.Decimal(10, 2)
   observaciones          String? @db.Text
-  
-  tenants              tenants                @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+
+  tenants              tenants              @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
   conteos_fisicos      conteos_fisicos      @relation(fields: [conteo_id], references: [id], onDelete: Cascade)
   productos_inventario productos_inventario @relation(fields: [producto_inventario_id], references: [id], onDelete: Restrict)
-  
+
   @@index([tenant_id])
   @@index([conteo_id], map: "conteo_id")
   @@index([producto_inventario_id], map: "producto_inventario_id")
@@ -184,7 +185,7 @@ model proveedores {
   ruc             String?  @db.VarChar(20)
   activo          Boolean  @default(true)
   created_at      DateTime @default(now()) @db.Timestamp(0)
-  
+
   compras compras[]
   tenants tenants   @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Restrict)
 
@@ -203,7 +204,7 @@ model categoriasmenu {
   descripcion    String?       @db.Text
   orden          Int?          @default(0)
   visible_en_web Boolean?      @default(false)
-  
+
   tenants   tenants     @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "categoriasmenu_ibfk_1")
   productos productos[]
 
@@ -227,10 +228,10 @@ model productos {
   es_picante     Boolean? @default(false)
   es_recomendado Boolean? @default(false)
   es_nuevo       Boolean? @default(false)
-  
+
   ordendetalles       ordendetalles[]
-  tenants             tenants            @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "productos_ibfk_1")
-  categoriasmenu      categoriasmenu     @relation(fields: [categoria_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "productos_ibfk_2")
+  tenants             tenants               @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "productos_ibfk_1")
+  categoriasmenu      categoriasmenu        @relation(fields: [categoria_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "productos_ibfk_2")
   webpedidos_detalles webpedidos_detalles[]
 
   @@index([categoria_id], map: "categoria_id")
@@ -259,14 +260,14 @@ model webpedidos {
   notas                 String?           @db.Text
   created_at            DateTime          @default(now()) @db.Timestamp(0)
   updated_at            DateTime?         @db.Timestamp(0)
-  
+
   tenants             tenants               @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
   clientes            clientes?             @relation(fields: [cliente_id], references: [id], onUpdate: Restrict)
   webpedidos_detalles webpedidos_detalles[]
   ordenes             ordenes[]
 
   @@unique([tenant_id, numero_pedido], map: "tenant_numero_pedido")
-  @@index([tenant_id] )
+  @@index([tenant_id])
   @@index([cliente_id], map: "cliente_id")
   @@index([estado], map: "estado")
   @@index([created_at], map: "created_at")
@@ -281,11 +282,11 @@ model webpedidos_detalles {
   cantidad        Int
   precio_unitario Decimal @db.Decimal(10, 2)
   subtotal        Decimal @db.Decimal(10, 2)
-  
+
   tenants    tenants    @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
   webpedidos webpedidos @relation(fields: [webpedido_id], references: [id], onDelete: Cascade)
   productos  productos  @relation(fields: [producto_id], references: [id], onUpdate: Restrict)
-  
+
   @@index([tenant_id])
   @@index([webpedido_id], map: "webpedido_id")
   @@index([producto_id], map: "producto_id")
@@ -306,18 +307,18 @@ model tenant_config_pedidos {
   tiempo_preparacion_promedio Int     @default(30)
   horario_apertura            String  @default("08:00") @db.VarChar(50)
   horario_cierre              String  @default("22:00") @db.VarChar(50)
-  
+
   tenants tenants @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
 }
 
 model clientes {
-  id         Int        @id @default(autoincrement())
+  id         Int      @id @default(autoincrement())
   tenant_id  Int
-  nombre     String     @db.VarChar(255)
-  email      String?    @db.VarChar(255)
-  telefono   String?    @db.VarChar(50)
-  created_at DateTime   @default(now()) @db.Timestamp(0)
-  
+  nombre     String   @db.VarChar(255)
+  email      String?  @db.VarChar(255)
+  telefono   String?  @db.VarChar(50)
+  created_at DateTime @default(now()) @db.Timestamp(0)
+
   tenants    tenants      @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "clientes_ibfk_1")
   reservas   reservas[]
   webpedidos webpedidos[]
@@ -326,19 +327,20 @@ model clientes {
 }
 
 model empleados {
-  id                  Int     @id @default(autoincrement())
+  id                  Int      @id @default(autoincrement())
   tenant_id           Int
   rol_id              Int
-  email               String  @db.VarChar(255)
-  password_hash       String  @db.VarChar(255)
-  nombre              String? @db.VarChar(255)
-  documento_identidad String? @db.VarChar(50)
+  email               String   @db.VarChar(255)
+  password_hash       String   @db.VarChar(255)
+  nombre              String?  @db.VarChar(255)
+  documento_identidad String?  @db.VarChar(50)
   is_active           Boolean? @default(true)
-  
-  tenants tenants   @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "empleados_ibfk_1")
-  roles   roles     @relation(fields: [rol_id], references: [id], onUpdate: Restrict, map: "empleados_ibfk_2")
-  ordenes ordenes[]
-  pagos   pagos[]
+
+  tenants            tenants              @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "empleados_ibfk_1")
+  roles              roles                @relation(fields: [rol_id], references: [id], onUpdate: Restrict, map: "empleados_ibfk_2")
+  ordenes            ordenes[]
+  pagos              pagos[]
+  cierres_inventario cierres_inventario[]
 
   @@unique([tenant_id, email])
   @@index([rol_id], map: "rol_id")
@@ -356,7 +358,7 @@ model ordenes {
   created_at   DateTime        @default(now()) @db.Timestamp(0)
   closed_at    DateTime?       @db.Timestamp(0)
   webpedido_id Int?
-  
+
   ordendetalles ordendetalles[]
   tenants       tenants         @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "ordenes_ibfk_1")
   mesas         mesas           @relation(fields: [mesa_id], references: [id], onUpdate: Restrict, map: "ordenes_ibfk_2")
@@ -378,7 +380,7 @@ model ordendetalles {
   cantidad        Int
   precio_unitario Decimal @db.Decimal(10, 2)
   notas           String? @db.Text
-  
+
   tenants   tenants   @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Restrict)
   ordenes   ordenes   @relation(fields: [orden_id], references: [id], onDelete: Cascade, onUpdate: Restrict)
   productos productos @relation(fields: [producto_id], references: [id], onUpdate: Restrict)
@@ -396,7 +398,7 @@ model pagos {
   metodo_pago pagos_metodo_pago
   monto       Decimal           @db.Decimal(10, 2)
   created_at  DateTime          @default(now()) @db.Timestamp(0)
-  
+
   tenants   tenants   @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "pagos_ibfk_1")
   ordenes   ordenes   @relation(fields: [orden_id], references: [id], onUpdate: Restrict, map: "pagos_ibfk_2")
   empleados empleados @relation(fields: [empleado_id], references: [id], onUpdate: Restrict, map: "pagos_ibfk_3")
@@ -419,7 +421,7 @@ model reservas {
   estado            reservas_estado? @default(Pendiente)
   notas             String?          @db.Text
   created_at        DateTime         @default(now()) @db.Timestamp(0)
-  
+
   tenants  tenants   @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "reservas_ibfk_1")
   clientes clientes? @relation(fields: [cliente_id], references: [id], onUpdate: Restrict, map: "reservas_ibfk_2")
   mesas    mesas?    @relation(fields: [mesa_id], references: [id], onUpdate: Restrict, map: "reservas_ibfk_3")
@@ -444,7 +446,7 @@ model eventos {
   fecha_evento DateTime? @db.DateTime(0)
   imagen_url   String?   @db.VarChar(2048)
   created_at   DateTime  @default(now()) @db.Timestamp(0)
-  
+
   tenants tenants @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "eventos_ibfk_1")
 
   @@index([tenant_id])
@@ -457,7 +459,7 @@ model galeriafotos {
   descripcion String? @db.Text
   foto_url    String  @db.VarChar(2048)
   orden       Int?    @default(0)
-  
+
   tenants tenants @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "galeriafotos_ibfk_1")
 
   @@index([tenant_id])
@@ -469,7 +471,7 @@ model mesas {
   nombre_o_numero String        @db.VarChar(50)
   capacidad       Int?          @default(0)
   estado          mesas_estado? @default(Libre)
-  
+
   tenants  tenants    @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "mesas_ibfk_1")
   ordenes  ordenes[]
   reservas reservas[]
@@ -484,7 +486,7 @@ model tenants {
   isActive       Boolean? @default(false)
   configuracion  String?  @db.LongText
   created_at     DateTime @default(now()) @db.Timestamp(0)
-  
+
   categoriasmenu        categoriasmenu[]
   clientes              clientes[]
   empleados             empleados[]
@@ -500,7 +502,7 @@ model tenants {
   webpedidos            webpedidos[]
   webpedidos_detalles   webpedidos_detalles[]
   tenant_config_pedidos tenant_config_pedidos?
-  
+
   categorias_inventario categorias_inventario[]
   tipos_gasto           tipos_gasto[]
   unidades_medida       unidades_medida[]
@@ -509,6 +511,50 @@ model tenants {
   compras_detalles      compras_detalles[]
   conteos_fisicos       conteos_fisicos[]
   conteos_detalles      conteos_detalles[]
+  cierres_inventario    cierres_inventario[]
+}
+
+model cierres_inventario {
+  id                Int      @id @default(autoincrement())
+  tenant_id         Int
+  fecha_inicio      DateTime
+  fecha_fin         DateTime
+  tipo_cierre       String // "Diario", "Semanal", "Mensual"
+  estado            String   @default("Borrador") // "Borrador", "Finalizado"
+  total_diferencias Decimal  @default(0) @db.Decimal(10, 2)
+  observaciones     String?  @db.Text
+  realizado_por_id  Int
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  tenants   tenants                       @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  empleados empleados                     @relation(fields: [realizado_por_id], references: [id])
+  detalles  cierres_inventario_detalles[]
+
+  @@index([tenant_id])
+  @@index([fecha_inicio])
+  @@index([estado])
+  @@map("cierres_inventario")
+}
+
+model cierres_inventario_detalles {
+  id                     Int      @id @default(autoincrement())
+  cierre_id              Int
+  producto_inventario_id Int
+  stock_sistema          Decimal  @db.Decimal(10, 3)
+  stock_fisico           Decimal  @db.Decimal(10, 3)
+  diferencia             Decimal  @db.Decimal(10, 3)
+  tipo_diferencia        String? // "Venta", "Merma", "Robo", "Error", "Donación"
+  valor_diferencia       Decimal  @default(0) @db.Decimal(10, 2) // diferencia × costo_unitario
+  notas                  String?  @db.Text
+  created_at             DateTime @default(now())
+
+  cierres_inventario   cierres_inventario   @relation(fields: [cierre_id], references: [id], onDelete: Cascade)
+  productos_inventario productos_inventario @relation(fields: [producto_inventario_id], references: [id])
+
+  @@index([cierre_id])
+  @@index([producto_inventario_id])
+  @@map("cierres_inventario_detalles")
 }
 
 // ========== ENUMS ==========
