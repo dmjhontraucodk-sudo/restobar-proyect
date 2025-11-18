@@ -46,6 +46,8 @@ import { validateToken } from '../middleware/auth.middleware';
 import upload from '../middleware/upload.middleware';
 import { reservationsController } from '../controller/auth/reservations.controller';
 import { mesasController } from '../controller/app/mesas.controller';
+//Cocina
+import { cocinaController } from '../controller/app/cocina.controller'; // <-- IMPORTAR NUEVO CONTROLLER
 
 const router = Router();
 
@@ -76,6 +78,10 @@ router.get('/categories', validateToken, getCategories);
 router.get('/ordenes', validateToken, getOrdenes);
 router.post('/ordenes', validateToken, createOrden);
 router.patch('/ordenes/:id/estado', validateToken, updateOrdenEstado);
+
+// --- Rutas Cocina (Cocina)---
+router.get('/cocina/pedidos', validateToken, cocinaController.getPedidosCocina);
+router.patch('/cocina/pedidos/:id/estado', validateToken, cocinaController.updateEstadoPedido);
 
 // --- Rutas de Mesas ---
 router.get('/mesas-con-ordenes', validateToken, getMesasConOrdenes);

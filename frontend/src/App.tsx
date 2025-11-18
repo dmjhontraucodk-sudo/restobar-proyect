@@ -1,4 +1,4 @@
-// src/App.tsx - CON RUTAS DE INVENTARIO
+// src/App.tsx - CON RUTAS DE INVENTARIO Y COCINA (CORREGIDO)
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
@@ -23,6 +23,9 @@ import TiposGasto from './pages/dashboard/inventario/TiposGasto';
 import UnidadesMedida from './pages/dashboard/inventario/UnidadesMedida';
 import ProductosInventario from './pages/dashboard/inventario/ProductosInventario';
 import Compras from './pages/dashboard/inventario/Compras';
+
+// ✨ PÁGINA DE COCINA (AGREGADO - FALTABA)
+import KitchenManagementPage from './pages/dashboard/KitchenManagement';
 
 // --- Páginas Públicas del Tenant (Restobar) ---
 import RestobarLanding from './pages/public/RestobarLanding';
@@ -98,6 +101,9 @@ const TenantPrivateRoutes = () => (
           <Route path="orders" element={<OrdersManagementPage />} />
           <Route path="tables" element={<TablesManagementPage />} />
           <Route path="reservas" element={<ReservationsManagementPage />} />
+          
+          {/* ✅ RUTA DE COCINA (CORREGIDO) */}
+          <Route path="kitchen" element={<KitchenManagementPage />} />
           
           {/* ✨ NUEVAS RUTAS DE INVENTARIO DINÁMICO ✨ */}
           <Route path="categorias-inventario" element={<CategoriasInventario />} />
