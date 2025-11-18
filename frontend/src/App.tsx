@@ -24,6 +24,9 @@ import UnidadesMedida from "./pages/dashboard/inventario/UnidadesMedida";
 import ProductosInventario from "./pages/dashboard/inventario/ProductosInventario";
 import Compras from "./pages/dashboard/inventario/Compras";
 
+// ✨ PÁGINA DE COCINA (AGREGADO - FALTABA)
+import KitchenManagementPage from './pages/dashboard/KitchenManagement';
+
 // --- Páginas Públicas del Tenant (Restobar) ---
 import RestobarLanding from "./pages/public/RestobarLanding";
 import ProductCatalog from "./pages/public/ProductCatalog";
@@ -107,6 +110,10 @@ const TenantPrivateRoutes = () => (
           <Route path="tables" element={<TablesManagementPage />} />
           <Route path="reservas" element={<ReservationsManagementPage />} />
 
+          
+          {/* ✅ RUTA DE COCINA (CORREGIDO) */}
+          <Route path="kitchen" element={<KitchenManagementPage />} />
+          
           {/* ✨ NUEVAS RUTAS DE INVENTARIO DINÁMICO ✨ */}
           <Route
             path="categorias-inventario"

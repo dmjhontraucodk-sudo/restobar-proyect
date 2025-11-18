@@ -530,6 +530,7 @@ export const useDashboardApi = () => {
   return {
     isLoading,
     error,
+
     
     // Funciones existentes
     getOverviewData,
@@ -576,5 +577,7 @@ export const useDashboardApi = () => {
     getCierreEstadisticas,
     createCierreInventario,
     finalizarCierre,
+    //cocina
+     makeRequest,
   };
 };
