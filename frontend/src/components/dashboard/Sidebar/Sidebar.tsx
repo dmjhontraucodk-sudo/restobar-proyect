@@ -1,4 +1,4 @@
-// src/components/dashboard/Sidebar/Sidebar.tsx - ACTUALIZADO CON ICONOS CORRECTOS
+// src/components/dashboard/Sidebar/Sidebar.tsx - ACTUALIZADO CON CIERRE DE INVENTARIO
 
 import React from 'react';
 import { NavigationContent } from './NavigationContent';
@@ -183,6 +183,14 @@ const FlyoutNavigationContent: React.FC<{ onLinkClick?: () => void; user: User }
             to="/dashboard/unidades-medida" 
             icon={<Icons.RulerIcon />} 
             label="Unidades" 
+            isCollapsed={false} 
+            onClick={onLinkClick}
+          />
+          {/* NUEVO: Cierre de Inventario */}
+          <SidebarLink 
+            to="/dashboard/cierre-inventario" 
+            icon={<Icons.ClipboardListIcon />} 
+            label="Cierre de Inventario" 
             isCollapsed={false} 
             onClick={onLinkClick}
           />

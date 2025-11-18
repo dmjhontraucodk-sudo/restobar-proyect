@@ -1,4 +1,4 @@
-// src/middleware/auth.middleware.ts (VERSIÓN CORREGIDA)
+// src/middleware/auth.middleware.ts (VERSIÓN COMPATIBLE)
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
@@ -36,8 +36,13 @@ export const validateToken = (req: AuthRequest, res: Response, next: NextFunctio
       process.env.JWT_SECRET as string
     ) as JwtPayload;
 
-    // 4. Si el token es válido, guardamos el payload (info del usuario) en req.user
+    // 4. Si el token es válido, guardamos el payload en req.user
     req.user = payload;
+    
+    // ✨ NUEVO: También exponer en el formato que esperan algunos controladores
+    (req as any).userId = payload.id;
+    (req as any).tenantId = payload.tenant_id;
+    (req as any).rolId = payload.rol_id;
     
     console.log('🔐 AUTH MIDDLEWARE - User authenticated:', {
       id: payload.id,

@@ -42,6 +42,15 @@ import {
   getCompraById,
 } from '../controller/app/dashboard.controller';
 
+import {
+  getCierresInventario,
+  getCierreById,
+  createCierreInventario,
+  updateCierreInventario,
+  finalizarCierre,
+  getCierreEstadisticas,
+} from '../controller/cierreInventario.controller';
+
 import { validateToken } from '../middleware/auth.middleware';
 import upload from '../middleware/upload.middleware';
 import { reservationsController } from '../controller/auth/reservations.controller';
@@ -123,5 +132,25 @@ router.post('/insumos', validateToken, createProductoInventario);
 
 // DEPRECADO: Usar /gastos/:id/recibir en su lugar
 router.post('/compras/:id/recibir', validateToken, receiveCompra);
+
+// ========== RUTAS DE CIERRE DE INVENTARIO (agregar después de las rutas existentes) ==========
+
+// Listar cierres con filtros
+router.get('/cierres-inventario', getCierresInventario);
+
+// Obtener un cierre específico con detalles
+router.get('/cierres-inventario/:id', getCierreById);
+
+// Obtener estadísticas de un cierre
+router.get('/cierres-inventario/:id/estadisticas', getCierreEstadisticas);
+
+// Crear nuevo cierre (en estado Borrador)
+router.post('/cierres-inventario', createCierreInventario);
+
+// Actualizar cierre (solo si está en Borrador)
+router.put('/cierres-inventario/:id', updateCierreInventario);
+
+// Finalizar cierre (actualiza stock y cambia estado a Finalizado)
+router.post('/cierres-inventario/:id/finalizar', finalizarCierre);
 
 export default router;

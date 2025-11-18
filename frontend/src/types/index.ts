@@ -371,3 +371,104 @@ export interface Proveedor {
   activo: boolean;
   created_at: string;
 }
+// AGREGAR AL FINAL DE: src/types/index.ts
+
+// ========== ✨ TIPOS PARA CIERRE DE INVENTARIO ✨ ==========
+
+export type TipoCierre = 'Diario' | 'Semanal' | 'Mensual';
+export type EstadoCierre = 'Borrador' | 'Finalizado';
+export type TipoDiferencia = 'Venta' | 'Merma' | 'Robo' | 'Error' | 'Donación';
+
+// Detalle de un producto en el cierre
+export interface CierreInventarioDetalle {
+  id: number;
+  cierre_id: number;
+  producto_inventario_id: number;
+  stock_sistema: number;
+  stock_fisico: number;
+  diferencia: number;
+  tipo_diferencia: TipoDiferencia | null;
+  valor_diferencia: number;
+  notas: string | null;
+  created_at: string;
+  productos_inventario: {
+    nombre: string;
+    costo_unitario: number;
+    unidades_medida: {
+      abreviatura: string;
+    } | null;
+    categorias_inventario: {
+      nombre: string;
+      color: string | null;
+    } | null;
+  };
+}
+
+// Cierre completo con detalles
+export interface CierreInventario {
+  id: number;
+  tenant_id: number;
+  fecha_inicio: string;
+  fecha_fin: string;
+  tipo_cierre: TipoCierre;
+  estado: EstadoCierre;
+  total_diferencias: number;
+  observaciones: string | null;
+  realizado_por_id: number;
+  created_at: string;
+  updated_at: string;
+  empleados: {
+    nombre: string | null;
+    email: string;
+  };
+  detalles: CierreInventarioDetalle[];
+}
+
+// Para crear un detalle de cierre
+export interface CreateCierreDetalleData {
+  producto_inventario_id: number;
+  stock_fisico: number;
+  tipo_diferencia?: TipoDiferencia;
+  notas?: string;
+}
+
+// Para crear un nuevo cierre
+export interface CreateCierreInventarioData {
+  fecha_inicio: string;
+  fecha_fin: string;
+  tipo_cierre: TipoCierre;
+  observaciones?: string;
+  detalles: CreateCierreDetalleData[];
+}
+
+// Para actualizar un cierre (mientras está en borrador)
+export interface UpdateCierreInventarioData {
+  observaciones?: string;
+  detalles?: CreateCierreDetalleData[];
+}
+
+// Filtros para listar cierres
+export interface GetCierresFilters {
+  estado?: EstadoCierre;
+  tipo_cierre?: TipoCierre;
+  fechaInicio?: string;
+  fechaFin?: string;
+}
+
+// Estadísticas de cierre
+export interface CierreEstadisticas {
+  total_productos_contados: number;
+  total_diferencias_positivas: number;
+  total_diferencias_negativas: number;
+  valor_total_mermas: number;
+  productos_con_mayor_diferencia: Array<{
+    producto: string;
+    diferencia: number;
+    valor: number;
+  }>;
+  diferencias_por_tipo: Array<{
+    tipo: TipoDiferencia;
+    cantidad: number;
+    valor: number;
+  }>;
+}

@@ -1,3 +1,4 @@
+// src/pages/MenuManagementPage.tsx - VERSIÓN MEJORADA
 import React from 'react';
 import { useMenuManagement } from '../hooks/useMenuManagement';
 import MenuHeader from '../components/menu/MenuHeader';
@@ -43,7 +44,7 @@ const MenuManagementPage: React.FC<MenuManagementPageProps> = ({ tipo }) => {
     setItemDescription,
     setItemImagePreview,
     
-    // Objeto de Handlers de Filtros
+    // Handlers de Filtros
     filterHandlers,
     
     // Funciones
@@ -64,26 +65,49 @@ const MenuManagementPage: React.FC<MenuManagementPageProps> = ({ tipo }) => {
     ? 'Administra las categorías y platos de tu restaurante'
     : 'Administra las categorías y bebidas de tu bar';
 
-  // --- RENDERIZADO DE CARGA Y ERROR ---
+  // --- RENDERIZADO DE CARGA ---
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        <p className="ml-4 text-lg text-gray-600">Cargando menú...</p>
+      <div className="flex flex-col justify-center items-center h-screen bg-gray-50">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mb-4"></div>
+        <p className="text-lg text-gray-600 font-medium">Cargando menú...</p>
+        <p className="text-sm text-gray-500 mt-2">Por favor espera un momento</p>
       </div>
     );
   }
 
-  if (apiError && categories.length === 0) {
+  // --- RENDERIZADO DE ERROR CRÍTICO ---
+  if (apiError && (!categories || categories.length === 0)) {
     return (
-      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-4 rounded-xl mx-4" role="alert">
-        <strong className="font-bold">¡Error!</strong>
-        <span className="block sm:inline"> No se pudo cargar el menú: {apiError}</span>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-8 max-w-md w-full">
+          <div className="text-red-600 mb-4">
+            <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h3 className="text-xl font-bold text-red-900 mb-2 text-center">
+            Error al Cargar el Menú
+          </h3>
+          <p className="text-red-700 text-center mb-6">
+            {apiError}
+          </p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="w-full px-4 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors font-medium"
+          >
+            Reintentar
+          </button>
+        </div>
       </div>
     );
   }
 
-  // --- RENDERIZADO DE LA PÁGINA ---
+  // ✅ VALIDACIÓN DEFENSIVA: Asegurar que categories y filteredCategories sean arrays
+  const safeCategories = Array.isArray(categories) ? categories : [];
+  const safeFilteredCategories = Array.isArray(filteredCategories) ? filteredCategories : [];
+
+  // --- RENDERIZADO PRINCIPAL ---
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header y Filtros */}
@@ -97,7 +121,7 @@ const MenuManagementPage: React.FC<MenuManagementPageProps> = ({ tipo }) => {
         onCategoryChange={filterHandlers.setSelectedCategory}
         availabilityFilter={filterHandlers.availabilityFilter}
         onAvailabilityChange={filterHandlers.setAvailabilityFilter}
-        categories={categories}
+        categories={safeCategories}
         inactiveItemsCount={inactiveItemsCount}
         onClearFilters={filterHandlers.handleClearFilters}
         hasActiveFilters={hasActiveFilters}
@@ -105,38 +129,69 @@ const MenuManagementPage: React.FC<MenuManagementPageProps> = ({ tipo }) => {
 
       {/* Contenido Principal */}
       <div className="px-4 py-6 max-w-7xl mx-auto">
-        <div className="space-y-6">
-          {filteredCategories.map((category: Category) => (
-            <CategorySection
-              key={category.id}
-              category={category}
-              onAddItem={handleAddItem}
-              onToggleItemStatus={handleToggleItemStatus}
-              onToggleWebVisibility={handleToggleWebVisibility}
-              onEditItem={handleEditItem}
-              onDeleteItem={(item: MenuItem) => toast.error(`Borrar "${item.name}" no implementado.`)}
-            />
-          ))}
+        {/* ✅ ALERTA SI HAY ERROR PERO HAY DATOS CACHEADOS */}
+        {apiError && safeCategories.length > 0 && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
+            <div className="flex items-start">
+              <div className="text-yellow-600 mr-3">⚠️</div>
+              <div className="flex-1">
+                <p className="text-sm text-yellow-800 font-medium">
+                  Mostrando datos guardados. Algunos cambios recientes pueden no estar visibles.
+                </p>
+                <p className="text-xs text-yellow-700 mt-1">{apiError}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
-          {/* Estado Vacío */}
-          {filteredCategories.length === 0 && !isLoading && (
+        {/* Lista de Categorías */}
+        <div className="space-y-6">
+          {safeFilteredCategories.length > 0 ? (
+            safeFilteredCategories.map((category: Category) => (
+              <CategorySection
+                key={category.id}
+                category={category}
+                onAddItem={handleAddItem}
+                onToggleItemStatus={handleToggleItemStatus}
+                onToggleWebVisibility={handleToggleWebVisibility}
+                onEditItem={handleEditItem}
+                onDeleteItem={(item: MenuItem) => toast.error(`Borrar "${item.name}" no implementado.`)}
+              />
+            ))
+          ) : (
+            // Estado Vacío
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center">
               <div className="text-gray-400 mb-4">
                 <FilterIcon className="w-16 h-16 mx-auto" />
               </div>
               <h3 className="text-xl font-medium text-gray-900 mb-2">
-                No se encontraron {tipo === 'COMIDA' ? 'platos' : 'bebidas'}
+                {hasActiveFilters 
+                  ? `No se encontraron ${tipo === 'COMIDA' ? 'platos' : 'bebidas'}`
+                  : `No hay ${tipo === 'COMIDA' ? 'categorías' : 'categorías'} creadas`
+                }
               </h3>
               <p className="text-gray-500 mb-6">
-                Intenta ajustar los filtros de búsqueda o añade nuevos {tipo === 'COMIDA' ? 'platos' : 'bebidas'} al menú.
+                {hasActiveFilters 
+                  ? `Intenta ajustar los filtros de búsqueda o añade nuevos ${tipo === 'COMIDA' ? 'platos' : 'bebidas'} al menú.`
+                  : `Comienza creando una categoría para organizar tu ${tipo === 'COMIDA' ? 'menú' : 'carta de bebidas'}.`
+                }
               </p>
-              <button 
-                onClick={filterHandlers.handleClearFilters} 
-                className="inline-flex items-center px-5 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors duration-200 font-medium"
-              >
-                <RotateCcwIcon className="w-4 h-4 mr-2" />
-                Limpiar Filtros
-              </button>
+              {hasActiveFilters ? (
+                <button 
+                  onClick={filterHandlers.handleClearFilters} 
+                  className="inline-flex items-center px-5 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors duration-200 font-medium"
+                >
+                  <RotateCcwIcon className="w-4 h-4 mr-2" />
+                  Limpiar Filtros
+                </button>
+              ) : (
+                <button 
+                  onClick={handleAddCategory} 
+                  className="inline-flex items-center px-5 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors duration-200 font-medium"
+                >
+                  Crear Primera Categoría
+                </button>
+              )}
             </div>
           )}
         </div>

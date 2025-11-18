@@ -1,4 +1,4 @@
-// src/hooks/useDashboardApi.ts - ACTUALIZADO CON INVENTARIO DINÁMICO
+// src/hooks/useDashboardApi.ts - CORREGIDO CON FUNCIONES DE CIERRE DE INVENTARIO
 
 import { useState, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
@@ -26,6 +26,11 @@ import {
   type Compra,
   type CreateCompraData,
   type GetComprasFilters,
+
+  type CierreInventario,
+  type CierreEstadisticas,
+  type CreateCierreInventarioData,
+  type GetCierresFilters,
 } from '../types';
 
 const API_BASE = '/api/dashboard';
@@ -486,6 +491,42 @@ export const useDashboardApi = () => {
     });
   }, [makeRequest]);
 
+  // ========== ✨ CIERRE DE INVENTARIO ✨ ==========
+
+  const getCierresInventario = useCallback((filters?: GetCierresFilters): Promise<CierreInventario[]> => {
+    const params = new URLSearchParams();
+    if (filters?.estado) params.append('estado', filters.estado);
+    if (filters?.tipo_cierre) params.append('tipo_cierre', filters.tipo_cierre);
+    if (filters?.fechaInicio) params.append('fechaInicio', filters.fechaInicio);
+    if (filters?.fechaFin) params.append('fechaFin', filters.fechaFin);
+
+    const queryString = params.toString();
+    const endpoint = `/cierres-inventario${queryString ? `?${queryString}` : ''}`;
+    
+    return makeRequest<CierreInventario[]>(endpoint);
+  }, [makeRequest]);
+
+  const getCierreById = useCallback((id: number): Promise<CierreInventario> => {
+    return makeRequest<CierreInventario>(`/cierres-inventario/${id}`);
+  }, [makeRequest]);
+
+  const getCierreEstadisticas = useCallback((id: number): Promise<CierreEstadisticas> => {
+    return makeRequest<CierreEstadisticas>(`/cierres-inventario/${id}/estadisticas`);
+  }, [makeRequest]);
+
+  const createCierreInventario = useCallback((data: CreateCierreInventarioData): Promise<CierreInventario> => {
+    return makeRequest<CierreInventario>('/cierres-inventario', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }, [makeRequest]);
+
+  const finalizarCierre = useCallback((id: number): Promise<{ message: string; cierre: CierreInventario }> => {
+    return makeRequest<{ message: string; cierre: CierreInventario }>(`/cierres-inventario/${id}/finalizar`, {
+      method: 'POST',
+    });
+  }, [makeRequest]);
+
   return {
     isLoading,
     error,
@@ -528,5 +569,12 @@ export const useDashboardApi = () => {
     getGastoById,
     createGasto,
     receiveCompra,
+
+    // ✨ Funciones de cierre de inventario
+    getCierresInventario,
+    getCierreById,
+    getCierreEstadisticas,
+    createCierreInventario,
+    finalizarCierre,
   };
 };
