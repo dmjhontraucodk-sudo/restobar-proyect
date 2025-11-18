@@ -190,7 +190,7 @@ const FlyoutNavigationContent: React.FC<{ onLinkClick?: () => void; user: User }
           <SidebarLink 
             to="/dashboard/cierre-inventario" 
             icon={<Icons.ClipboardListIcon />} 
-            label="Cierre de Inventario" 
+            label="Inventario" 
             isCollapsed={false} 
             onClick={onLinkClick}
           />

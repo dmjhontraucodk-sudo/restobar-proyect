@@ -170,7 +170,7 @@ export const NavigationContent: React.FC<NavigationContentProps> = ({
             <SidebarLink
               to="/dashboard/cierre-inventario"
               icon={<Icons.ClipboardListIcon />}
-              label="Cierre de Inventario"
+              label="Inventario"
               isCollapsed={isCollapsed}
               onClick={onLinkClick}
             />

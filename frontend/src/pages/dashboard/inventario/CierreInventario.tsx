@@ -70,7 +70,7 @@ const CierresInventario: React.FC = () => {
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-center mb-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Cierres de Inventario</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Gestion de Inventario</h1>
               <p className="text-gray-600 mt-1">Gestiona los conteos físicos y ajusta el stock</p>
             </div>
             <button
