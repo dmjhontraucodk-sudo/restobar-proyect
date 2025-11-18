@@ -1,4 +1,4 @@
-// src/types/index.ts - ACTUALIZADO CON INVENTARIO DINÁMICO
+// src/types/index.ts - ACTUALIZADO CON INVENTARIO DINÁMICO (Compatible con erasableSyntaxOnly)
 
 // ========== TIPOS EXISTENTES (SIN CAMBIOS) ==========
 
@@ -44,6 +44,9 @@ export interface PedidoData {
   instrucciones_entrega?: string;
   hora_programada?: string;
   notas_especiales?: string;
+  subtotal: number;
+  total: number;
+  costo_envio: number;
   items: Array<{
     id: number;
     cantidad: number;
@@ -170,13 +173,74 @@ export interface CreateReservationData {
    cliente_nombre: string;
    cliente_email?: string;
    cliente_telefono: string;
-   fecha_hora: string; // ISO string o formato de fecha válido
+   fecha_hora: string; 
    cantidad_personas: number;
    notas?: string;
-   mesa_id?: number | null; // ✅ NUEVO: Campo opcional para mesa seleccionada
+   mesa_id?: number | null;
 }
 
-//export * from '../hooks/useDashboardApi';
+// ========== ✨ TIPOS PARA WEBPEDIDOS (REEMPLAZANDO ENUMS) ✨ ==========
+
+export type webpedidos_tipo = 'RecogerEnTienda' | 'EntregaDomicilio';
+
+export type webpedidos_estado = 
+  | 'Pendiente'
+  | 'Confirmado'
+  | 'EnPreparacion'
+  | 'ListoParaRecoger'
+  | 'EnCamino'
+  | 'Entregado'
+  | 'Cancelado';
+
+// ✅ CONSTANTES PARA USO EN EL CÓDIGO (equivalente a enum values)
+export const WEBPEDIDOS_TIPO = {
+  RecogerEnTienda: 'RecogerEnTienda' as webpedidos_tipo,
+  EntregaDomicilio: 'EntregaDomicilio' as webpedidos_tipo,
+} as const;
+
+export const WEBPEDIDOS_ESTADO = {
+  Pendiente: 'Pendiente' as webpedidos_estado,
+  Confirmado: 'Confirmado' as webpedidos_estado,
+  EnPreparacion: 'EnPreparacion' as webpedidos_estado,
+  ListoParaRecoger: 'ListoParaRecoger' as webpedidos_estado,
+  EnCamino: 'EnCamino' as webpedidos_estado,
+  Entregado: 'Entregado' as webpedidos_estado,
+  Cancelado: 'Cancelado' as webpedidos_estado,
+} as const;
+
+// ========== ✨ INTERFACES PARA WEBPEDIDOS (API) ✨ ==========
+
+export interface ApiWebPedidoDetalle {
+  id: number;
+  cantidad: number;
+  precio_unitario: number;
+  subtotal: number;
+  productos: {
+    id: number;
+    nombre: string;
+  };
+}
+
+export interface ApiWebPedido {
+  id: number;
+  numero_pedido: string;
+  cliente_nombre: string;
+  cliente_email: string | null;
+  cliente_telefono: string;
+  tipo_pedido: webpedidos_tipo;
+  estado: webpedidos_estado;
+  subtotal: number;
+  total: number;
+  costo_envio: number;
+  direccion_entrega: string | null;
+  instrucciones_entrega: string | null;
+  hora_programada: string | null;
+  notas_especiales: string | null;
+  notas: string | null;
+  created_at: string;
+  updated_at: string | null;
+  webpedidos_detalles: ApiWebPedidoDetalle[];
+}
 
 // ========== ✨ NUEVOS TIPOS - INVENTARIO DINÁMICO ✨ ==========
 
@@ -370,4 +434,33 @@ export interface Proveedor {
   ruc: string | null;
   activo: boolean;
   created_at: string;
+}
+
+// ========== TIPOS DE PRISMA (EXTENDIDOS) ==========
+
+export interface WebPedido {
+  id: number;
+  numero_pedido: string;
+  cliente_nombre: string;
+  cliente_email?: string;
+  cliente_telefono: string;
+  tipo_pedido: webpedidos_tipo;
+  estado: webpedidos_estado;
+  subtotal: number;
+  total: number;
+  costo_envio: number;
+  direccion_entrega?: string;
+  instrucciones_entrega?: string;
+  hora_programada?: Date;
+  notas_especiales?: string;
+  created_at: Date;
+}
+
+export interface WebPedidoDetalle {
+  id: number;
+  producto_id: number;
+  cantidad: number;
+  precio_unitario: number;
+  subtotal: number;
+  producto: Producto;
 }

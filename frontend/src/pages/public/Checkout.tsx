@@ -44,6 +44,8 @@ export default function Checkout() {
   const canProceedStep2 = formData.tipo_pedido === 'RecogerEnTienda' || 
     (formData.tipo_pedido === 'EntregaDomicilio' && formData.direccion_entrega);
 
+  // src/pages/public/Checkout.tsx (Modificación en handleSubmitOrder)
+
   const handleSubmitOrder = async () => {
     if (isLoading) return;
 
@@ -57,6 +59,12 @@ export default function Checkout() {
         instrucciones_entrega: formData.instrucciones_entrega || undefined,
         hora_programada: formData.hora_programada === 'custom' && formData.customTime ? formData.customTime : undefined,
         notas_especiales: formData.notas_especiales || undefined,
+        
+        // 🚀 AÑADIR LOS CAMPOS DE TOTALES REQUERIDOS POR EL BACK-END
+        subtotal: subtotal,
+        total: total,
+        costo_envio: deliveryFee, 
+        
         items: items.map(item => ({
           id: item.id,
           cantidad: item.cantidad,

@@ -5,6 +5,9 @@ import { webOrdersController } from '../controller/web-orders.controller';
 import { reservationsController } from '../controller/auth/reservations.controller';
 import { validateToken } from '../middleware/auth.middleware';
 
+import { pedidosWebFlowController } from '../controller/pedidos-web-flow.controller'; // <-- IMPORTAR NUEVO
+
+
 const router = Router();
 
 // ==================== RUTAS PÚBLICAS (Sin autenticación) ====================
@@ -17,8 +20,8 @@ router.get('/products/:id', webCatalogController.getProduct);
 router.post('/check-availability', webCatalogController.checkAvailability);
 
 // Pedidos web (creación desde la web pública)
-router.post('/orders', webOrdersController.createWebOrder);
-router.post('/reservations', reservationsController.createReservation); 
+router.post('/orders', pedidosWebFlowController.createWebOrder); // <-- USAR NUEVO CONTROLLER
+router.post('/reservations', reservationsController.createReservation);
 // ==================== RUTAS PRIVADAS (Requieren autenticación) ====================
 // Estas rutas son para el panel administrativo del tenant
 

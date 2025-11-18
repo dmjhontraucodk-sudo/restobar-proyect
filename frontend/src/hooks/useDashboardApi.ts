@@ -489,6 +489,7 @@ export const useDashboardApi = () => {
   return {
     isLoading,
     error,
+
     
     // Funciones existentes
     getOverviewData,
@@ -528,5 +529,8 @@ export const useDashboardApi = () => {
     getGastoById,
     createGasto,
     receiveCompra,
+
+    //cocina
+     makeRequest,
   };
 };
