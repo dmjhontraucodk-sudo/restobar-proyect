@@ -1146,6 +1146,7 @@ const createGastoSchema = z.object({
   items: z.array(compraDetalleSchema).optional(),
 });
 
+// 🆕 AÑADIR ESTAS FUNCIONES FALTANTES
 export const getGastos = async (req: AuthRequest, res: Response) => {
   try {
     const tenantId = req.user?.tenant_id;
@@ -1180,7 +1181,7 @@ export const getGastos = async (req: AuthRequest, res: Response) => {
       if (fechaFin) whereClause.fecha.lte = new Date(fechaFin);
     }
 
-    const gastos = await prisma.compras.findMany({
+    const compras = await prisma.compras.findMany({
       where: whereClause,
       include: {
         tipos_gasto: {
@@ -1207,10 +1208,10 @@ export const getGastos = async (req: AuthRequest, res: Response) => {
       }
     });
 
-    res.status(200).json(gastos);
+    res.status(200).json(compras);
 
   } catch (error: any) {
-    console.error('Error en getGastos:', error);
+    console.error('Error en getGastos (compras):', error);
     res.status(500).json({ error: 'Error interno del servidor.' });
   }
 };
@@ -1246,14 +1247,13 @@ export const createGasto = async (req: AuthRequest, res: Response) => {
     }
 
     const nuevaCompra = await prisma.$transaction(async (tx) => {
-      
       const compra = await tx.compras.create({
         data: {
           tenant_id: tenantId,
           tipo_gasto_id: tipo_gasto_id,
           fecha: new Date(fecha),
           total: total,
-          descripcion: descripcion,
+          observaciones: descripcion,
           numero_documento: numero_documento,
           proveedor_id: proveedor_id,
           estado_compra: tipoGasto.afecta_inventario ? 'Pendiente' : 'Completado',
@@ -1281,7 +1281,7 @@ export const createGasto = async (req: AuthRequest, res: Response) => {
     res.status(201).json(nuevaCompra);
 
   } catch (error: any) {
-    console.error('Error en createGasto:', error);
+    console.error('Error en createGasto (compra):', error);
     res.status(500).json({ error: 'Error interno del servidor.' });
   }
 };

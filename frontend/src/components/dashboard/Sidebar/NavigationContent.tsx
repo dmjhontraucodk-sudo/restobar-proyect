@@ -25,14 +25,14 @@ export const NavigationContent: React.FC<NavigationContentProps> = ({
         }`}
       >
         {isCollapsed ? (
-          <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg shadow-lg">
+          <div className="flex items-center justify-center w-8 h-8 bg-linear-to-br from-blue-600 to-blue-800 rounded-lg shadow-lg">
             <span className="text-sm font-bold text-white">
               {user?.name?.charAt(0) || "R"}
             </span>
           </div>
         ) : (
           <div className="flex items-center space-x-2">
-            <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg shadow-lg">
+            <div className="flex items-center justify-center w-8 h-8 bg-linear-to-br from-blue-600 to-blue-800 rounded-lg shadow-lg">
               <span className="text-sm font-bold text-white">
                 {user?.name?.charAt(0) || "R"}
               </span>
@@ -50,7 +50,7 @@ export const NavigationContent: React.FC<NavigationContentProps> = ({
       {/* Navegación - Compacto */}
       <nav
         className={`mt-2 flex-1 flex flex-col ${
-          isCollapsed ? "space-y-0 px-1" : "space-y-0 px-2"
+          isCollapsed ? "space-y-0 px-1" : "space-y-1 px-2"
         }`}
       >
         {/* Grupo 1: Operaciones en Tiempo Real */}
@@ -99,7 +99,7 @@ export const NavigationContent: React.FC<NavigationContentProps> = ({
               Menú & Cocina
             </h3>
           )}
-          <div className="space-y-0">
+          <div className="space-y-1">
             <SidebarLink
               to="/dashboard/menu"
               icon={<Icons.UtensilsIcon />}
@@ -124,7 +124,7 @@ export const NavigationContent: React.FC<NavigationContentProps> = ({
           </div>
         </div>
 
-        {/* ✨ GRUPO 3: INVENTARIO DINÁMICO (NUEVO) ✨ */}
+        {/* ✨ GRUPO 3: INVENTARIO (ACTUALIZADO) ✨ */}
         <div className={`${isCollapsed ? "pt-0" : "pt-2"}`}>
           {!isCollapsed && (
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 px-3">
@@ -139,52 +139,75 @@ export const NavigationContent: React.FC<NavigationContentProps> = ({
               isCollapsed={isCollapsed}
               onClick={onLinkClick}
             />
+            {/* ✨ NUEVO: Compras (Solo Inventario) */}
             <SidebarLink
               to="/dashboard/compras"
               icon={<Icons.ShoppingCartIcon />}
-              label="Compras & Gastos"
+              label="Compras"
               isCollapsed={isCollapsed}
               onClick={onLinkClick}
             />
-            <SidebarLink
-              to="/dashboard/categorias-inventario"
-              icon={<Icons.TagIcon />}
-              label="Categorías"
-              isCollapsed={isCollapsed}
-              onClick={onLinkClick}
-            />
-            <SidebarLink
-              to="/dashboard/tipos-gasto"
-              icon={<Icons.DollarSignIcon />}
-              label="Tipos de Gasto"
-              isCollapsed={isCollapsed}
-              onClick={onLinkClick}
-            />
-            <SidebarLink
-              to="/dashboard/unidades-medida"
-              icon={<Icons.RulerIcon />}
-              label="Unidades"
-              isCollapsed={isCollapsed}
-              onClick={onLinkClick}
-            />
+            {/* ✨ NUEVO: Cierre de Inventario */}
             <SidebarLink
               to="/dashboard/cierre-inventario"
-              icon={<Icons.ClipboardListIcon />}
-              label="Inventario"
+              icon={<Icons.ClipboardCheckIcon />}
+              label="Cierre Inventario"
               isCollapsed={isCollapsed}
               onClick={onLinkClick}
             />
+            
+            {/* Configuración de Inventario (solo cuando no está colapsado) */}
+            {!isCollapsed && (
+              <div className="ml-2 mt-2 pt-2 border-t border-gray-100">
+                <SidebarLink
+                  to="/dashboard/categorias-inventario"
+                  icon={<Icons.TagIcon />}
+                  label="Categorías"
+                  isCollapsed={isCollapsed}
+                  onClick={onLinkClick}
+                />
+                <SidebarLink
+                  to="/dashboard/tipos-gasto"
+                  icon={<Icons.ListIcon />}
+                  label="Tipos de Gasto"
+                  isCollapsed={isCollapsed}
+                  onClick={onLinkClick}
+                />
+                <SidebarLink
+                  to="/dashboard/unidades-medida"
+                  icon={<Icons.RulerIcon />}
+                  label="Unidades"
+                  isCollapsed={isCollapsed}
+                  onClick={onLinkClick}
+                />
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Grupo 4: Gestión y Reportes */}
+        {/* ✨ GRUPO 4: FINANZAS (NUEVO) ✨ */}
         <div className={`${isCollapsed ? "pt-0" : "pt-2"}`}>
           {!isCollapsed && (
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 px-3">
-              Gestión
+              Finanzas
             </h3>
           )}
           <div className="space-y-1">
+            {/* ✨ NUEVO: Gastos Operativos */}
+            <SidebarLink
+              to="/dashboard/gastos"
+              icon={<Icons.TrendingDownIcon />}
+              label="Gastos Operativos"
+              isCollapsed={isCollapsed}
+              onClick={onLinkClick}
+            />
+            <SidebarLink
+              to="/dashboard/finances"
+              icon={<Icons.DollarSignIcon />}
+              label="Resumen Financiero"
+              isCollapsed={isCollapsed}
+              onClick={onLinkClick}
+            />
             <SidebarLink
               to="/dashboard/reports"
               icon={<Icons.ChartBarIcon />}
@@ -192,13 +215,17 @@ export const NavigationContent: React.FC<NavigationContentProps> = ({
               isCollapsed={isCollapsed}
               onClick={onLinkClick}
             />
-            <SidebarLink
-              to="/dashboard/finances"
-              icon={<Icons.DollarSignIcon />}
-              label="Finanzas"
-              isCollapsed={isCollapsed}
-              onClick={onLinkClick}
-            />
+          </div>
+        </div>
+
+        {/* Grupo 5: Gestión */}
+        <div className={`${isCollapsed ? "pt-0" : "pt-2"}`}>
+          {!isCollapsed && (
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 px-3">
+              Gestión
+            </h3>
+          )}
+          <div className="space-y-1">
             <SidebarLink
               to="/dashboard/team"
               icon={<Icons.UsersIcon />}
@@ -217,11 +244,11 @@ export const NavigationContent: React.FC<NavigationContentProps> = ({
         </div>
       </nav>
 
-      {/* Información del Usuario - Compacto */}
+      {/* Información del Usuario - Solo cuando no está colapsado */}
       {!isCollapsed && user && (
-        <div className="p-2 mx-2 mt-auto mb-2 bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg border border-gray-200">
+        <div className="p-2 mx-2 mt-auto mb-2 bg-linear-to-r from-gray-50 to-blue-50 rounded-lg border border-gray-200">
           <div className="text-center">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center mx-auto mb-1 shadow-lg">
+            <div className="w-8 h-8 bg-linear-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center mx-auto mb-1 shadow-lg">
               <span className="text-white font-bold text-xs">
                 {user.name?.charAt(0) || "U"}
               </span>

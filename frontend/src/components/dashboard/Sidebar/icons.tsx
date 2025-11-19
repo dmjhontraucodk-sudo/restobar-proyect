@@ -171,3 +171,31 @@ export const RulerIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <path d="m4.5 13.5 2 2"/>
   </svg>
 );
+
+// ✨ NUEVOS ICONOS AGREGADOS ✨
+
+export const ClipboardCheckIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/>
+    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+    <path d="m9 14 2 2 4-4"/>
+  </svg>
+);
+
+export const ListIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <line x1="8" x2="21" y1="6" y2="6"/>
+    <line x1="8" x2="21" y1="12" y2="12"/>
+    <line x1="8" x2="21" y1="18" y2="18"/>
+    <line x1="3" x2="3.01" y1="6" y2="6"/>
+    <line x1="3" x2="3.01" y1="12" y2="12"/>
+    <line x1="3" x2="3.01" y1="18" y2="18"/>
+  </svg>
+);
+
+export const TrendingDownIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/>
+    <polyline points="17 18 23 18 23 12"/>
+  </svg>
+);

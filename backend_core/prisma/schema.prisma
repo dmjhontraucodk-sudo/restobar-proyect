@@ -43,11 +43,13 @@ model tipos_gasto {
   created_at        DateTime @default(now()) @db.Timestamp(0)
 
   tenants tenants   @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  gastos  gastos[]
   compras compras[]
 
-  @@unique([tenant_id, nombre], map: "tenant_tipo_gasto")
+  @@unique([tenant_id, nombre])
   @@index([tenant_id])
-  @@index([activo], map: "activo_idx")
+  @@index([activo])
+  @@map("tipos_gasto")
 }
 
 model unidades_medida {
@@ -104,19 +106,20 @@ model compras {
   fecha            DateTime @db.DateTime(0)
   total            Decimal  @db.Decimal(10, 2)
   numero_documento String?  @db.VarChar(100)
-  descripcion      String?  @db.Text
-  estado_compra    String?  @default("Pendiente") @db.VarChar(50)
+  observaciones    String?  @db.Text
+  estado_compra    String   @default("Pendiente") @db.VarChar(50) // "Pendiente", "Recibido"
   created_at       DateTime @default(now()) @db.Timestamp(0)
 
-  tenants          tenants            @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Restrict)
-  tipos_gasto      tipos_gasto        @relation(fields: [tipo_gasto_id], references: [id], onUpdate: Restrict)
-  proveedores      proveedores?       @relation(fields: [proveedor_id], references: [id], onUpdate: Restrict)
+  tenants          tenants            @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  tipos_gasto      tipos_gasto        @relation(fields: [tipo_gasto_id], references: [id])
+  proveedores      proveedores?       @relation(fields: [proveedor_id], references: [id])
   compras_detalles compras_detalles[]
 
-  @@index([proveedor_id], map: "proveedor_id")
   @@index([tenant_id])
-  @@index([tipo_gasto_id], map: "tipo_gasto_id")
-  @@index([estado_compra], map: "estado_compra_idx")
+  @@index([tipo_gasto_id])
+  @@index([proveedor_id])
+  @@index([estado_compra])
+  @@map("compras")
 }
 
 model compras_detalles {
@@ -129,11 +132,36 @@ model compras_detalles {
 
   tenants              tenants              @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
   compras              compras              @relation(fields: [compra_id], references: [id], onDelete: Cascade)
-  productos_inventario productos_inventario @relation(fields: [producto_inventario_id], references: [id], onDelete: Restrict)
+  productos_inventario productos_inventario @relation(fields: [producto_inventario_id], references: [id])
 
   @@index([tenant_id])
-  @@index([compra_id], map: "compra_id")
-  @@index([producto_inventario_id], map: "producto_inventario_id")
+  @@index([compra_id])
+  @@index([producto_inventario_id])
+  @@map("compras_detalles")
+}
+
+model gastos {
+  id               Int      @id @default(autoincrement())
+  tenant_id        Int
+  tipo_gasto_id    Int
+  proveedor_id     Int?
+  fecha            DateTime @db.DateTime(0)
+  monto            Decimal  @db.Decimal(10, 2)
+  numero_documento String?  @db.VarChar(100)
+  descripcion      String?  @db.Text
+  metodo_pago      String?  @db.VarChar(50) // "Efectivo", "Transferencia", "Tarjeta"
+  aprobado_por_id  Int? // Empleado que aprobó
+  created_at       DateTime @default(now()) @db.Timestamp(0)
+
+  tenants     tenants      @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  tipos_gasto tipos_gasto  @relation(fields: [tipo_gasto_id], references: [id])
+  proveedores proveedores? @relation(fields: [proveedor_id], references: [id])
+  empleados   empleados?   @relation(fields: [aprobado_por_id], references: [id])
+
+  @@index([tenant_id])
+  @@index([tipo_gasto_id])
+  @@index([fecha])
+  @@map("gastos")
 }
 
 model conteos_fisicos {
@@ -187,6 +215,7 @@ model proveedores {
   created_at      DateTime @default(now()) @db.Timestamp(0)
 
   compras compras[]
+  gastos  gastos[]
   tenants tenants   @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Restrict)
 
   @@unique([tenant_id, nombre_empresa], map: "tenant_proveedor")
@@ -355,6 +384,12 @@ model empleados {
   ordenes             ordenes[]
   pagos               pagos[]
   cierres_inventario  cierres_inventario[]
+  tenants            tenants              @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "empleados_ibfk_1")
+  roles              roles                @relation(fields: [rol_id], references: [id], onUpdate: Restrict, map: "empleados_ibfk_2")
+  ordenes            ordenes[]
+  pagos              pagos[]
+  gastos             gastos[]
+  cierres_inventario cierres_inventario[]
 
   @@unique([tenant_id, email])
   @@index([rol_id], map: "rol_id")
@@ -528,6 +563,7 @@ model tenants {
   productos_inventario  productos_inventario[]
   compras               compras[]
   compras_detalles      compras_detalles[]
+  gastos                gastos[]
   conteos_fisicos       conteos_fisicos[]
   conteos_detalles      conteos_detalles[]
   cierres_inventario    cierres_inventario[]

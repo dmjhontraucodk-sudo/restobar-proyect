@@ -1,4 +1,4 @@
-// src/App.tsx - CON RUTAS DE INVENTARIO
+// src/App.tsx - VERSIÓN COMPLETA ACTUALIZADA
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
@@ -16,16 +16,22 @@ import OverviewPage from "./pages/Overview";
 import MenuManagementPage from "./pages/MenuManagement";
 import InventoryManagementPage from "./pages/InventoryManagement";
 import OrdersManagementPage from "./pages/OrdersManagement";
+import KitchenManagementPage from './pages/dashboard/KitchenManagement';
 
-// ✨ NUEVAS PÁGINAS DE INVENTARIO
+// ✨ PÁGINAS DE INVENTARIO
 import CategoriasInventario from "./pages/dashboard/inventario/CategoriasInventario";
 import TiposGasto from "./pages/dashboard/inventario/TiposGasto";
 import UnidadesMedida from "./pages/dashboard/inventario/UnidadesMedida";
 import ProductosInventario from "./pages/dashboard/inventario/ProductosInventario";
-import Compras from "./pages/dashboard/inventario/Compras";
 
-// ✨ PÁGINA DE COCINA (AGREGADO - FALTABA)
-import KitchenManagementPage from './pages/dashboard/KitchenManagement';
+// ✨ COMPRAS Y GASTOS (SEPARADOS)
+import Compras from "./pages/dashboard/inventario/Compras";
+import Gastos from "./pages/dashboard/finanzas/Gastos"; // ← NUEVA PÁGINA
+
+// ✨ CIERRE DE INVENTARIO
+import CierreInventario from "./pages/dashboard/inventario/CierreInventario";
+import NuevoCierreInventario from "./pages/dashboard/inventario/NuevoCierreInventario";
+import DetalleCierreInventario from "./pages/dashboard/inventario/DetalleCierreInventario";
 
 // --- Páginas Públicas del Tenant (Restobar) ---
 import RestobarLanding from "./pages/public/RestobarLanding";
@@ -41,7 +47,7 @@ import TenantGuard from "./components/TenantGuard";
 import ReservationForm from "./pages/public/ReservationForm";
 import ReservationsManagementPage from "./pages/ReservationsManagement";
 
-// --- Mesas---
+// --- Mesas ---
 import TablesManagementPage from "./pages/TablesManagement";
 
 // --- Equipo ---
@@ -100,46 +106,43 @@ const TenantPrivateRoutes = () => (
     <Route element={<ProtectedRoute />}>
       <Route element={<TenantGuard />}>
         <Route path="/dashboard" element={<DashboardLayout />}>
+          {/* Dashboard Principal */}
           <Route index element={<OverviewPage />} />
 
-          {/* Rutas Existentes */}
+          {/* ========== MENÚ & COCINA ========== */}
           <Route path="menu" element={<MenuManagementPage tipo="COMIDA" />} />
-          <Route
-            path="bebidas"
-            element={<MenuManagementPage tipo="BEBIDA" />}
-          />
-          <Route path="inventory" element={<InventoryManagementPage />} />
+          <Route path="bebidas" element={<MenuManagementPage tipo="BEBIDA" />} />
+          <Route path="kitchen" element={<KitchenManagementPage />} />
+
+          {/* ========== OPERACIONES ========== */}
           <Route path="orders" element={<OrdersManagementPage />} />
           <Route path="tables" element={<TablesManagementPage />} />
           <Route path="reservas" element={<ReservationsManagementPage />} />
           <Route path="/dashboard/team" element={<TeamManagement />} />
 
+          {/* ========== INVENTARIO ========== */}
+          {/* Gestión de Productos */}
+          <Route path="productos-inventario" element={<ProductosInventario />} />
           
-          {/* ✅ RUTA DE COCINA (CORREGIDO) */}
-          <Route path="kitchen" element={<KitchenManagementPage />} />
+          {/* ✨ COMPRAS (Solo las que afectan inventario) */}
+          <Route path="compras" element={<Compras />} />
           
-          {/* ✨ NUEVAS RUTAS DE INVENTARIO DINÁMICO ✨ */}
-          <Route
-            path="categorias-inventario"
-            element={<CategoriasInventario />}
-          />
+          {/* ✨ CIERRE DE INVENTARIO */}
+          <Route path="cierre-inventario" element={<CierreInventario />} />
+          <Route path="cierre-inventario/nuevo" element={<NuevoCierreInventario />} />
+          <Route path="cierre-inventario/:id" element={<DetalleCierreInventario />} />
+          
+          {/* Configuración de Inventario */}
+          <Route path="categorias-inventario" element={<CategoriasInventario />} />
           <Route path="tipos-gasto" element={<TiposGasto />} />
           <Route path="unidades-medida" element={<UnidadesMedida />} />
-          <Route
-            path="productos-inventario"
-            element={<ProductosInventario />}
-          />
-          <Route path="compras" element={<Compras />} />
 
-          <Route path="cierre-inventario" element={<CierreInventario />} />
-          <Route
-            path="cierre-inventario/nuevo"
-            element={<NuevoCierreInventario />}
-          />
-          <Route
-            path="cierre-inventario/:id"
-            element={<DetalleCierreInventario />}
-          />
+          {/* ========== FINANZAS ========== */}
+          {/* ✨ GASTOS OPERATIVOS (Los que NO afectan inventario) */}
+          <Route path="gastos" element={<Gastos />} />
+
+          {/* Ruta legacy de inventario (por si acaso) */}
+          <Route path="inventory" element={<InventoryManagementPage />} />
         </Route>
       </Route>
     </Route>

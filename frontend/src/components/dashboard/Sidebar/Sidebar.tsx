@@ -1,4 +1,4 @@
-// src/components/dashboard/Sidebar/Sidebar.tsx - ACTUALIZADO CON CIERRE DE INVENTARIO
+// src/components/dashboard/Sidebar/Sidebar.tsx - VERSIÓN COMPLETA ACTUALIZADA
 
 import React from 'react';
 import { NavigationContent } from './NavigationContent';
@@ -145,7 +145,7 @@ const FlyoutNavigationContent: React.FC<{ onLinkClick?: () => void; user: User }
         </div>
       </div>
 
-      {/* ✨ GRUPO 3: INVENTARIO DINÁMICO (NUEVO) ✨ */}
+      {/* ✨ GRUPO 3: INVENTARIO (ACTUALIZADO) ✨ */}
       <div className="pt-2">
         <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 px-3">
           Inventario
@@ -158,51 +158,71 @@ const FlyoutNavigationContent: React.FC<{ onLinkClick?: () => void; user: User }
             isCollapsed={false} 
             onClick={onLinkClick}
           />
+          {/* ✨ NUEVO: Compras (Solo Inventario) */}
           <SidebarLink 
             to="/dashboard/compras" 
             icon={<Icons.ShoppingCartIcon />} 
-            label="Compras & Gastos" 
+            label="Compras" 
             isCollapsed={false} 
             onClick={onLinkClick}
           />
-          <SidebarLink 
-            to="/dashboard/categorias-inventario" 
-            icon={<Icons.TagIcon />} 
-            label="Categorías" 
-            isCollapsed={false} 
-            onClick={onLinkClick}
-          />
-          <SidebarLink 
-            to="/dashboard/tipos-gasto" 
-            icon={<Icons.DollarSignIcon />} 
-            label="Tipos de Gasto" 
-            isCollapsed={false} 
-            onClick={onLinkClick}
-          />
-          <SidebarLink 
-            to="/dashboard/unidades-medida" 
-            icon={<Icons.RulerIcon />} 
-            label="Unidades" 
-            isCollapsed={false} 
-            onClick={onLinkClick}
-          />
-          {/* NUEVO: Cierre de Inventario */}
+          {/* ✨ NUEVO: Cierre de Inventario */}
           <SidebarLink 
             to="/dashboard/cierre-inventario" 
-            icon={<Icons.ClipboardListIcon />} 
-            label="Inventario" 
+            icon={<Icons.ClipboardCheckIcon />} 
+            label="Cierre Inventario" 
             isCollapsed={false} 
             onClick={onLinkClick}
           />
+          
+          {/* Configuración de Inventario (submenu) */}
+          <div className="ml-2 mt-2 pt-2 border-t border-gray-100">
+            <SidebarLink 
+              to="/dashboard/categorias-inventario" 
+              icon={<Icons.TagIcon />} 
+              label="Categorías" 
+              isCollapsed={false} 
+              onClick={onLinkClick}
+            />
+            <SidebarLink 
+              to="/dashboard/tipos-gasto" 
+              icon={<Icons.ListIcon />} 
+              label="Tipos de Gasto" 
+              isCollapsed={false} 
+              onClick={onLinkClick}
+            />
+            <SidebarLink 
+              to="/dashboard/unidades-medida" 
+              icon={<Icons.RulerIcon />} 
+              label="Unidades" 
+              isCollapsed={false} 
+              onClick={onLinkClick}
+            />
+          </div>
         </div>
       </div>
 
-      {/* Grupo 4: Gestión y Reportes */}
+      {/* ✨ GRUPO 4: FINANZAS (NUEVO) ✨ */}
       <div className="pt-2">
         <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 px-3">
-          Gestión
+          Finanzas
         </h3>
         <div className="space-y-1">
+          {/* ✨ NUEVO: Gastos Operativos */}
+          <SidebarLink 
+            to="/dashboard/gastos" 
+            icon={<Icons.TrendingDownIcon />} 
+            label="Gastos Operativos" 
+            isCollapsed={false} 
+            onClick={onLinkClick}
+          />
+          <SidebarLink 
+            to="/dashboard/finances" 
+            icon={<Icons.DollarSignIcon />} 
+            label="Resumen Financiero" 
+            isCollapsed={false} 
+            onClick={onLinkClick} 
+          />
           <SidebarLink 
             to="/dashboard/reports" 
             icon={<Icons.ChartBarIcon />} 
@@ -210,13 +230,15 @@ const FlyoutNavigationContent: React.FC<{ onLinkClick?: () => void; user: User }
             isCollapsed={false} 
             onClick={onLinkClick} 
           />
-          <SidebarLink 
-            to="/dashboard/finances" 
-            icon={<Icons.DollarSignIcon />} 
-            label="Finanzas" 
-            isCollapsed={false} 
-            onClick={onLinkClick} 
-          />
+        </div>
+      </div>
+
+      {/* Grupo 5: Gestión */}
+      <div className="pt-2">
+        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 px-3">
+          Gestión
+        </h3>
+        <div className="space-y-1">
           <SidebarLink 
             to="/dashboard/team" 
             icon={<Icons.UsersIcon />} 

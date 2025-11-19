@@ -1,4 +1,4 @@
-// src/types/index.ts - ACTUALIZADO CON INVENTARIO DINÁMICO (Compatible con erasableSyntaxOnly)
+// src/types/index.ts - VERSIÓN COMPLETAMENTE CORREGIDA
 
 // ========== TIPOS EXISTENTES (SIN CAMBIOS) ==========
 
@@ -435,7 +435,6 @@ export interface Proveedor {
   activo: boolean;
   created_at: string;
 }
-// AGREGAR AL FINAL DE: src/types/index.ts
 
 // ========== ✨ TIPOS PARA CIERRE DE INVENTARIO ✨ ==========
 
@@ -536,6 +535,7 @@ export interface CierreEstadisticas {
     valor: number;
   }>;
 }
+
 // ========== TIPOS DE PRISMA (EXTENDIDOS) ==========
 
 export interface WebPedido {
@@ -665,4 +665,49 @@ export interface NominaResponse {
   success: boolean;
   nomina: EmpleadoNomina[];
   estadisticas: EstadisticasNomina;
+}
+// ========== ✨ TIPOS PARA GASTOS OPERATIVOS ✨ ==========
+
+export interface GastoOperativo {
+  id: number;
+  tenant_id: number;
+  tipo_gasto_id: number;
+  proveedor_id: number | null;
+  fecha: string;
+  monto: number;  // ✅ DIFERENTE de 'total'
+  numero_documento: string | null;
+  descripcion: string | null;
+  metodo_pago: string | null;
+  aprobado_por_id: number | null;
+  created_at: string;
+  
+  tipos_gasto: {
+    nombre: string;
+    afecta_inventario: boolean;
+    color: string | null;
+    icono: string | null;
+  };
+  proveedores?: {
+    nombre_empresa: string;
+  };
+  empleados?: {
+    nombre: string | null;
+    email: string;
+  };
+}
+
+export interface CreateGastoOperativoData {
+  tipo_gasto_id: number;
+  fecha: string;
+  monto: number;  // ✅ DIFERENTE de 'total'
+  numero_documento?: string;
+  descripcion?: string;
+  metodo_pago?: string;
+  proveedor_id?: number;
+}
+
+export interface GetGastosFilters {
+  tipo_gasto_id?: number;
+  fechaInicio?: string;
+  fechaFin?: string;
 }
