@@ -30,8 +30,8 @@ CREATE TABLE `tipos_gasto` (
     `created_at` TIMESTAMP(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
 
     INDEX `tipos_gasto_tenant_id_idx`(`tenant_id`),
-    INDEX `activo_idx`(`activo`),
-    UNIQUE INDEX `tenant_tipo_gasto`(`tenant_id`, `nombre`),
+    INDEX `tipos_gasto_activo_idx`(`activo`),
+    UNIQUE INDEX `tipos_gasto_tenant_id_nombre_key`(`tenant_id`, `nombre`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -84,14 +84,14 @@ CREATE TABLE `compras` (
     `fecha` DATETIME(0) NOT NULL,
     `total` DECIMAL(10, 2) NOT NULL,
     `numero_documento` VARCHAR(100) NULL,
-    `descripcion` TEXT NULL,
-    `estado_compra` VARCHAR(50) NULL DEFAULT 'Pendiente',
+    `observaciones` TEXT NULL,
+    `estado_compra` VARCHAR(50) NOT NULL DEFAULT 'Pendiente',
     `created_at` TIMESTAMP(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
 
-    INDEX `proveedor_id`(`proveedor_id`),
     INDEX `compras_tenant_id_idx`(`tenant_id`),
-    INDEX `tipo_gasto_id`(`tipo_gasto_id`),
-    INDEX `estado_compra_idx`(`estado_compra`),
+    INDEX `compras_tipo_gasto_id_idx`(`tipo_gasto_id`),
+    INDEX `compras_proveedor_id_idx`(`proveedor_id`),
+    INDEX `compras_estado_compra_idx`(`estado_compra`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -105,8 +105,28 @@ CREATE TABLE `compras_detalles` (
     `costo_unitario` DECIMAL(10, 2) NOT NULL,
 
     INDEX `compras_detalles_tenant_id_idx`(`tenant_id`),
-    INDEX `compra_id`(`compra_id`),
-    INDEX `producto_inventario_id`(`producto_inventario_id`),
+    INDEX `compras_detalles_compra_id_idx`(`compra_id`),
+    INDEX `compras_detalles_producto_inventario_id_idx`(`producto_inventario_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `gastos` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `tenant_id` INTEGER NOT NULL,
+    `tipo_gasto_id` INTEGER NOT NULL,
+    `proveedor_id` INTEGER NULL,
+    `fecha` DATETIME(0) NOT NULL,
+    `monto` DECIMAL(10, 2) NOT NULL,
+    `numero_documento` VARCHAR(100) NULL,
+    `descripcion` TEXT NULL,
+    `metodo_pago` VARCHAR(50) NULL,
+    `aprobado_por_id` INTEGER NULL,
+    `created_at` TIMESTAMP(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
+
+    INDEX `gastos_tenant_id_idx`(`tenant_id`),
+    INDEX `gastos_tipo_gasto_id_idx`(`tipo_gasto_id`),
+    INDEX `gastos_fecha_idx`(`fecha`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -291,12 +311,22 @@ CREATE TABLE `empleados` (
     `tenant_id` INTEGER NOT NULL,
     `rol_id` INTEGER NOT NULL,
     `email` VARCHAR(255) NOT NULL,
-    `password_hash` VARCHAR(255) NOT NULL,
+    `password_hash` VARCHAR(255) NULL,
     `nombre` VARCHAR(255) NULL,
     `documento_identidad` VARCHAR(50) NULL,
-    `is_active` BOOLEAN NULL DEFAULT true,
+    `telefono` VARCHAR(50) NULL,
+    `requiere_login` BOOLEAN NOT NULL DEFAULT false,
+    `es_propietario` BOOLEAN NOT NULL DEFAULT false,
+    `is_active` BOOLEAN NOT NULL DEFAULT true,
+    `debe_cambiar_pass` BOOLEAN NOT NULL DEFAULT true,
+    `salario` DECIMAL(10, 2) NULL,
+    `fecha_ingreso` DATE NULL,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_at` DATETIME(3) NOT NULL,
 
     INDEX `rol_id`(`rol_id`),
+    INDEX `empleados_tenant_id_requiere_login_idx`(`tenant_id`, `requiere_login`),
+    INDEX `empleados_tenant_id_es_propietario_idx`(`tenant_id`, `es_propietario`),
     UNIQUE INDEX `empleados_tenant_id_email_key`(`tenant_id`, `email`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -380,8 +410,10 @@ CREATE TABLE `roles` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `nombre` VARCHAR(50) NOT NULL,
     `descripcion` TEXT NULL,
+    `activo` BOOLEAN NOT NULL DEFAULT true,
 
     UNIQUE INDEX `nombre`(`nombre`),
+    INDEX `activo_idx`(`activo`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -437,6 +469,44 @@ CREATE TABLE `tenants` (
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- CreateTable
+CREATE TABLE `cierres_inventario` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `tenant_id` INTEGER NOT NULL,
+    `fecha_inicio` DATETIME(3) NOT NULL,
+    `fecha_fin` DATETIME(3) NOT NULL,
+    `tipo_cierre` VARCHAR(191) NOT NULL,
+    `estado` VARCHAR(191) NOT NULL DEFAULT 'Borrador',
+    `total_diferencias` DECIMAL(10, 2) NOT NULL DEFAULT 0,
+    `observaciones` TEXT NULL,
+    `realizado_por_id` INTEGER NOT NULL,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_at` DATETIME(3) NOT NULL,
+
+    INDEX `cierres_inventario_tenant_id_idx`(`tenant_id`),
+    INDEX `cierres_inventario_fecha_inicio_idx`(`fecha_inicio`),
+    INDEX `cierres_inventario_estado_idx`(`estado`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `cierres_inventario_detalles` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `cierre_id` INTEGER NOT NULL,
+    `producto_inventario_id` INTEGER NOT NULL,
+    `stock_sistema` DECIMAL(10, 3) NOT NULL,
+    `stock_fisico` DECIMAL(10, 3) NOT NULL,
+    `diferencia` DECIMAL(10, 3) NOT NULL,
+    `tipo_diferencia` VARCHAR(191) NULL,
+    `valor_diferencia` DECIMAL(10, 2) NOT NULL DEFAULT 0,
+    `notas` TEXT NULL,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `cierres_inventario_detalles_cierre_id_idx`(`cierre_id`),
+    INDEX `cierres_inventario_detalles_producto_inventario_id_idx`(`producto_inventario_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 -- AddForeignKey
 ALTER TABLE `categorias_inventario` ADD CONSTRAINT `categorias_inventario_tenant_id_fkey` FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -456,13 +526,13 @@ ALTER TABLE `productos_inventario` ADD CONSTRAINT `productos_inventario_categori
 ALTER TABLE `productos_inventario` ADD CONSTRAINT `productos_inventario_unidad_medida_id_fkey` FOREIGN KEY (`unidad_medida_id`) REFERENCES `unidades_medida`(`id`) ON DELETE SET NULL ON UPDATE RESTRICT;
 
 -- AddForeignKey
-ALTER TABLE `compras` ADD CONSTRAINT `compras_tenant_id_fkey` FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE ON UPDATE RESTRICT;
+ALTER TABLE `compras` ADD CONSTRAINT `compras_tenant_id_fkey` FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `compras` ADD CONSTRAINT `compras_tipo_gasto_id_fkey` FOREIGN KEY (`tipo_gasto_id`) REFERENCES `tipos_gasto`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+ALTER TABLE `compras` ADD CONSTRAINT `compras_tipo_gasto_id_fkey` FOREIGN KEY (`tipo_gasto_id`) REFERENCES `tipos_gasto`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `compras` ADD CONSTRAINT `compras_proveedor_id_fkey` FOREIGN KEY (`proveedor_id`) REFERENCES `proveedores`(`id`) ON DELETE SET NULL ON UPDATE RESTRICT;
+ALTER TABLE `compras` ADD CONSTRAINT `compras_proveedor_id_fkey` FOREIGN KEY (`proveedor_id`) REFERENCES `proveedores`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `compras_detalles` ADD CONSTRAINT `compras_detalles_tenant_id_fkey` FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
@@ -472,6 +542,18 @@ ALTER TABLE `compras_detalles` ADD CONSTRAINT `compras_detalles_compra_id_fkey` 
 
 -- AddForeignKey
 ALTER TABLE `compras_detalles` ADD CONSTRAINT `compras_detalles_producto_inventario_id_fkey` FOREIGN KEY (`producto_inventario_id`) REFERENCES `productos_inventario`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `gastos` ADD CONSTRAINT `gastos_tenant_id_fkey` FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `gastos` ADD CONSTRAINT `gastos_tipo_gasto_id_fkey` FOREIGN KEY (`tipo_gasto_id`) REFERENCES `tipos_gasto`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `gastos` ADD CONSTRAINT `gastos_proveedor_id_fkey` FOREIGN KEY (`proveedor_id`) REFERENCES `proveedores`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `gastos` ADD CONSTRAINT `gastos_aprobado_por_id_fkey` FOREIGN KEY (`aprobado_por_id`) REFERENCES `empleados`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `conteos_fisicos` ADD CONSTRAINT `conteos_fisicos_tenant_id_fkey` FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
@@ -571,3 +653,15 @@ ALTER TABLE `galeriafotos` ADD CONSTRAINT `galeriafotos_ibfk_1` FOREIGN KEY (`te
 
 -- AddForeignKey
 ALTER TABLE `mesas` ADD CONSTRAINT `mesas_ibfk_1` FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE ON UPDATE RESTRICT;
+
+-- AddForeignKey
+ALTER TABLE `cierres_inventario` ADD CONSTRAINT `cierres_inventario_tenant_id_fkey` FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `cierres_inventario` ADD CONSTRAINT `cierres_inventario_realizado_por_id_fkey` FOREIGN KEY (`realizado_por_id`) REFERENCES `empleados`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `cierres_inventario_detalles` ADD CONSTRAINT `cierres_inventario_detalles_cierre_id_fkey` FOREIGN KEY (`cierre_id`) REFERENCES `cierres_inventario`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `cierres_inventario_detalles` ADD CONSTRAINT `cierres_inventario_detalles_producto_inventario_id_fkey` FOREIGN KEY (`producto_inventario_id`) REFERENCES `productos_inventario`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
