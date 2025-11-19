@@ -44,6 +44,9 @@ import ReservationsManagementPage from "./pages/ReservationsManagement";
 // --- Mesas---
 import TablesManagementPage from "./pages/TablesManagement";
 
+// --- Equipo ---
+import TeamManagement from './pages/dashboard/TeamManagement';
+
 // ========== IMPORTS (agregar al inicio) ==========
 import CierreInventario from "./pages/dashboard/inventario/CierreInventario";
 import NuevoCierreInventario from "./pages/dashboard/inventario/NuevoCierreInventario";
@@ -109,6 +112,7 @@ const TenantPrivateRoutes = () => (
           <Route path="orders" element={<OrdersManagementPage />} />
           <Route path="tables" element={<TablesManagementPage />} />
           <Route path="reservas" element={<ReservationsManagementPage />} />
+          <Route path="/dashboard/team" element={<TeamManagement />} />
 
           
           {/* ✅ RUTA DE COCINA (CORREGIDO) */}

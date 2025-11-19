@@ -564,3 +564,105 @@ export interface WebPedidoDetalle {
   subtotal: number;
   producto: Producto;
 }
+
+// ========== TIPOS ACTUALIZADOS PARA GESTIÓN DE EMPLEADOS CON SALARIO ==========
+
+export interface ApiRol {
+  id: number;
+  nombre: string;
+  descripcion: string | null;
+  activo: boolean; // ✅ NUEVO CAMPO
+}
+
+export interface ApiEmpleado {
+  id: number;
+  tenant_id: number;
+  rol_id: number;
+  email: string;
+  nombre: string | null;
+  documento_identidad: string | null;
+  telefono: string | null;
+  requiere_login: boolean;
+  es_propietario: boolean;
+  is_active: boolean;
+  debe_cambiar_pass: boolean;
+  salario: string | null; // ✅ Decimal en string
+  fecha_ingreso: string | null; // ✅ NUEVO CAMPO
+  created_at: string;
+  updated_at: string;
+  roles: ApiRol;
+}
+
+export interface CreateEmpleadoData {
+  nombre: string;
+  email: string;
+  rol_id: number;
+  documento_identidad?: string;
+  telefono?: string;
+  requiere_login: boolean;
+  password?: string;
+  salario?: number | string; // ✅ NUEVO
+  fecha_ingreso?: string; // ✅ NUEVO
+}
+
+export interface UpdateEmpleadoData {
+  nombre?: string;
+  email?: string;
+  rol_id?: number;
+  documento_identidad?: string;
+  telefono?: string;
+  is_active?: boolean;
+  salario?: number | string; // ✅ NUEVO
+  fecha_ingreso?: string; // ✅ NUEVO
+}
+
+export interface ResetPasswordResponse {
+  success: boolean;
+  message: string;
+  password_temporal: string;
+}
+
+// ========== NUEVOS TIPOS PARA ROLES ==========
+
+export interface CreateRolData {
+  nombre: string;
+  descripcion?: string;
+}
+
+export interface UpdateRolData {
+  nombre?: string;
+  descripcion?: string;
+  activo?: boolean;
+}
+
+// ========== NUEVOS TIPOS PARA NÓMINA ==========
+
+export interface EmpleadoNomina {
+  id: number;
+  nombre: string | null;
+  email: string;
+  rol: string;
+  salario: number;
+  fecha_ingreso: string | null;
+  is_active: boolean;
+}
+
+export interface EstadisticasNomina {
+  total_empleados_con_salario: number;
+  total_nomina_mensual: number;
+  salario_promedio: number;
+  salario_maximo: number;
+  salario_minimo: number;
+  por_rol: Array<{
+    rol: string;
+    cantidad: number;
+    total_salarios: number;
+    promedio: number;
+  }>;
+}
+
+export interface NominaResponse {
+  success: boolean;
+  nomina: EmpleadoNomina[];
+  estadisticas: EstadisticasNomina;
+}

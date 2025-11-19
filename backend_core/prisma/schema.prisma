@@ -331,19 +331,35 @@ model empleados {
   tenant_id           Int
   rol_id              Int
   email               String   @db.VarChar(255)
-  password_hash       String   @db.VarChar(255)
+  password_hash       String?  @db.VarChar(255) // NULL si no requiere login
   nombre              String?  @db.VarChar(255)
   documento_identidad String?  @db.VarChar(50)
-  is_active           Boolean? @default(true)
+  telefono            String?  @db.VarChar(50)  // ✅ NUEVO CAMPO
+  
+  // Control de acceso
+  requiere_login      Boolean  @default(false)  // ✅ NUEVO CAMPO
+  es_propietario      Boolean  @default(false)  // ✅ NUEVO CAMPO
+  is_active           Boolean  @default(true)
+  debe_cambiar_pass   Boolean  @default(true)   // ✅ NUEVO CAMPO
+  
+  // Para futuro (nómina)
+  salario             Decimal? @db.Decimal(10, 2) // ✅ NUEVO CAMPO
+  fecha_ingreso       DateTime? @db.Date           // ✅ NUEVO CAMPO
+  
+  // Timestamps
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt         // ✅ NUEVO CAMPO
 
-  tenants            tenants              @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "empleados_ibfk_1")
-  roles              roles                @relation(fields: [rol_id], references: [id], onUpdate: Restrict, map: "empleados_ibfk_2")
-  ordenes            ordenes[]
-  pagos              pagos[]
-  cierres_inventario cierres_inventario[]
+  tenants             tenants              @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "empleados_ibfk_1")
+  roles               roles                @relation(fields: [rol_id], references: [id], onUpdate: Restrict, map: "empleados_ibfk_2")
+  ordenes             ordenes[]
+  pagos               pagos[]
+  cierres_inventario  cierres_inventario[]
 
   @@unique([tenant_id, email])
   @@index([rol_id], map: "rol_id")
+  @@index([tenant_id, requiere_login])  // ✅ NUEVO ÍNDICE
+  @@index([tenant_id, es_propietario])  // ✅ NUEVO ÍNDICE
 }
 
 model ordenes {
@@ -435,7 +451,10 @@ model roles {
   id          Int         @id @default(autoincrement())
   nombre      String      @unique(map: "nombre") @db.VarChar(50)
   descripcion String?     @db.Text
+  activo      Boolean     @default(true)  // ✅ NUEVO CAMPO
   empleados   empleados[]
+
+  @@index([activo], map: "activo_idx")  // ✅ NUEVO ÍNDICE
 }
 
 model eventos {
