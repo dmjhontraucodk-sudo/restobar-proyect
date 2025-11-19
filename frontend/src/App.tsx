@@ -26,7 +26,7 @@ import ProductosInventario from "./pages/dashboard/inventario/ProductosInventari
 
 // ✨ COMPRAS Y GASTOS (SEPARADOS)
 import Compras from "./pages/dashboard/inventario/Compras";
-import Gastos from "./pages/dashboard/finanzas/Gastos"; // ← NUEVA PÁGINA
+import Gastos from "./pages/dashboard/Finanzas/Gastos"; // ← NUEVA PÁGINA
 
 // ✨ CIERRE DE INVENTARIO
 import CierreInventario from "./pages/dashboard/inventario/CierreInventario";
@@ -52,11 +52,6 @@ import TablesManagementPage from "./pages/TablesManagement";
 
 // --- Equipo ---
 import TeamManagement from './pages/dashboard/TeamManagement';
-
-// ========== IMPORTS (agregar al inicio) ==========
-import CierreInventario from "./pages/dashboard/inventario/CierreInventario";
-import NuevoCierreInventario from "./pages/dashboard/inventario/NuevoCierreInventario";
-import DetalleCierreInventario from "./pages/dashboard/inventario/DetalleCierreInventario";
 
 // --- Lógica de Subdominio ---
 const getTenantId = () => {
