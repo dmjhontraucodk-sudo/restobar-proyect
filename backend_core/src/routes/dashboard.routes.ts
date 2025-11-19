@@ -55,8 +55,10 @@ import { validateToken } from '../middleware/auth.middleware';
 import upload from '../middleware/upload.middleware';
 import { reservationsController } from '../controller/auth/reservations.controller';
 import { mesasController } from '../controller/app/mesas.controller';
-//Cocina
-import { cocinaController } from '../controller/app/cocina.controller'; // <-- IMPORTAR NUEVO CONTROLLER
+import { cocinaController } from '../controller/app/cocina.controller';
+import { empleadosController } from '../controller/app/empleados.controller';
+import { rolesController } from '../controller/app/roles.controller';
+import { nominaController } from '../controller/app/nomina.controller';
 
 const router = Router();
 
@@ -158,5 +160,56 @@ router.put('/cierres-inventario/:id', updateCierreInventario);
 
 // Finalizar cierre (actualiza stock y cambia estado a Finalizado)
 router.post('/cierres-inventario/:id/finalizar', finalizarCierre);
+
+
+// ========== RUTAS DE GESTIÓN DE EMPLEADOS (EQUIPO) ==========
+// Obtener todos los empleados
+router.get('/empleados', validateToken, empleadosController.getAllEmpleados);
+
+// Obtener empleados con acceso al sistema
+router.get('/empleados/con-acceso', validateToken, empleadosController.getEmpleadosConAcceso);
+
+// Obtener roles disponibles
+router.get('/roles', validateToken, empleadosController.getRoles);
+
+// Obtener un empleado específico
+router.get('/empleados/:id', validateToken, empleadosController.getEmpleadoById);
+
+// Crear nuevo empleado
+router.post('/empleados', validateToken, empleadosController.createEmpleado);
+
+// Actualizar empleado
+router.patch('/empleados/:id', validateToken, empleadosController.updateEmpleado);
+
+// Desactivar empleado
+router.delete('/empleados/:id', validateToken, empleadosController.desactivarEmpleado);
+
+// Reactivar empleado
+router.post('/empleados/:id/activar', validateToken, empleadosController.activarEmpleado);
+
+// Resetear contraseña de empleado
+router.post('/empleados/:id/resetear-password', validateToken, empleadosController.resetearPassword);
+
+// ========== RUTAS DE GESTIÓN DE ROLES  ==========
+// Obtener todos los roles (incluye inactivos) - Solo Administrador
+router.get('/roles/todos', validateToken, rolesController.getAllRoles);
+
+// Crear nuevo rol - Solo Administrador
+router.post('/roles/crear', validateToken, rolesController.createRol);
+
+// Actualizar rol - Solo Administrador
+router.patch('/roles/:id', validateToken, rolesController.updateRol);
+
+// Desactivar rol - Solo Administrador
+router.delete('/roles/:id', validateToken, rolesController.desactivarRol);
+
+// Reactivar rol - Solo Administrador
+router.post('/roles/:id/activar', validateToken, rolesController.activarRol);
+
+// Obtener nómina completa - Administrador y Gerente
+router.get('/nomina', validateToken, nominaController.getNomina);
+
+// Obtener estadísticas de nómina - Administrador y Gerente
+router.get('/nomina/estadisticas', validateToken, nominaController.getEstadisticasNomina);
 
 export default router;
