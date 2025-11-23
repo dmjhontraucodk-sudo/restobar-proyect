@@ -12,11 +12,12 @@ import CartDemo from "./pages/public/components/CartDemo";
 // --- Páginas y Layouts del Tenant ---
 import LoginPage from "./pages/Login";
 import DashboardLayout from "./layouts/DashboardLayout";
-import OverviewPage from "./pages/Overview";
+import Overview from './pages/Overview';
 import MenuManagementPage from "./pages/MenuManagement";
 import InventoryManagementPage from "./pages/InventoryManagement";
 import OrdersManagementPage from "./pages/OrdersManagement";
 import KitchenManagementPage from './pages/dashboard/KitchenManagement';
+import WebOrdersManagementPage from "./pages/WebOrdersManagement";
 
 // ✨ PÁGINAS DE INVENTARIO
 import CategoriasInventario from "./pages/dashboard/inventario/CategoriasInventario";
@@ -102,7 +103,7 @@ const TenantPrivateRoutes = () => (
       <Route element={<TenantGuard />}>
         <Route path="/dashboard" element={<DashboardLayout />}>
           {/* Dashboard Principal */}
-          <Route index element={<OverviewPage />} />
+          <Route index element={<Overview />} />
 
           {/* ========== MENÚ & COCINA ========== */}
           <Route path="menu" element={<MenuManagementPage tipo="COMIDA" />} />
@@ -111,6 +112,7 @@ const TenantPrivateRoutes = () => (
 
           {/* ========== OPERACIONES ========== */}
           <Route path="orders" element={<OrdersManagementPage />} />
+          <Route path="web-orders" element={<WebOrdersManagementPage />} />
           <Route path="tables" element={<TablesManagementPage />} />
           <Route path="reservas" element={<ReservationsManagementPage />} />
           <Route path="/dashboard/team" element={<TeamManagement />} />

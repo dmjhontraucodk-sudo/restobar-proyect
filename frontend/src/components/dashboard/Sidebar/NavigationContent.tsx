@@ -76,6 +76,13 @@ export const NavigationContent: React.FC<NavigationContentProps> = ({
               onClick={onLinkClick}
             />
             <SidebarLink
+              to="/dashboard/web-orders" 
+              icon={<Icons.GlobeIcon />} 
+              label="Pedidos Web"
+              isCollapsed={isCollapsed}
+              onClick={onLinkClick}
+            />
+            <SidebarLink
               to="/dashboard/tables"
               icon={<Icons.TableIcon />}
               label="Mesas"

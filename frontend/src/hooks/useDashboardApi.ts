@@ -34,6 +34,9 @@ import {
   type GastoOperativo,
   type CreateGastoOperativoData,
   type GetGastosFilters,
+
+  // ⭐ IMPORTACIÓN NECESARIA ⭐
+  type DashboardOverview,
 } from "../types";
 
 const API_BASE = "/api/dashboard";
@@ -204,11 +207,9 @@ export const useDashboardApi = () => {
     [logout, currentTenant]
   );
 
-  const getOverviewData = useCallback((): Promise<{
-    totalOrders: number;
-    totalSales: number;
-  }> => {
-    return makeRequest<{ totalOrders: number; totalSales: number }>(
+  // ⭐ FUNCIÓN CORREGIDA ⭐
+   const getOverviewData = useCallback((): Promise<DashboardOverview> => {
+    return makeRequest<DashboardOverview>(
       "/overview"
     );
   }, [makeRequest]);

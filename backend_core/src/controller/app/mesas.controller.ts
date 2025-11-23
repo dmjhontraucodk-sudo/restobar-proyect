@@ -21,23 +21,48 @@ interface AuthRequest extends Request {
 }
 // --- FIN AuthRequest ---
 export const mesasController = {
+    /**
+     * GET /api/dashboard/mesas - Obtiene todas las mesas de un tenant
+     * El Front-end (useOrdersApi) filtra esto a estado 'Libre'.
+     */
+    async getAllMesas(req: AuthRequest, res: Response) {
+        try {
+            const tenantId = req.user?.tenant_id;
+            
+            if (!tenantId || tenantId !== req.tenant?.id) {
+                // Si el token no coincide con el subdominio, denegar
+                return res.status(403).json({ error: 'Acceso prohibido.' });
+            }
 
-    // GET /api/dashboard/mesas
-    async getAllMesas(req: AuthRequest, res: Response, next: NextFunction) {
-        try {
-            // Usamos req.user?.tenant_id ya que la ruta está protegida por validateToken
-            const tenantId = req.user?.tenant_id;
-            
-            if (!tenantId) {
-                return res.status(403).json({ error: 'Acceso prohibido.' });
-            }
+            const mesas = await prisma.mesas.findMany({
+                where: {
+                    tenant_id: tenantId,
+                    // Devolvemos todas las mesas para que el Front-end decida si están 'Libre'
+                },
+                select: {
+                    id: true,
+                    nombre_o_numero: true,
+                    capacidad: true,
+                    estado: true, // Debe devolver 'Libre', 'Ocupada', 'Reservada'
+                },
+                orderBy: {
+                    nombre_o_numero: 'asc',
+                }
+            });
 
-            const mesas = await mesasService.getAllMesas(tenantId);
-            res.json(mesas);
-        } catch (error) {
-            next(error);
-        }
-    },
+            // Si no hay mesas configuradas, devolver un array vacío (esto es crucial para evitar errores)
+            return res.status(200).json(mesas || []);
+
+        } catch (error: any) {
+            console.error('Error en mesasController.getAllMesas:', error);
+            // Si hay un error de base de datos, devolver 500
+            return res.status(500).json({ 
+                error: 'Error interno del servidor al cargar las mesas.', 
+                details: error.message 
+            });
+        }
+    },
+
 
     // POST /api/dashboard/mesas
     async createMesa(req: AuthRequest, res: Response, next: NextFunction) {

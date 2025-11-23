@@ -26,7 +26,10 @@ const createEmpleadoSchema = z.object({
     documento_identidad: z.string().optional(),
     telefono: z.string().optional(),
     requiere_login: z.boolean(),
-    password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres').optional()
+    password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres').optional(),
+
+    salario: z.union([z.number(), z.string()]).optional(), 
+    fecha_ingreso: z.string().optional() 
 });
 
 const updateEmpleadoSchema = z.object({

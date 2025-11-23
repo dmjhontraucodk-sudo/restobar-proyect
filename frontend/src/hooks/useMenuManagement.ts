@@ -490,6 +490,7 @@ export const useMenuManagement = (tipo: TipoCategoria = 'COMIDA') => {
     apiError,
     categories,
     filteredCategories,
+    allProducts: categories.flatMap(cat => cat.items || []).filter(Boolean),
     isSubmitting,
     isSubmittingCategory,
     isUploading,

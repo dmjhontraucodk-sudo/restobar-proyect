@@ -1,6 +1,7 @@
 // src/routes/dashboard.routes.ts - VERSIÓN COMPLETA CORREGIDA
 
 import { Router } from 'express';
+import { getOverviewData } from '../controller/app/overview.controller';
 import { 
   // Funciones existentes
   getDashboardInfo, 
@@ -16,6 +17,7 @@ import {
   createOrden,
   updateOrdenEstado,
   getMesasConOrdenes,
+  addItemsToOrden,
   
   // ✨ CATEGORÍAS DE INVENTARIO
   getCategoriasInventario,
@@ -40,6 +42,7 @@ import {
   createGasto,
   receiveCompra,
   getCompraById,
+ 
 } from '../controller/app/dashboard.controller';
 
 import {
@@ -69,7 +72,9 @@ import { cocinaController } from '../controller/app/cocina.controller';
 import { empleadosController } from '../controller/app/empleados.controller';
 import { rolesController } from '../controller/app/roles.controller';
 import { nominaController } from '../controller/app/nomina.controller';
-
+import { cierrePosController } from '../controller/app/cierre-pos.controller';
+// ✨ NUEVA IMPORTACIÓN: Tu nuevo controlador de Pedidos Web Listos
+import { webReadyOrdersController } from '../controller/app/web-ready-orders.controller';
 const router = Router();
 
 // ========== RUTAS EXISTENTES ==========
@@ -81,8 +86,7 @@ router.post('/upload-image',
   uploadImage
 );
 
-// --- Información General ---
-router.get('/info', validateToken, getDashboardInfo);
+router.get('/overview', validateToken, getOverviewData);
 
 // --- Productos del Menú (Platos/Bebidas) ---
 router.get('/products', validateToken, getProducts);
@@ -99,6 +103,12 @@ router.get('/categories', validateToken, getCategories);
 router.get('/ordenes', validateToken, getOrdenes);
 router.post('/ordenes', validateToken, createOrden);
 router.patch('/ordenes/:id/estado', validateToken, updateOrdenEstado);
+router.patch('/ordenes/:id/cierre', validateToken, cierrePosController.closeOrder);
+router.post('/ordenes/:id/items', validateToken, addItemsToOrden);
+
+// ========== ✨ NUEVA SECCIÓN: PEDIDOS WEB LISTOS ✨ ==========
+router.get('/web-ready-orders', validateToken, webReadyOrdersController.getReadyOrders);
+router.patch('/web-ready-orders/:id/status', validateToken, webReadyOrdersController.updateStatus);
 
 // --- Cocina ---
 router.get('/cocina/pedidos', validateToken, cocinaController.getPedidosCocina);
@@ -235,5 +245,6 @@ router.get('/nomina', validateToken, nominaController.getNomina);
 
 // Obtener estadísticas de nómina - Administrador y Gerente
 router.get('/nomina/estadisticas', validateToken, nominaController.getEstadisticasNomina);
+
 
 export default router;
