@@ -108,6 +108,20 @@ const FlyoutNavigationContent: React.FC<{
             isCollapsed={false}
             onClick={onLinkClick}
           />
+          <SidebarLink 
+            to="/dashboard/web-orders" 
+            icon={<Icons.GlobeIcon />} 
+            label="Pedidos Web" 
+            isCollapsed={false} 
+            onClick={onLinkClick}
+          />
+          <SidebarLink 
+            to="/dashboard/tables" 
+            icon={<Icons.TableIcon />} 
+            label="Mesas" 
+            isCollapsed={false} 
+            onClick={onLinkClick} 
+          />
           <SidebarLink
             to="/dashboard/tables"
             icon={<Icons.TableIcon />}

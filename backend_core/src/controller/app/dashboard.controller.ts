@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { cloudinary } from '../../config/cloudinary.config';
 import { TipoCategoria, ordenes_estado, pagos_metodo_pago } from '@prisma/client';
 
+import { ordenesService } from '../../services/ordenes.service';
 // --- Interfaz de Autenticación ---
 interface AuthRequest extends Request {
   user?: {
@@ -509,15 +510,15 @@ export const getOrdenes = async (req: AuthRequest, res: Response) => {
       whereClause.estado = estado;
     }
 
-    if (fechaInicio || fechaFin) {
-      whereClause.created_at = {};
-      if (fechaInicio) {
-        whereClause.created_at.gte = new Date(fechaInicio);
-      }
-      if (fechaFin) {
-        whereClause.created_at.lte = new Date(fechaFin);
-      }
-    }
+  if (estado !== 'Abierta' && (fechaInicio || fechaFin)) { // <-- MODIFICACIÓN AQUÍ
+      whereClause.created_at = {};
+      if (fechaInicio) {
+        whereClause.created_at.gte = new Date(fechaInicio);
+      }
+      if (fechaFin) {
+        whereClause.created_at.lte = new Date(fechaFin);
+      }
+    }
 
     const ordenes = await prisma.ordenes.findMany({
       where: whereClause,
@@ -748,6 +749,45 @@ export const updateOrdenEstado = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ error: 'Error interno del servidor.' });
   }
 };
+
+  // Esquema para añadir ítems (igual al itemSchema original)
+  const updateOrderItemsSchema = z.object({
+      items: z.array(ordenItemSchema).min(1, "Debe añadir al menos un item."),
+  });
+
+  // ✅ NUEVA FUNCIÓN CONTROLADORA
+  export const addItemsToOrden = async (req: AuthRequest, res: Response) => {
+      try {
+          const tenantId = req.user?.tenant_id;
+          const empleadoId = req.user?.id;
+          const ordenId = parseInt(req.params.id);
+
+          if (!tenantId || !empleadoId || isNaN(ordenId)) {
+              return res.status(400).json({ error: 'Datos de orden o sesión inválidos.' });
+          }
+
+          const validation = updateOrderItemsSchema.safeParse(req.body);
+          if (!validation.success) {
+              return res.status(400).json({ error: 'Datos inválidos', details: validation.error.issues });
+          }
+
+          const data = validation.data;
+          
+          // Llamar al nuevo servicio
+          const ordenActualizada = await ordenesService.addItemsToOrder(
+              tenantId,
+              empleadoId,
+              ordenId,
+              data
+          );
+
+          res.status(200).json(ordenActualizada);
+
+      } catch (error: any) {
+          console.error('Error en addItemsToOrden:', error);
+          res.status(400).json({ error: error.message || 'Error al añadir ítems a la orden.' });
+      }
+  };
 
 export const getMesasConOrdenes = async (req: AuthRequest, res: Response) => {
   try {

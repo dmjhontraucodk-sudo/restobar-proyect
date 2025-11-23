@@ -111,6 +111,7 @@ export type OrdenEstado = 'Abierta' | 'Cerrada' | 'Pagada' | 'Cancelada';
 
 export interface ApiOrdenDetalle {
   id: number;
+  producto_id: number;
   cantidad: number;
   precio_unitario: string;
   notas: string | null;
@@ -123,6 +124,7 @@ export interface ApiOrden {
   id: number;
   estado: OrdenEstado;
   subtotal: string;
+  descuento: string;
   total: string;
   created_at: string;
   mesas: {
@@ -779,4 +781,100 @@ export interface CajaHistorialItem {
   diferencia: number;
   empleados: { nombre: string | null };
   _count: { movimientos: number };
+}
+// ==========PEDIDO=========
+
+export type PedidoOrigen = 'WEB' | string;
+
+export interface KitchenItemDto {
+    id_detalle: number; 
+    producto_nombre: string;
+    cantidad: number;
+    notas: string | null; 
+}
+
+
+export interface KitchenOrderUnificada {
+    id: string; 
+
+    numero_orden: string; 
+    origen: PedidoOrigen; 
+  
+    estado: webpedidos_estado; 
+    cliente_mesa_nombre: string; 
+    items: KitchenItemDto[];
+    created_at: string; 
+    notas_especiales: string | null;
+}
+
+//Tipos de Respuesta Dashboard
+interface TopProductoData {
+    nombre: string;
+    cantidad: number;
+    categoria: 'COMIDA' | 'BEBIDA';
+}
+
+interface MesasEstadoData {
+    estado: mesas_estado; // Usa el enum de Prisma
+    cantidad: number;
+}
+
+interface VentasPorHoraData {
+    hora: string; // Ej: '08:00'
+    total: number;
+}
+
+interface VentasPorDiaData {
+    dia: string; // Ej: 'Mon', 'Tue', etc.
+    total: number;
+}
+
+export interface DashboardOverview {
+    // Kpis
+    ventasHoy: number;
+    pedidosHoy: number;
+    ocupacionPorcentaje: number;
+    ticketPromedio: number;
+    
+    // Mesas
+    estadoMesas: MesasEstadoData[];
+    totalMesas: number;
+
+    // Gráficos de Venta
+    ventasPorHora: VentasPorHoraData[];
+    tendenciaVentas: VentasPorDiaData[];
+    ventasPorCategoria: Array<{ 
+        nombre: string; 
+        porcentaje: number; 
+        total: number 
+    }>;
+
+    // Top Productos
+    topPlatos: TopProductoData[];
+    topBebidas: TopProductoData[];
+}
+
+export interface DashboardOverview {
+    // Kpis
+    ventasHoy: number;
+    pedidosHoy: number;
+    ocupacionPorcentaje: number;
+    ticketPromedio: number;
+    
+    // Mesas
+    estadoMesas: MesasEstadoData[]; // Ej: [{ estado: 'Libre', cantidad: 3 }, ...]
+    totalMesas: number;
+
+    // Gráficos de Venta
+    ventasPorHora: VentasPorHoraData[];
+    tendenciaVentas: VentasPorDiaData[];
+    ventasPorCategoria: Array<{ 
+        nombre: string; 
+        porcentaje: number; 
+        total: number 
+    }>;
+
+    // Top Productos
+    topPlatos: TopProductoData[];
+    topBebidas: TopProductoData[];
 }

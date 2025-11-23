@@ -1,105 +1,103 @@
-// frontend/src/hooks/useKitchenManagement.ts - FINAL CON CORRECCIONES DE TIPOS Y TOAST
+// frontend/src/hooks/useKitchenManagement.ts (MODIFICADO)
 
 import { useState, useEffect, useCallback } from 'react';
 import { useDashboardApi } from './useDashboardApi'; 
 import { 
-    type webpedidos_estado, 
-    type ApiWebPedido,
-    type ApiWebPedidoDetalle, 
+    type webpedidos_estado, 
+    // ✅ CAMBIO 1: Importamos la nueva interfaz unificada
+    type KitchenOrderUnificada, 
 } from '../types'; 
 
 import toast from 'react-hot-toast';
+export type KitchenOrder = KitchenOrderUnificada; 
 
-
-// Definición de KitchenOrder (sin cambios, ya fue corregida)
-export interface KitchenOrder extends Omit<ApiWebPedido, 'webpedidos_detalles'> {
-    webpedidos_detalles: Array<ApiWebPedidoDetalle & {
-        productos: { 
-            nombre: string;
-        };
-    }>;
-}
 
 export const useKitchenManagement = () => {
-    const [orders, setOrders] = useState<KitchenOrder[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [isPolling, setIsPolling] = useState(true); 
-    
-    // Obtenemos makeRequest (asumiendo que ya lo exportaste en useDashboardApi.ts)
-    const { makeRequest } = useDashboardApi(); 
+    // ✅ CAMBIO 3: Usamos KitchenOrder (que ahora es KitchenOrderUnificada)
+    const [orders, setOrders] = useState<KitchenOrder[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [isPolling, setIsPolling] = useState(true); 
+    
+    const { makeRequest } = useDashboardApi(); 
 
-    const loadKitchenOrders = useCallback(async () => {
-        setIsLoading(true);
-        setError(null);
+    const loadKitchenOrders = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
 
-        try {
-            const fetchedOrders = await makeRequest<KitchenOrder[]>('/cocina/pedidos');
-            setOrders(fetchedOrders);
-            
-        } catch (err: any) {
-            console.error("Error al cargar pedidos de cocina:", err);
-            const errorMessage = err.message || 'No se pudieron cargar los pedidos de la cocina.';
-            setError(errorMessage);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [makeRequest]);
+        try {
+            // ✅ El Back-end ahora devuelve KitchenOrderUnificada[]
+            const fetchedOrders = await makeRequest<KitchenOrder[]>('/cocina/pedidos');
+            setOrders(fetchedOrders);
+            
+        } catch (err: any) {
+            // ... (Manejo de error) ...
+            console.error("Error al cargar pedidos de cocina:", err);
+            const errorMessage = err.message || 'No se pudieron cargar los pedidos de la cocina.';
+            setError(errorMessage);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [makeRequest]);
 
-    // La función updateOrderStatus usa toast, por lo que la advertencia se irá al usarlo.
-    const updateOrderStatus = useCallback(async (orderId: number, newState: webpedidos_estado): Promise<void> => {
-        
-        const originalOrders = [...orders];
-        setOrders(prevOrders => prevOrders.map(order => 
-            order.id === orderId ? { ...order, estado: newState } : order
-        ));
+    // ✅ CAMBIO 4: La función ahora acepta el ID como string (ID Unificado)
+    const updateOrderStatus = useCallback(async (orderId: string, newState: webpedidos_estado): Promise<void> => {
+        
+        const originalOrders = [...orders];
+        // Actualización optimista de la interfaz de usuario
+        setOrders(prevOrders => prevOrders.map(order => 
+            // ✅ La comparación del ID es ahora con un string
+            order.id === orderId ? { ...order, estado: newState } : order
+        ));
 
-        try {
-            await makeRequest<KitchenOrder>(`/cocina/pedidos/${orderId}/estado`, {
-                method: 'PATCH',
-                body: JSON.stringify({ estado: newState }),
-            });
-            
-            await loadKitchenOrders(); 
+        try {
+            // ✅ CAMBIO CRUCIAL: Enviamos el ID Unificado (W-123 o P-456)
+            // El Back-end ya sabe cómo dividirlo y qué tabla actualizar.
+            await makeRequest<KitchenOrder>(`/cocina/pedidos/${orderId}/estado`, {
+                method: 'PATCH',
+                body: JSON.stringify({ estado: newState }),
+            });
+            
+            // Forzar una recarga para obtener la data fresca y unificada.
+            await loadKitchenOrders(); 
 
-        } catch (err: any) {
-            setOrders(originalOrders);
-            // Aquí se usa toast, resolviendo la advertencia en tiempo de ejecución.
-            // Si quieres mover el toast al componente, elimina esta línea y la importación de 'toast' arriba.
-            toast.error(err.message || 'Error al actualizar el estado del pedido'); 
-            
-            throw new Error(err.message || 'Error al actualizar el estado del pedido');
-        }
-    }, [makeRequest, orders, loadKitchenOrders]);
+        } catch (err: any) {
+            setOrders(originalOrders);
+            toast.error(err.message || 'Error al actualizar el estado del pedido'); 
+            
+            throw new Error(err.message || 'Error al actualizar el estado del pedido');
+        }
+    }, [makeRequest, orders, loadKitchenOrders]);
 
 
-    useEffect(() => {
-        loadKitchenOrders();
+    useEffect(() => {
+        // ... (Lógica de polling sin cambios) ...
+        loadKitchenOrders();
 
-        let intervalId: number | undefined; 
-        
-        if (isPolling) {
-            intervalId = setInterval(() => {
-                console.log("🔄 Recargando pedidos de cocina (polling)...");
-                loadKitchenOrders();
-            }, 10000); 
-        }
+        let intervalId: number | undefined; 
+        
+        if (isPolling) {
+            intervalId = setInterval(() => {
+                console.log("🔄 Recargando pedidos de cocina (polling)...");
+                loadKitchenOrders();
+            }, 10000); 
+        }
 
-        return () => {
-            if (intervalId) {
-                clearInterval(intervalId);
-            }
-        };
-    }, [isPolling, loadKitchenOrders]); 
+        return () => {
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
+        };
+    }, [isPolling, loadKitchenOrders]); 
 
-    
-    return {
-        orders,
-        isLoading,
-        error,
-        reloadOrders: loadKitchenOrders,
-        updateOrderStatus,
-        isPolling,
-        setIsPolling,
-    };
+    
+    return {
+        orders,
+        isLoading,
+        error,
+        reloadOrders: loadKitchenOrders,
+        updateOrderStatus,
+        isPolling,
+        setIsPolling,
+    };
 };

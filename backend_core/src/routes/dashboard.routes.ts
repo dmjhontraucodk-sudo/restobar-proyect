@@ -2,18 +2,51 @@
 
 import { Router } from 'express';
 import { validateToken } from '../middleware/auth.middleware';
-import upload from '../middleware/upload.middleware';
-
-// --- CONTROLADORES ---
+import upload from '../middleware/upload.middleware'; 
+  
+import { getOverviewData } from '../controller/app/overview.controller';
 import { 
-  getDashboardInfo, getProducts, createProduct, createCategory, updateProduct,
-  getCategories, getProductById, updateProductDetails, uploadImage,
-  getOrdenes, createOrden, updateOrdenEstado, getMesasConOrdenes,
-  getCategoriasInventario, createCategoriaInventario, updateCategoriaInventario,
-  getTiposGasto, createTipoGasto,
-  getUnidadesMedida, createUnidadMedida,
-  getProductosInventario, createProductoInventario, updateProductoInventario,
-  getGastos, createGasto, receiveCompra, getCompraById, getKardexReport,
+  // Funciones existentes
+  getDashboardInfo, 
+  getProducts, 
+  createProduct, 
+  createCategory, 
+  updateProduct,
+  getCategories,
+  getProductById,
+  updateProductDetails,
+  uploadImage,
+  getOrdenes,
+  createOrden,
+  updateOrdenEstado,
+  getMesasConOrdenes,
+  addItemsToOrden,
+  
+  // ✨ CATEGORÍAS DE INVENTARIO
+  getCategoriasInventario,
+  createCategoriaInventario,
+  updateCategoriaInventario,
+  
+  // ✨ TIPOS DE GASTO
+  getTiposGasto,
+  createTipoGasto,
+  
+  // ✨ UNIDADES DE MEDIDA
+  getUnidadesMedida,
+  createUnidadMedida,
+  
+  // ✨ PRODUCTOS DE INVENTARIO
+  getProductosInventario,
+  createProductoInventario,
+  updateProductoInventario,
+  getKardexReport,
+  
+  // ✨ COMPRAS (Con inventario)
+  getGastos,
+  createGasto,
+  receiveCompra,
+  getCompraById,
+ 
 } from '../controller/app/dashboard.controller';
 
 import {
@@ -48,6 +81,9 @@ import { empleadosController } from '../controller/app/empleados.controller';
 import { rolesController } from '../controller/app/roles.controller';
 import { nominaController, calcularPagoEmpleado } from '../controller/app/nomina.controller';
 
+import { cierrePosController } from '../controller/app/cierre-pos.controller';
+// ✨ NUEVA IMPORTACIÓN: Tu nuevo controlador de Pedidos Web Listos
+import { webReadyOrdersController } from '../controller/app/web-ready-orders.controller';
 const router = Router();
 
 // ========== 🖼️ IMÁGENES ==========
@@ -55,6 +91,14 @@ router.post('/upload-image', validateToken, upload.single('image'), uploadImage)
 
 // ========== 📊 DASHBOARD GENERAL ==========
 router.get('/info', validateToken, getDashboardInfo);
+// --- Subida de Imágenes ---
+router.post('/upload-image',
+  validateToken,
+  upload.single('image'),
+  uploadImage
+);
+
+router.get('/overview', validateToken, getOverviewData);
 
 // ========== 🍔 MENÚ Y PRODUCTOS ==========
 router.get('/products', validateToken, getProducts);
@@ -69,6 +113,12 @@ router.get('/categories', validateToken, getCategories);
 router.get('/ordenes', validateToken, getOrdenes);
 router.post('/ordenes', validateToken, createOrden);
 router.patch('/ordenes/:id/estado', validateToken, updateOrdenEstado);
+router.patch('/ordenes/:id/cierre', validateToken, cierrePosController.closeOrder);
+router.post('/ordenes/:id/items', validateToken, addItemsToOrden);
+
+// ========== ✨ NUEVA SECCIÓN: PEDIDOS WEB LISTOS ✨ ==========
+router.get('/web-ready-orders', validateToken, webReadyOrdersController.getReadyOrders);
+router.patch('/web-ready-orders/:id/status', validateToken, webReadyOrdersController.updateStatus);
 
 router.get('/cocina/pedidos', validateToken, cocinaController.getPedidosCocina);
 router.patch('/cocina/pedidos/:id/estado', validateToken, cocinaController.updateEstadoPedido);
@@ -152,5 +202,6 @@ router.post('/roles/:id/activar', validateToken, rolesController.activarRol);
 router.get('/nomina', validateToken, nominaController.getNomina);
 router.get('/nomina/estadisticas', validateToken, nominaController.getEstadisticasNomina);
 router.get('/nomina/calcular/:id', validateToken, calcularPagoEmpleado);
+
 
 export default router;
