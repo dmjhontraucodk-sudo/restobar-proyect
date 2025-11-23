@@ -5,21 +5,39 @@ import Modal from '../ui/Modal';
 import { PlusIcon, XIcon, ImageIcon, UploadIcon } from '../icons';
 import { type Category } from '../../types';
 
+// ✅ DEFINIMOS EL TIPO DE DATO PARA EL INSUMO AQUÍ (Para evitar errores si no está en types)
+export interface InsumoOption {
+  id: number;
+  nombre: string;
+  stock_actual: number;
+  unidad_medida?: { abreviatura: string };
+}
+
 interface AddPlatoModalProps {
   isOpen: boolean;
   onClose: () => void;
   isEditing: boolean;
   isUploading: boolean;
   editingCategory: Category | null;
+  
   itemName: string;
   onItemNameChange: (value: string) => void;
+  
   itemPrice: number;
   onItemPriceChange: (value: number) => void;
+  
   itemDescription: string;
   onItemDescriptionChange: (value: string) => void;
+
+  // ✅ NUEVOS PROPS PARA VINCULACIÓN DE INVENTARIO
+  insumos: InsumoOption[];
+  selectedInsumoId: number | null;
+  onInsumoChange: (id: number | null) => void;
+
   itemImagePreview: string | null;
   onImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemoveImage: () => void;
+  
   isSubmitting: boolean;
   onSubmit: (e: React.FormEvent) => void;
 }
@@ -36,6 +54,12 @@ const AddPlatoModal: React.FC<AddPlatoModalProps> = ({
   onItemPriceChange,
   itemDescription,
   onItemDescriptionChange,
+  
+  // ✅ DESESTRUCTURAMOS LOS NUEVOS PROPS
+  insumos,
+  selectedInsumoId,
+  onInsumoChange,
+
   itemImagePreview,
   onImageChange,
   onRemoveImage,
@@ -128,12 +152,12 @@ const AddPlatoModal: React.FC<AddPlatoModalProps> = ({
     submitButtonText = isEditing ? "Actualizando..." : "Guardando...";
   }
 
-  // ✅ Variable de estado para la lógica - CORREGIDO
   const showPreview = !!(itemImagePreview && !imageError);
 
   return (
     <Modal title={modalTitle} onClose={onClose}>
       <form onSubmit={onSubmit} className="space-y-6">
+        
         {/* Nombre y Precio */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -151,7 +175,7 @@ const AddPlatoModal: React.FC<AddPlatoModalProps> = ({
               required 
             />
           </div>
-          {/* INPUT DE PRECIO MEJORADO */}
+
           <div>
             <label htmlFor="itemPrice" className="block text-sm font-medium text-gray-700 mb-2">
               Precio <span className="text-red-500">*</span>
@@ -172,7 +196,6 @@ const AddPlatoModal: React.FC<AddPlatoModalProps> = ({
                 required 
               />
             </div>
-            <p className="text-xs text-gray-500 mt-1">Usa punto para decimales (ej: 25.50)</p>
           </div>
         </div>
         
@@ -193,13 +216,39 @@ const AddPlatoModal: React.FC<AddPlatoModalProps> = ({
           />
         </div>
 
-        {/* --- 🚀 SECCIÓN DE IMAGEN CORREGIDA --- */}
+        {/* ✅ SECCIÓN DE VINCULACIÓN CON INVENTARIO (NUEVO) */}
+        <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+          <label htmlFor="inventoryLink" className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+            Vincular con Inventario 
+            <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">Opcional</span>
+          </label>
+          
+          <p className="text-xs text-gray-500 mb-3">
+            Si seleccionas un producto, se descontará <strong>1 unidad</strong> automáticamente del stock al realizar una venta.
+          </p>
+
+          <select
+            id="inventoryLink"
+            value={selectedInsumoId || ""}
+            onChange={(e) => onInsumoChange(e.target.value ? Number(e.target.value) : null)}
+            disabled={isUploading || isSubmitting}
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+          >
+            <option value="">-- Sin vincular (Solo Venta) --</option>
+            {insumos.map((insumo) => (
+              <option key={insumo.id} value={insumo.id}>
+                📦 {insumo.nombre} (Stock: {Number(insumo.stock_actual).toFixed(0)} {insumo.unidad_medida?.abreviatura})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Sección de Imagen */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Imagen del Plato
           </label>
           
-          {/* 1. Contenedor de Vista Previa - SOLO se muestra cuando hay preview */}
           {showPreview && (
             <div className="relative w-32 h-32 mx-auto">
               <div className={`w-32 h-32 rounded-lg border-2 border-gray-300 overflow-hidden ${imageLoaded ? '' : 'bg-gray-100'}`}>
@@ -213,14 +262,12 @@ const AddPlatoModal: React.FC<AddPlatoModalProps> = ({
                 />
               </div>
               
-              {/* Spinner - SOLO se muestra cuando está subiendo */}
               {isUploading && (
                 <div className="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center rounded-lg">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 </div>
               )}
           
-              {/* Botón 'X' - SOLO se muestra cuando NO está subiendo */}
               {!isUploading && (
                 <button
                   type="button"
@@ -234,7 +281,6 @@ const AddPlatoModal: React.FC<AddPlatoModalProps> = ({
             </div>
           )}
           
-          {/* 2. Contenedor de "Dropzone" - SOLO se muestra cuando NO hay preview */}
           {!showPreview && (
             <div className={`border-2 border-dashed border-gray-300 rounded-xl p-6 text-center ${isUploading ? 'opacity-50 cursor-not-allowed' : 'hover:border-gray-400'} transition-colors duration-200`}>
               <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-3" />
@@ -256,13 +302,9 @@ const AddPlatoModal: React.FC<AddPlatoModalProps> = ({
                 <UploadIcon className="w-4 h-4 mr-2" />
                 {isUploading ? "Subiendo..." : "Seleccionar Imagen"}
               </label>
-              <p className="text-xs text-gray-500 mt-2">
-                Formatos: JPG, PNG, WEBP • Máx. 10MB
-              </p>
             </div>
           )}
         </div>
-        {/* --- 🚀 FIN DE LA CORRECCIÓN --- */}
 
         {/* Información Adicional */}
         <div className="bg-blue-50 rounded-xl p-4">

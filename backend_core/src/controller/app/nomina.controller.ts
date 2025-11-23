@@ -1,6 +1,8 @@
-// backend_core/src/controller/app/nomina.controller.ts
 import { Request, Response } from 'express';
 import { nominaService } from '../../services/nomina.service';
+import { Prisma } from '@prisma/client';
+// ✅ 1. CORRECCIÓN: IMPORTAR LA INSTANCIA DE PRISMA
+import { prisma } from '../../lib/prisma';
 
 // --- Interfaz de Autenticación ---
 interface AuthRequest extends Request {
@@ -42,7 +44,7 @@ export const nominaController = {
 
             // Solo Administrador (propietario) y Gerente pueden ver salarios
             const puedeVerSalarios = usuarioActual.es_propietario || 
-                                    usuarioActual.roles.nombre === 'Gerente';
+                                     usuarioActual.roles.nombre === 'Gerente';
 
             if (!puedeVerSalarios) {
                 return res.status(403).json({ 
@@ -62,7 +64,7 @@ export const nominaController = {
         } catch (error: any) {
             console.error('Error en getNomina:', error);
             return res.status(500).json({ 
-                success: false,
+                success: false, 
                 error: 'Error interno del servidor.' 
             });
         }
@@ -87,7 +89,7 @@ export const nominaController = {
             }
 
             const puedeVerSalarios = usuarioActual.es_propietario || 
-                                    usuarioActual.roles.nombre === 'Gerente';
+                                     usuarioActual.roles.nombre === 'Gerente';
 
             if (!puedeVerSalarios) {
                 return res.status(403).json({ 
@@ -105,9 +107,69 @@ export const nominaController = {
         } catch (error: any) {
             console.error('Error en getEstadisticasNomina:', error);
             return res.status(500).json({ 
-                success: false,
+                success: false, 
                 error: 'Error interno del servidor.' 
             });
         }
     },
+};
+
+// ✅ FUNCION CORREGIDA
+export const calcularPagoEmpleado = async (req: AuthRequest, res: Response) => {
+    try {
+        const tenantId = req.user?.tenant_id;
+        const empleadoId = parseInt(req.params.id);
+
+        if (!tenantId || isNaN(empleadoId)) return res.status(400).json({ error: 'Datos inválidos' });
+
+        // 1. Buscar empleado
+        const empleado = await prisma.empleados.findUnique({
+            where: { id: empleadoId },
+            select: { id: true, nombre: true, salario: true }
+        });
+
+        if (!empleado) return res.status(404).json({ error: 'Empleado no encontrado' });
+
+        // 2. Buscar descuentos PENDIENTES
+        const descuentos = await prisma.descuentos_empleados.findMany({
+            where: {
+                tenant_id: tenantId,
+                empleado_id: empleadoId,
+                estado: 'Pendiente'
+            }
+        });
+
+        // 3. 🔍 VERIFICAR SI YA SE PAGÓ ESTE MES
+        const fechaActual = new Date();
+        const inicioMes = new Date(fechaActual.getFullYear(), fechaActual.getMonth(), 1);
+        
+        // Buscamos un gasto que coincida con el patrón de nómina para este empleado en este mes
+        const pagoPrevio = await prisma.gastos.findFirst({
+            where: {
+                tenant_id: tenantId,
+                fecha: { gte: inicioMes },
+                descripcion: { contains: `Pago de Nómina: ${empleado.nombre}` } // Usamos el nombre como referencia
+            }
+        });
+
+        // 4. Calcular totales
+        const sueldoBase = Number(empleado.salario || 0);
+        const totalDescuentos = descuentos.reduce((sum: number, d: any) => sum + Number(d.monto), 0);
+        const totalPagar = Math.max(sueldoBase - totalDescuentos, 0);
+
+        return res.json({
+            empleado: empleado.nombre,
+            sueldo_base: sueldoBase,
+            total_descuentos: totalDescuentos,
+            total_pagar: totalPagar,
+            descuentos_detalle: descuentos,
+            // ✅ ENVIAMOS LA ALERTA
+            ultimo_pago: pagoPrevio ? pagoPrevio.fecha : null,
+            ya_pagado_mes_actual: !!pagoPrevio 
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error al calcular nómina' });
+    }
 };

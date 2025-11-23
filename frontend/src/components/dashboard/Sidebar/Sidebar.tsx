@@ -1,10 +1,10 @@
 // src/components/dashboard/Sidebar/Sidebar.tsx - VERSIÓN COMPLETA ACTUALIZADA
 
-import React from 'react';
-import { NavigationContent } from './NavigationContent';
-import { SidebarLink } from './SidebarLink';
-import * as Icons from './icons';
-import { type User } from '../../../context/AuthContext';
+import React from "react";
+import { NavigationContent } from "./NavigationContent";
+import { SidebarLink } from "./SidebarLink";
+import * as Icons from "./icons";
+import { type User } from "../../../context/AuthContext";
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -25,25 +25,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSidebarLeave,
   onFlyoutLeave,
   onLinkClick,
-  user
+  user,
 }) => {
   return (
-    <div 
+    <div
       className={`sidebar-container hidden md:flex flex-col bg-white border-r border-gray-200 shadow-xl transition-all duration-500 ease-in-out z-30 fixed inset-y-0 left-0 ${sidebarWidthClass}`}
       onMouseEnter={onSidebarEnter}
       onMouseLeave={onSidebarLeave}
     >
       <div className="flex flex-col grow pt-0 overflow-y-auto">
-        <NavigationContent isCollapsed={isCollapsed} onLinkClick={onLinkClick} />
+        <NavigationContent
+          isCollapsed={isCollapsed}
+          onLinkClick={onLinkClick}
+        />
       </div>
-      
+
       {/* Flyout */}
-      <div 
+      <div
         className={`flyout-container absolute top-0 left-0 w-80 h-full bg-white border-r border-gray-200 shadow-2xl transition-all duration-500 ease-in-out pointer-events-auto ${
-          showFlyout ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4 pointer-events-none'
+          showFlyout
+            ? "opacity-100 translate-x-0"
+            : "opacity-0 -translate-x-4 pointer-events-none"
         }`}
         style={{ zIndex: 40 }}
-        onMouseEnter={() => {/* mantener hover */}}
+        onMouseEnter={() => {
+          /* mantener hover */
+        }}
         onMouseLeave={onFlyoutLeave}
       >
         <div className="flex flex-col h-full overflow-hidden">
@@ -52,19 +59,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div className="flex items-center space-x-2">
                 <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg shadow-lg">
                   <span className="text-sm font-bold text-white">
-                    {user?.name?.charAt(0) || 'R'}
+                    {user?.name?.charAt(0) || "R"}
                   </span>
                 </div>
                 <div>
                   <h1 className="text-lg font-bold text-gray-900">
-                    {user?.tenantName || 'RestoBar'}
+                    {user?.tenantName || "RestoBar"}
                   </h1>
                   <p className="text-xs text-gray-500">Sistema</p>
                 </div>
               </div>
             </div>
           </div>
-          
+
           <div className="flex-1 overflow-y-auto">
             <FlyoutNavigationContent onLinkClick={onLinkClick} user={user} />
           </div>
@@ -75,7 +82,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
 };
 
 // Componente para el contenido del flyout
-const FlyoutNavigationContent: React.FC<{ onLinkClick?: () => void; user: User }> = ({ onLinkClick, user }) => {
+const FlyoutNavigationContent: React.FC<{
+  onLinkClick?: () => void;
+  user: User;
+}> = ({ onLinkClick, user }) => {
   return (
     <nav className="mt-2 flex-1 flex flex-col space-y-1 px-2 pb-4">
       {/* Grupo 1: Operaciones en Tiempo Real */}
@@ -84,32 +94,32 @@ const FlyoutNavigationContent: React.FC<{ onLinkClick?: () => void; user: User }
           Operaciones
         </h3>
         <div className="space-y-1">
-          <SidebarLink 
-            to="/dashboard" 
-            icon={<Icons.HomeIcon />} 
-            label="Panel Principal" 
-            isCollapsed={false} 
-            onClick={onLinkClick} 
-          />
-          <SidebarLink 
-            to="/dashboard/orders" 
-            icon={<Icons.ClipboardListIcon />} 
-            label="Pedidos" 
-            isCollapsed={false} 
+          <SidebarLink
+            to="/dashboard"
+            icon={<Icons.HomeIcon />}
+            label="Panel Principal"
+            isCollapsed={false}
             onClick={onLinkClick}
           />
-          <SidebarLink 
-            to="/dashboard/tables" 
-            icon={<Icons.TableIcon />} 
-            label="Mesas" 
-            isCollapsed={false} 
-            onClick={onLinkClick} 
+          <SidebarLink
+            to="/dashboard/orders"
+            icon={<Icons.ClipboardListIcon />}
+            label="Pedidos"
+            isCollapsed={false}
+            onClick={onLinkClick}
           />
-          <SidebarLink 
-            to="/dashboard/reservas" 
-            icon={<Icons.CalendarIcon />} 
-            label="Reservas" 
-            isCollapsed={false} 
+          <SidebarLink
+            to="/dashboard/tables"
+            icon={<Icons.TableIcon />}
+            label="Mesas"
+            isCollapsed={false}
+            onClick={onLinkClick}
+          />
+          <SidebarLink
+            to="/dashboard/reservas"
+            icon={<Icons.CalendarIcon />}
+            label="Reservas"
+            isCollapsed={false}
             onClick={onLinkClick}
           />
         </div>
@@ -121,26 +131,26 @@ const FlyoutNavigationContent: React.FC<{ onLinkClick?: () => void; user: User }
           Menú & Cocina
         </h3>
         <div className="space-y-1">
-          <SidebarLink 
-            to="/dashboard/menu" 
-            icon={<Icons.UtensilsIcon />} 
-            label="Menú Principal" 
-            isCollapsed={false} 
-            onClick={onLinkClick} 
+          <SidebarLink
+            to="/dashboard/menu"
+            icon={<Icons.UtensilsIcon />}
+            label="Menú Principal"
+            isCollapsed={false}
+            onClick={onLinkClick}
           />
-          <SidebarLink 
-            to="/dashboard/bebidas" 
-            icon={<Icons.WineIcon />} 
-            label="Bebidas & Bar" 
-            isCollapsed={false} 
-            onClick={onLinkClick} 
+          <SidebarLink
+            to="/dashboard/bebidas"
+            icon={<Icons.WineIcon />}
+            label="Bebidas & Bar"
+            isCollapsed={false}
+            onClick={onLinkClick}
           />
-          <SidebarLink 
-            to="/dashboard/kitchen" 
-            icon={<Icons.ChefHatIcon />} 
-            label="Cocina" 
-            isCollapsed={false} 
-            onClick={onLinkClick} 
+          <SidebarLink
+            to="/dashboard/kitchen"
+            icon={<Icons.ChefHatIcon />}
+            label="Cocina"
+            isCollapsed={false}
+            onClick={onLinkClick}
           />
         </div>
       </div>
@@ -151,51 +161,58 @@ const FlyoutNavigationContent: React.FC<{ onLinkClick?: () => void; user: User }
           Inventario
         </h3>
         <div className="space-y-1">
+          <SidebarLink
+            to="/dashboard/productos-inventario"
+            icon={<Icons.PackageIcon />}
+            label="Productos"
+            isCollapsed={false}
+            onClick={onLinkClick}
+          />
           <SidebarLink 
-            to="/dashboard/productos-inventario" 
-            icon={<Icons.PackageIcon />} 
-            label="Productos" 
+            to="/dashboard/kardex" 
+            icon={<Icons.ClipboardListIcon />} 
+            label="Kardex Valorizado" 
             isCollapsed={false} 
             onClick={onLinkClick}
           />
           {/* ✨ NUEVO: Compras (Solo Inventario) */}
-          <SidebarLink 
-            to="/dashboard/compras" 
-            icon={<Icons.ShoppingCartIcon />} 
-            label="Compras" 
-            isCollapsed={false} 
+          <SidebarLink
+            to="/dashboard/compras"
+            icon={<Icons.ShoppingCartIcon />}
+            label="Compras"
+            isCollapsed={false}
             onClick={onLinkClick}
           />
           {/* ✨ NUEVO: Cierre de Inventario */}
-          <SidebarLink 
-            to="/dashboard/cierre-inventario" 
-            icon={<Icons.ClipboardCheckIcon />} 
-            label="Cierre Inventario" 
-            isCollapsed={false} 
+          <SidebarLink
+            to="/dashboard/cierre-inventario"
+            icon={<Icons.ClipboardCheckIcon />}
+            label="Cierre Inventario"
+            isCollapsed={false}
             onClick={onLinkClick}
           />
-          
+
           {/* Configuración de Inventario (submenu) */}
           <div className="ml-2 mt-2 pt-2 border-t border-gray-100">
-            <SidebarLink 
-              to="/dashboard/categorias-inventario" 
-              icon={<Icons.TagIcon />} 
-              label="Categorías" 
-              isCollapsed={false} 
+            <SidebarLink
+              to="/dashboard/categorias-inventario"
+              icon={<Icons.TagIcon />}
+              label="Categorías"
+              isCollapsed={false}
               onClick={onLinkClick}
             />
-            <SidebarLink 
-              to="/dashboard/tipos-gasto" 
-              icon={<Icons.ListIcon />} 
-              label="Tipos de Gasto" 
-              isCollapsed={false} 
+            <SidebarLink
+              to="/dashboard/tipos-gasto"
+              icon={<Icons.ListIcon />}
+              label="Tipos de Gasto"
+              isCollapsed={false}
               onClick={onLinkClick}
             />
-            <SidebarLink 
-              to="/dashboard/unidades-medida" 
-              icon={<Icons.RulerIcon />} 
-              label="Unidades" 
-              isCollapsed={false} 
+            <SidebarLink
+              to="/dashboard/unidades-medida"
+              icon={<Icons.RulerIcon />}
+              label="Unidades"
+              isCollapsed={false}
               onClick={onLinkClick}
             />
           </div>
@@ -208,27 +225,40 @@ const FlyoutNavigationContent: React.FC<{ onLinkClick?: () => void; user: User }
           Finanzas
         </h3>
         <div className="space-y-1">
-          {/* ✨ NUEVO: Gastos Operativos */}
-          <SidebarLink 
-            to="/dashboard/gastos" 
-            icon={<Icons.TrendingDownIcon />} 
-            label="Gastos Operativos" 
-            isCollapsed={false} 
+          <SidebarLink
+            to="/dashboard/caja"
+            icon={<Icons.CurrencyDollarIcon />}
+            label="Caja y Turnos"
+            isCollapsed={false}
             onClick={onLinkClick}
           />
           <SidebarLink 
-            to="/dashboard/finances" 
-            icon={<Icons.DollarSignIcon />} 
-            label="Resumen Financiero" 
+            to="/dashboard/nomina" 
+            icon={<Icons.UsersIcon />} 
+            label="Pago de Nómina" 
             isCollapsed={false} 
             onClick={onLinkClick} 
           />
-          <SidebarLink 
-            to="/dashboard/reports" 
-            icon={<Icons.ChartBarIcon />} 
-            label="Reportes" 
-            isCollapsed={false} 
-            onClick={onLinkClick} 
+          <SidebarLink
+            to="/dashboard/gastos"
+            icon={<Icons.TrendingDownIcon />}
+            label="Gastos Operativos"
+            isCollapsed={false}
+            onClick={onLinkClick}
+          />
+          <SidebarLink
+            to="/dashboard/finances"
+            icon={<Icons.DollarSignIcon />}
+            label="Resumen Financiero"
+            isCollapsed={false}
+            onClick={onLinkClick}
+          />
+          <SidebarLink
+            to="/dashboard/reports"
+            icon={<Icons.ChartBarIcon />}
+            label="Reportes"
+            isCollapsed={false}
+            onClick={onLinkClick}
           />
         </div>
       </div>
@@ -239,19 +269,19 @@ const FlyoutNavigationContent: React.FC<{ onLinkClick?: () => void; user: User }
           Gestión
         </h3>
         <div className="space-y-1">
-          <SidebarLink 
-            to="/dashboard/team" 
-            icon={<Icons.UsersIcon />} 
-            label="Equipo" 
-            isCollapsed={false} 
-            onClick={onLinkClick} 
+          <SidebarLink
+            to="/dashboard/team"
+            icon={<Icons.UsersIcon />}
+            label="Equipo"
+            isCollapsed={false}
+            onClick={onLinkClick}
           />
-          <SidebarLink 
-            to="/dashboard/settings" 
-            icon={<Icons.SettingsIcon />} 
-            label="Configuración" 
-            isCollapsed={false} 
-            onClick={onLinkClick} 
+          <SidebarLink
+            to="/dashboard/settings"
+            icon={<Icons.SettingsIcon />}
+            label="Configuración"
+            isCollapsed={false}
+            onClick={onLinkClick}
           />
         </div>
       </div>
@@ -262,7 +292,7 @@ const FlyoutNavigationContent: React.FC<{ onLinkClick?: () => void; user: User }
           <div className="text-center">
             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center mx-auto mb-1 shadow-lg">
               <span className="text-white font-bold text-xs">
-                {user.name?.charAt(0) || 'U'}
+                {user.name?.charAt(0) || "U"}
               </span>
             </div>
             <h4 className="font-semibold text-gray-900 text-xs">{user.name}</h4>

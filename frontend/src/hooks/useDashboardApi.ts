@@ -34,6 +34,12 @@ import {
   type GastoOperativo,
   type CreateGastoOperativoData,
   type GetGastosFilters,
+
+  type Caja,
+  type AbrirCajaData,
+  type EstadoCajaResponse,
+  type RegistrarMovimientoData,
+  type CerrarCajaData,
 } from "../types";
 
 const API_BASE = "/api/dashboard";
@@ -747,6 +753,56 @@ export const useDashboardApi = () => {
     [makeRequest]
   );
 
+  // ========== 💰 MÓDULO DE CAJA (NUEVO) ==========
+
+  const abrirCaja = useCallback(
+    (data: AbrirCajaData): Promise<Caja> => {
+      return makeRequest<Caja>("/caja/abrir", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+    },
+    [makeRequest]
+  );
+
+  const getEstadoCaja = useCallback((): Promise<EstadoCajaResponse> => {
+    return makeRequest<EstadoCajaResponse>("/caja/estado");
+  }, [makeRequest]);
+
+  const registrarMovimientoCaja = useCallback(
+    (data: RegistrarMovimientoData): Promise<{ message: string }> => {
+      return makeRequest<{ message: string }>("/caja/movimiento", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+    },
+    [makeRequest]
+  );
+
+  const cerrarCaja = useCallback(
+    (data: CerrarCajaData): Promise<Caja> => {
+      return makeRequest<Caja>("/caja/cerrar", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+    },
+    [makeRequest]
+  );
+
+  const getResumenFinanciero = useCallback(async (fechaInicio?: string, fechaFin?: string) => {
+    const params = new URLSearchParams();
+    if (fechaInicio) params.append('fechaInicio', fechaInicio);
+    if (fechaFin) params.append('fechaFin', fechaFin);
+    
+    // Retorna cualquier tipo (any) por ahora para facilitar
+    return makeRequest<any>(`/finanzas/resumen?${params.toString()}`);
+  }, [makeRequest]);
+
+  const calcularPagoNomina = useCallback(async (empleadoId: number) => {
+      // Retorna el desglose: sueldo base, descuentos, total a pagar
+      return makeRequest<any>(`/nomina/calcular/${empleadoId}`);
+  }, [makeRequest]);
+
   return {
     isLoading,
     error,
@@ -806,6 +862,16 @@ export const useDashboardApi = () => {
     updateGastoOperativo,
     deleteGastoOperativo,
     getGastosEstadisticas,
+
+    // Funciones de Caja
+    abrirCaja,
+    getEstadoCaja,
+    registrarMovimientoCaja,
+    cerrarCaja,
+    getResumenFinanciero,
+
+    //Nomina
+    calcularPagoNomina,
 
     // Utilidad
     makeRequest,

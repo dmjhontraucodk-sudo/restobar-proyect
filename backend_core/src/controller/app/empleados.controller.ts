@@ -2,6 +2,7 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { empleadosService } from '../../services/empleados.service';
+import { prisma } from '../../lib/prisma'; // ✅ Importar prisma
 
 // --- Interfaz de Autenticación (Dashboard) ---
 interface AuthRequest extends Request {
@@ -26,7 +27,9 @@ const createEmpleadoSchema = z.object({
     documento_identidad: z.string().optional(),
     telefono: z.string().optional(),
     requiere_login: z.boolean(),
-    password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres').optional()
+    password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres').optional(),
+    salario: z.union([z.number(), z.string()]).optional(), 
+    fecha_ingreso: z.string().optional()
 });
 
 const updateEmpleadoSchema = z.object({
@@ -36,12 +39,20 @@ const updateEmpleadoSchema = z.object({
     documento_identidad: z.string().optional(),
     telefono: z.string().optional(),
     is_active: z.boolean().optional(),
-    salario: z.union([z.number(), z.string()]).optional(), // ✅ NUEVO
-    fecha_ingreso: z.string().optional() // ✅ NUEVO
+    salario: z.union([z.number(), z.string()]).optional(),
+    fecha_ingreso: z.string().optional()
 });
 
 const cambiarPasswordSchema = z.object({
     nueva_password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres')
+});
+
+// ✅ SCHEMA PARA INCIDENCIAS (Agregar esto)
+const incidenciaSchema = z.object({
+    empleado_id: z.number().int().positive('ID de empleado inválido'),
+    monto: z.number().positive('El monto debe ser positivo'),
+    motivo: z.string().min(1, 'El motivo es requerido'),
+    es_adelanto: z.boolean().default(false)
 });
 
 // ==================== CONTROLLER ====================
@@ -436,6 +447,94 @@ export const empleadosController = {
             return res.status(500).json({ 
                 success: false,
                 error: 'Error interno del servidor.' 
+            });
+        }
+    },
+
+    /**
+     * POST /api/dashboard/empleados/incidencias - Registra incidencias o adelantos
+     */
+    async registrarIncidencia(req: AuthRequest, res: Response) {
+        try {
+            const tenantId = req.user?.tenant_id;
+            const usuarioActualId = req.user?.id; // ✅ Corregido: usar usuarioActualId
+
+            if (!tenantId || !usuarioActualId) {
+                return res.status(403).json({ error: 'Acceso prohibido.' });
+            }
+
+            const validation = incidenciaSchema.safeParse(req.body); // ✅ Ahora existe
+            if (!validation.success) {
+                return res.status(400).json({ 
+                    error: 'Datos inválidos', 
+                    details: validation.error.issues 
+                });
+            }
+
+            const { empleado_id, monto, motivo, es_adelanto } = validation.data;
+
+            // 🔥 TRANSACCIÓN ATÓMICA
+            const result = await prisma.$transaction(async (tx) => { // ✅ prisma importado
+                
+                // 1. Registrar la deuda en el historial del empleado
+                const incidencia = await tx.descuentos_empleados.create({
+                    data: {
+                        tenant_id: tenantId,
+                        empleado_id: empleado_id,
+                        monto: monto,
+                        motivo: es_adelanto ? `Adelanto: ${motivo}` : motivo,
+                        estado: 'Pendiente' // Se descontará en la próxima nómina
+                    }
+                });
+
+                // 2. SI ES ADELANTO: Sacar dinero de la Caja
+                if (es_adelanto) {
+                    // Buscar caja abierta del usuario que hace la operación (o una general)
+                    const cajaAbierta = await tx.cajas.findFirst({
+                        where: {
+                            tenant_id: tenantId,
+                            usuario_responsable_id: usuarioActualId,
+                            estado: 'Abierta'
+                        }
+                    });
+
+                    if (!cajaAbierta) {
+                        throw new Error('No tienes una caja abierta para entregar el dinero del adelanto.');
+                    }
+
+                    // Registrar Egreso en Caja
+                    await tx.cajas_movimientos.create({
+                        data: {
+                            tenant_id: tenantId,
+                            caja_id: cajaAbierta.id,
+                            usuario_id: usuarioActualId,
+                            tipo: 'EGRESO',
+                            concepto: `Adelanto a Empleado #${empleado_id}`,
+                            monto: monto,
+                            metodo_pago: 'Efectivo', // Asumimos efectivo por defecto para caja chica
+                            documento_tipo: 'Adelanto',
+                            documento_id: incidencia.id,
+                            notas: motivo
+                        }
+                    });
+                }
+
+                return incidencia;
+            });
+
+            return res.status(201).json({
+                success: true,
+                message: es_adelanto ? 
+                    'Adelanto registrado y dinero descontado de caja.' : 
+                    'Incidencia registrada correctamente.',
+                data: result
+            });
+
+        } catch (error: any) {
+            console.error('Error en registrarIncidencia:', error);
+            return res.status(500).json({ 
+                success: false,
+                error: error.message || 'Error interno del servidor.' 
             });
         }
     }

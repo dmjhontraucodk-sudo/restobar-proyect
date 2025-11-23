@@ -139,6 +139,13 @@ export const NavigationContent: React.FC<NavigationContentProps> = ({
               isCollapsed={isCollapsed}
               onClick={onLinkClick}
             />
+            <SidebarLink
+              to="/dashboard/kardex"
+              icon={<Icons.ClipboardListIcon />} 
+              label="Kardex Valorizado"
+              isCollapsed={isCollapsed}
+              onClick={onLinkClick}
+            />
             {/* ✨ NUEVO: Compras (Solo Inventario) */}
             <SidebarLink
               to="/dashboard/compras"
@@ -155,7 +162,7 @@ export const NavigationContent: React.FC<NavigationContentProps> = ({
               isCollapsed={isCollapsed}
               onClick={onLinkClick}
             />
-            
+
             {/* Configuración de Inventario (solo cuando no está colapsado) */}
             {!isCollapsed && (
               <div className="ml-2 mt-2 pt-2 border-t border-gray-100">
@@ -193,7 +200,20 @@ export const NavigationContent: React.FC<NavigationContentProps> = ({
             </h3>
           )}
           <div className="space-y-1">
-            {/* ✨ NUEVO: Gastos Operativos */}
+            <SidebarLink
+              to="/dashboard/caja"
+              icon={<Icons.CurrencyDollarIcon />}
+              label="Caja y Turnos"
+              isCollapsed={false}
+              onClick={onLinkClick}
+            />
+            <SidebarLink
+              to="/dashboard/nomina"
+              icon={<Icons.UsersIcon />}
+              label="Pago de Nómina"
+              isCollapsed={isCollapsed}
+              onClick={onLinkClick}
+            />
             <SidebarLink
               to="/dashboard/gastos"
               icon={<Icons.TrendingDownIcon />}

@@ -1,4 +1,4 @@
-// src/App.tsx - VERSIÓN COMPLETA ACTUALIZADA
+// src/App.tsx - VERSIÓN FINAL ORDENADA
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
@@ -23,34 +23,33 @@ import CategoriasInventario from "./pages/dashboard/inventario/CategoriasInventa
 import TiposGasto from "./pages/dashboard/inventario/TiposGasto";
 import UnidadesMedida from "./pages/dashboard/inventario/UnidadesMedida";
 import ProductosInventario from "./pages/dashboard/inventario/ProductosInventario";
-
-// ✨ COMPRAS Y GASTOS (SEPARADOS)
+import KardexPage from "./pages/dashboard/inventario/KardexPage";
 import Compras from "./pages/dashboard/inventario/Compras";
-import Gastos from "./pages/dashboard/Finanzas/Gastos"; // ← NUEVA PÁGINA
 
 // ✨ CIERRE DE INVENTARIO
 import CierreInventario from "./pages/dashboard/inventario/CierreInventario";
 import NuevoCierreInventario from "./pages/dashboard/inventario/NuevoCierreInventario";
 import DetalleCierreInventario from "./pages/dashboard/inventario/DetalleCierreInventario";
 
+// ✨ PÁGINAS DE FINANZAS
+import Gastos from "./pages/dashboard/Finanzas/Gastos";
+import CajaPage from "./pages/dashboard/Finanzas/CajaPage";
+import HistorialCajasPage from "./pages/dashboard/Finanzas/HistorialCajasPage";
+import FinancialPage from "./pages/dashboard/Finanzas/FinancialPage";
+import NominaPage from "./pages/dashboard/Finanzas/NominaPage"; // ✅ AQUÍ ESTÁ LA NUEVA PÁGINA
+
 // --- Páginas Públicas del Tenant (Restobar) ---
 import RestobarLanding from "./pages/public/RestobarLanding";
 import ProductCatalog from "./pages/public/ProductCatalog";
 import Cart from "./pages/public/Cart";
 import Checkout from "./pages/public/Checkout";
+import ReservationForm from "./pages/public/ReservationForm";
 
-// --- Componentes ---
+// --- Componentes y Gestión ---
 import ProtectedRoute from "./components/ProtectedRoute";
 import TenantGuard from "./components/TenantGuard";
-
-// --- Reservas ---
-import ReservationForm from "./pages/public/ReservationForm";
 import ReservationsManagementPage from "./pages/ReservationsManagement";
-
-// --- Mesas ---
 import TablesManagementPage from "./pages/TablesManagement";
-
-// --- Equipo ---
 import TeamManagement from './pages/dashboard/TeamManagement';
 
 // --- Lógica de Subdominio ---
@@ -101,28 +100,27 @@ const TenantPrivateRoutes = () => (
     <Route element={<ProtectedRoute />}>
       <Route element={<TenantGuard />}>
         <Route path="/dashboard" element={<DashboardLayout />}>
-          {/* Dashboard Principal */}
+          
+          {/* 📊 DASHBOARD PRINCIPAL */}
           <Route index element={<OverviewPage />} />
 
-          {/* ========== MENÚ & COCINA ========== */}
+          {/* 🍔 MENÚ & COCINA */}
           <Route path="menu" element={<MenuManagementPage tipo="COMIDA" />} />
           <Route path="bebidas" element={<MenuManagementPage tipo="BEBIDA" />} />
           <Route path="kitchen" element={<KitchenManagementPage />} />
 
-          {/* ========== OPERACIONES ========== */}
+          {/* ⚡ OPERACIONES */}
           <Route path="orders" element={<OrdersManagementPage />} />
           <Route path="tables" element={<TablesManagementPage />} />
           <Route path="reservas" element={<ReservationsManagementPage />} />
           <Route path="/dashboard/team" element={<TeamManagement />} />
 
-          {/* ========== INVENTARIO ========== */}
-          {/* Gestión de Productos */}
+          {/* 📦 INVENTARIO */}
           <Route path="productos-inventario" element={<ProductosInventario />} />
-          
-          {/* ✨ COMPRAS (Solo las que afectan inventario) */}
+          <Route path="kardex" element={<KardexPage />} />
           <Route path="compras" element={<Compras />} />
           
-          {/* ✨ CIERRE DE INVENTARIO */}
+          {/* Cierre de Inventario */}
           <Route path="cierre-inventario" element={<CierreInventario />} />
           <Route path="cierre-inventario/nuevo" element={<NuevoCierreInventario />} />
           <Route path="cierre-inventario/:id" element={<DetalleCierreInventario />} />
@@ -132,11 +130,14 @@ const TenantPrivateRoutes = () => (
           <Route path="tipos-gasto" element={<TiposGasto />} />
           <Route path="unidades-medida" element={<UnidadesMedida />} />
 
-          {/* ========== FINANZAS ========== */}
-          {/* ✨ GASTOS OPERATIVOS (Los que NO afectan inventario) */}
+          {/* 💰 FINANZAS */}
+          <Route path="caja" element={<CajaPage />} />
+          <Route path="caja/historial" element={<HistorialCajasPage />} />
           <Route path="gastos" element={<Gastos />} />
+          <Route path="finances" element={<FinancialPage />} />
+          <Route path="nomina" element={<NominaPage />} /> {/* ✅ RUTA AGREGADA CORRECTAMENTE */}
 
-          {/* Ruta legacy de inventario (por si acaso) */}
+          {/* Ruta legacy (por compatibilidad) */}
           <Route path="inventory" element={<InventoryManagementPage />} />
         </Route>
       </Route>
@@ -153,21 +154,12 @@ export default function App() {
   const tenantId = getTenantId();
 
   const getRoutesToRender = () => {
-    if (!tenantId) {
-      return <GlobalRoutes />;
-    }
-
+    if (!tenantId) return <GlobalRoutes />;
+    
     const currentPath = window.location.pathname;
-
-    // Rutas de administración
-    if (
-      currentPath.startsWith("/dashboard") ||
-      currentPath.startsWith("/login")
-    ) {
+    if (currentPath.startsWith("/dashboard") || currentPath.startsWith("/login")) {
       return <TenantPrivateRoutes />;
     }
-
-    // Cualquier otra ruta = Landing REAL del restobar + catálogo
     return <TenantPublicRoutes />;
   };
 
@@ -200,7 +192,6 @@ export default function App() {
           },
         }}
       />
-
       <BrowserRouter>{getRoutesToRender()}</BrowserRouter>
     </AuthProvider>
   );

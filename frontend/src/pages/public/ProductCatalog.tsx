@@ -1,5 +1,5 @@
 // src/pages/public/ProductCatalog.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Filter, Leaf, Flame, Award, Sparkles } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useWebApi } from '../../hooks/useWebApi';
@@ -34,7 +34,7 @@ export default function ProductCatalog() {
     } finally {
       setLoading(false);
     }
-  }, [getCategories]);
+  }, [getCatalog]);
 
   useEffect(() => {
     loadCatalog();

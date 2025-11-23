@@ -2,7 +2,6 @@
 import { useCart } from '../context/CartContext';
 import { Hero } from './public/components/Hero';
 import { Features } from './public/components/Features';
-import { DemoMenuCatalog } from './public/components/DemoMenuCatalog';
 import Header from './public/components/Header';
 import Footer from './public/components/Footer';
 import type { Producto } from '../types';
@@ -35,7 +34,6 @@ export const Landing = () => {
       <div className="min-h-screen">
         <Hero onScrollToMenu={scrollToMenu} />
         <Features />
-        <DemoMenuCatalog onAddToCart={handleAddToCart} />
       </div>
 
       <Footer tenantName="RestoBar Demo" isDemo={true} />

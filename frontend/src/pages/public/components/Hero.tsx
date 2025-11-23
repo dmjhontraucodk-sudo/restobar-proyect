@@ -1,5 +1,5 @@
 // src/pages/public/components/Hero.tsx
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Star, Clock, MapPin, ArrowRight } from "lucide-react";
 
 interface HeroProps {
   onScrollToMenu: () => void;
@@ -7,66 +7,111 @@ interface HeroProps {
 
 export function Hero({ onScrollToMenu }: HeroProps) {
   return (
-    <div className="relative h-screen flex items-center justify-center overflow-hidden">
-      <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{
-          backgroundImage: 'url(https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=1920)',
-        }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-b from-white/80 via-white/60 to-white/40"></div>
-      </div>
+    <div className="relative min-h-screen w-full flex flex-col md:flex-row bg-white overflow-hidden">
+      {/* --- COLUMNA IZQUIERDA: CONTENIDO PROFESIONAL --- */}
+      <div className="w-full md:w-1/2 flex flex-col justify-center px-8 sm:px-16 lg:px-24 py-16 z-10 bg-white">
+        {/* Encabezado minimalista */}
+        <div className="mb-12">
+          <h1 className="text-4xl lg:text-5xl xl:text-6xl font-bold text-slate-900 leading-tight mb-6">
+            Perú en cada
+            <span className="text-blue-600 block">bocado</span>
+          </h1>
+          <p className="text-lg text-slate-600 leading-relaxed max-w-md">
+            Sabores que narran nuestra historia, ingredientes que honran nuestra
+            tierra. La esencia del Perú servida en cada creación culinaria.
+          </p>
+        </div>
 
-      <div className="relative z-10 text-center px-4 max-w-5xl mx-auto">
-        <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6 tracking-tight">
-          Sabores que Inspiran,
-          <br />
-          <span className="text-blue-600">Momentos que Perduran</span>
-        </h1>
-
-        <p className="text-xl md:text-2xl text-gray-700 mb-12 font-light">
-          Experiencia gastronómica premium con delivery y take away
-        </p>
-
-        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
+        {/* Botones compactos */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-16">
           <button
             onClick={onScrollToMenu}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-10 py-4 rounded-full text-lg transition-all transform hover:scale-105 shadow-2xl shadow-blue-500/30"
+            className="flex items-center justify-center gap-3 bg-blue-600 text-white font-semibold px-8 py-4 rounded-lg hover:bg-blue-700 transition-colors duration-300 shadow-md hover:shadow-lg"
           >
-            Ver Menú Completo
+            <span>Ver Menú Completo</span>
+            <ArrowRight size={18} />
           </button>
+
           <button
             onClick={onScrollToMenu}
-            className="bg-white/90 hover:bg-white text-gray-900 font-semibold px-10 py-4 rounded-full text-lg transition-all backdrop-blur-md border border-gray-300 shadow-lg"
+            className="flex items-center justify-center border border-slate-300 text-slate-700 font-semibold px-8 py-4 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all duration-300"
           >
-            Pedir Delivery
+            Reservar Mesa
           </button>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-6 text-gray-700">
-          <div className="flex items-center gap-2">
-            <span className="text-blue-600 text-2xl">★</span>
-            <span className="font-medium">4.8/5 · 250+ reseñas</span>
+        {/* Stats profesionales */}
+        <div className="grid grid-cols-3 gap-8 border-t border-slate-100 pt-8">
+          <div className="flex items-center gap-4">
+            <div className="p-2 bg-blue-50 rounded-lg">
+              <Star size={18} className="text-blue-600" fill="currentColor" />
+            </div>
+            <div>
+              <div className="font-bold text-xl text-slate-900">4.9</div>
+              <div className="text-xs text-slate-500 uppercase tracking-wide">
+                Rating
+              </div>
+            </div>
           </div>
-          <div className="hidden sm:block w-px h-6 bg-gray-300"></div>
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🚚</span>
-            <span className="font-medium">Delivery en 35 min</span>
+
+          <div className="flex items-center gap-4 border-l border-slate-100 pl-8">
+            <div className="p-2 bg-green-50 rounded-lg">
+              <Clock size={18} className="text-green-600" />
+            </div>
+            <div>
+              <div className="font-bold text-xl text-slate-900">20'</div>
+              <div className="text-xs text-slate-500 uppercase tracking-wide">
+                Entrega
+              </div>
+            </div>
           </div>
-          <div className="hidden sm:block w-px h-6 bg-gray-300"></div>
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">📍</span>
-            <span className="font-medium">Av. Principal 123, Lima</span>
+
+          <div className="flex items-center gap-4 border-l border-slate-100 pl-8">
+            <div className="p-2 bg-purple-50 rounded-lg">
+              <MapPin size={18} className="text-purple-600" />
+            </div>
+            <div>
+              <div className="font-bold text-xl text-slate-900">Centro</div>
+              <div className="text-xs text-slate-500 uppercase tracking-wide">
+                Ubicación
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <button
-        onClick={onScrollToMenu}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 text-gray-600 hover:text-blue-600 transition-colors animate-bounce"
-      >
-        <ChevronDown size={40} />
-      </button>
+      {/* --- COLUMNA DERECHA: IMAGEN CON DESVANECIMIENTO EN IZQUIERDA E INFERIOR --- */}
+      <div className="w-full md:w-1/2 h-[50vh] md:h-auto relative bg-slate-100">
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage:
+              "url(https://images.pexels.com/photos/1267320/pexels-photo-1267320.jpeg?auto=compress&cs=tinysrgb&w=1920)",
+          }}
+        />
+
+        {/* Overlay con desvanecimiento en izquierda e inferior */}
+        <div
+          className="absolute inset-0 bg-gradient-to-r from-white via-white/50 to-transparent 
+                      md:bg-gradient-to-r md:from-white md:via-white/80 md:via-40% md:to-transparent"
+        ></div>
+
+        {/* Desvanecimiento adicional en la parte inferior */}
+        <div
+          className="absolute inset-0 bg-gradient-to-t from-white/40 via-transparent to-transparent 
+                      md:bg-gradient-to-t md:from-white/30 md:via-transparent md:to-transparent"
+        ></div>
+
+        {/* Botón scroll down */}
+        <div className="absolute bottom-6 right-6">
+          <button
+            onClick={onScrollToMenu}
+            className="bg-white text-slate-700 p-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+          >
+            <ChevronDown size={20} />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

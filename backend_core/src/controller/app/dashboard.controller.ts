@@ -3,7 +3,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../../lib/prisma';
 import { z } from 'zod';
 import { cloudinary } from '../../config/cloudinary.config';
-import { TipoCategoria, ordenes_estado } from '@prisma/client';
+import { TipoCategoria, ordenes_estado, pagos_metodo_pago } from '@prisma/client';
 
 // --- Interfaz de Autenticación ---
 interface AuthRequest extends Request {
@@ -629,58 +629,122 @@ export const createOrden = async (req: AuthRequest, res: Response) => {
 
 const updateEstadoSchema = z.object({
   estado: z.nativeEnum(ordenes_estado),
+  metodo_pago: z.nativeEnum(pagos_metodo_pago).optional(),
 });
 
 export const updateOrdenEstado = async (req: AuthRequest, res: Response) => {
   try {
     const tenantId = req.user?.tenant_id;
-    if (!tenantId || tenantId !== req.tenant?.id) {
+    const usuarioId = req.user?.id;
+    
+    if (!tenantId || !usuarioId || tenantId !== req.tenant?.id) {
       return res.status(403).json({ error: 'Acceso prohibido.' });
     }
 
     const ordenId = parseInt(req.params.id);
-    if (isNaN(ordenId)) {
-      return res.status(400).json({ error: 'ID de orden inválido.' });
-    }
+    if (isNaN(ordenId)) return res.status(400).json({ error: 'ID inválido.' });
 
     const validation = updateEstadoSchema.safeParse(req.body);
     if (!validation.success) {
       return res.status(400).json({ error: 'Datos inválidos', details: validation.error.issues });
     }
 
-    const { estado } = validation.data;
+    const { estado, metodo_pago } = validation.data;
 
-    const ordenActualizada = await prisma.ordenes.updateMany({
-      where: {
-        id: ordenId,
-        tenant_id: tenantId,
-      },
-      data: {
-        estado: estado,
-        ...( (estado === 'Pagada' || estado === 'Cancelada') && {
-          closed_at: new Date() 
-        })
-      }
+    // Buscar la orden actual
+    const ordenActual = await prisma.ordenes.findUnique({
+        where: { id: ordenId },
+        include: { ordendetalles: true } // Por si necesitamos info extra
     });
 
-    if (ordenActualizada.count === 0) {
-      return res.status(404).json({ error: 'Orden no encontrada.' });
-    }
-    
-    if (estado === 'Pagada' || estado === 'Cancelada') {
-      const orden = await prisma.ordenes.findFirst({ where: { id: ordenId } });
-      if (orden) {
-        await prisma.mesas.updateMany({
-          where: { id: orden.mesa_id, tenant_id: tenantId },
-          data: { estado: 'Libre' }
-        });
-      }
+    if (!ordenActual || ordenActual.tenant_id !== tenantId) {
+        return res.status(404).json({ error: 'Orden no encontrada.' });
     }
 
-    res.status(200).json({ message: 'Estado de la orden actualizado.' });
+    // 🔥 TRANSACCIÓN DE COBRO
+    await prisma.$transaction(async (tx) => {
+        
+        // 1. Si se está PAGANDO, mover dinero a CAJA
+        if (estado === 'Pagada' && ordenActual.estado !== 'Pagada') {
+            
+            // Validar que se envió método de pago (por defecto Efectivo si no envían)
+            const metodo = metodo_pago || 'Efectivo'; 
+            const montoCobrar = Number(ordenActual.total);
+
+            // A. Buscar Caja Abierta
+            const cajaAbierta = await tx.cajas.findFirst({
+                where: { 
+                    tenant_id: tenantId, 
+                    usuario_responsable_id: usuarioId, // La caja del cajero actual
+                    estado: 'Abierta' 
+                }
+            });
+
+            if (!cajaAbierta) {
+                throw new Error('No tienes una caja abierta para cobrar esta orden.');
+            }
+
+            // B. Registrar Movimiento en Caja (INGRESO)
+            await tx.cajas_movimientos.create({
+                data: {
+                    tenant_id: tenantId,
+                    caja_id: cajaAbierta.id,
+                    usuario_id: usuarioId,
+                    tipo: 'INGRESO',
+                    concepto: `Cobro Orden #${ordenId}`,
+                    monto: montoCobrar,
+                    metodo_pago: metodo,
+                    documento_tipo: 'Orden',
+                    documento_id: ordenId
+                }
+            });
+
+            // C. Actualizar saldo esperado en Caja
+            await tx.cajas.update({
+                where: { id: cajaAbierta.id },
+                data: {
+                    monto_esperado: { increment: montoCobrar }
+                }
+            });
+
+            // D. Registrar en historial de Pagos
+            await tx.pagos.create({
+                data: {
+                    tenant_id: tenantId,
+                    orden_id: ordenId,
+                    empleado_id: usuarioId,
+                    metodo_pago: metodo,
+                    monto: montoCobrar
+                }
+            });
+        }
+
+        // 2. Actualizar estado de la Orden
+        await tx.ordenes.update({
+            where: { id: ordenId },
+            data: {
+                estado: estado,
+                closed_at: (estado === 'Pagada' || estado === 'Cancelada') ? new Date() : null
+            }
+        });
+
+        // 3. Liberar Mesa (Si se paga o cancela)
+        if (estado === 'Pagada' || estado === 'Cancelada') {
+            await tx.mesas.update({
+                where: { id: ordenActual.mesa_id },
+                data: { estado: 'Libre' }
+            });
+        }
+    });
+
+    res.status(200).json({ message: `Orden actualizada a ${estado}` });
 
   } catch (error: any) {
     console.error('Error en updateOrdenEstado:', error);
+    // Manejo de error específico si no hay caja
+    if (error.message.includes('No tienes una caja abierta')) {
+        return res.status(400).json({ error: error.message });
+    }
     res.status(500).json({ error: 'Error interno del servidor.' });
   }
 };
@@ -1286,77 +1350,103 @@ export const createGasto = async (req: AuthRequest, res: Response) => {
   }
 };
 
+// Actualiza tu función receiveCompra con esta lógica financiera
 export const receiveCompra = async (req: AuthRequest, res: Response) => {
   try {
     const tenantId = req.user?.tenant_id;
+    const usuarioId = req.user?.id; // Necesitamos saber quién recibe
     if (!tenantId || tenantId !== req.tenant?.id) {
       return res.status(403).json({ error: 'Acceso prohibido.' });
     }
 
     const compraId = parseInt(req.params.id);
-    if (isNaN(compraId)) {
-      return res.status(400).json({ error: 'ID de compra inválido.' });
-    }
+    if (isNaN(compraId)) return res.status(400).json({ error: 'ID inválido.' });
 
+    // 1. Buscar la compra y sus detalles
     const compra = await prisma.compras.findFirst({
-      where: {
-        id: compraId,
-        tenant_id: tenantId,
-      },
-      include: {
-        tipos_gasto: true
+      where: { id: compraId, tenant_id: tenantId },
+      include: { 
+        tipos_gasto: true,
+        compras_detalles: true 
       }
     });
 
-    if (!compra) {
-      return res.status(404).json({ error: 'Compra no encontrada.' });
-    }
-
+    if (!compra) return res.status(404).json({ error: 'Compra no encontrada.' });
+    
     if (!compra.tipos_gasto.afecta_inventario) {
-      return res.status(400).json({ 
-        error: 'Solo se pueden recibir compras que afectan el inventario.' 
-      });
+      return res.status(400).json({ error: 'Esta compra no afecta inventario.' });
     }
 
     if (compra.estado_compra === 'Recibido') {
-      return res.status(400).json({ error: 'Esta compra ya fue recibida anteriormente.' });
+      return res.status(400).json({ error: 'Esta compra ya fue procesada.' });
     }
 
+    // 🔥 TRANSACCIÓN FINANCIERA
     await prisma.$transaction(async (tx) => {
       
-      const detalles = await tx.compras_detalles.findMany({
-        where: {
-          compra_id: compraId,
-          tenant_id: tenantId,
-        }
-      });
+      for (const detalle of compra.compras_detalles) {
+        // A. Obtener estado actual del producto
+        const productoActual = await tx.productos_inventario.findUnique({
+            where: { id: detalle.producto_inventario_id }
+        });
 
-      for (const detalle of detalles) {
-        await tx.productos_inventario.updateMany({
-          where: {
-            id: detalle.producto_inventario_id,
-            tenant_id: tenantId,
-          },
-          data: {
-            stock_actual: {
-              increment: detalle.cantidad
-            },
-            costo_unitario: detalle.costo_unitario,
-          }
+        if (!productoActual) continue;
+
+        // B. Cálculos Matemáticos (Costo Promedio Ponderado)
+        const stockActual = Number(productoActual.stock_actual || 0);
+        const costoActual = Number(productoActual.costo_unitario || 0);
+        const cantidadIngreso = Number(detalle.cantidad);
+        const costoIngreso = Number(detalle.costo_unitario);
+
+        const nuevoStock = stockActual + cantidadIngreso;
+        
+        // Fórmula PPP: ((StockActual * CostoActual) + (Ingreso * CostoIngreso)) / NuevoStock
+        let nuevoCostoPromedio = costoActual;
+        if (nuevoStock > 0) {
+            const valorTotalAnterior = stockActual * costoActual;
+            const valorTotalIngreso = cantidadIngreso * costoIngreso;
+            nuevoCostoPromedio = (valorTotalAnterior + valorTotalIngreso) / nuevoStock;
+        }
+
+        // C. Registrar en KARDEX (ENTRADA)
+        await tx.kardex.create({
+            data: {
+                tenant_id: tenantId,
+                fecha: new Date(),
+                tipo_movimiento: 'ENTRADA',
+                motivo: 'Compra',
+                producto_inventario_id: detalle.producto_inventario_id,
+                cantidad: cantidadIngreso,
+                costo_unitario: costoIngreso, // En entrada registramos el costo real de compra
+                valor_total: cantidadIngreso * costoIngreso,
+                saldo_cantidad: nuevoStock,
+                saldo_valor: nuevoStock * nuevoCostoPromedio,
+                documento_tipo: 'Compra',
+                documento_id: compra.id,
+                usuario_id: usuarioId,
+                observaciones: `Recepción Compra #${compra.numero_documento || compraId}`
+            }
+        });
+
+        // D. Actualizar Producto Maestro
+        await tx.productos_inventario.update({
+            where: { id: detalle.producto_inventario_id },
+            data: {
+                stock_actual: nuevoStock,
+                costo_unitario: nuevoCostoPromedio, // ¡Actualizamos el costo del sistema!
+                ultimo_conteo: new Date() // Opcional: marcar movimiento reciente
+            }
         });
       }
 
+      // E. Marcar compra como recibida
       await tx.compras.update({
         where: { id: compraId },
-        data: {
-          estado_compra: 'Recibido'
-        }
+        data: { estado_compra: 'Recibido' }
       });
     });
 
-    res.status(200).json({ 
-      message: 'Compra recibida exitosamente. El stock ha sido incrementado.' 
-    });
+    res.status(200).json({ message: 'Inventario actualizado y Kardex generado.' });
 
   } catch (error: any) {
     console.error('Error en receiveCompra:', error);
@@ -1405,5 +1495,47 @@ export const getCompraById = async (req: AuthRequest, res: Response) => {
   } catch (error: any) {
     console.error('Error en getCompraById:', error);
     res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+};
+
+export const getKardexReport = async (req: AuthRequest, res: Response) => {
+  try {
+    const tenantId = req.user?.tenant_id;
+    if (!tenantId) return res.status(403).json({ error: 'Acceso prohibido.' });
+
+    const { producto_id, fechaInicio, fechaFin, tipo_movimiento } = req.query;
+
+    const whereClause: any = { tenant_id: tenantId };
+
+    if (producto_id) whereClause.producto_inventario_id = parseInt(producto_id as string);
+    if (tipo_movimiento) whereClause.tipo_movimiento = tipo_movimiento;
+    
+    if (fechaInicio || fechaFin) {
+      whereClause.fecha = {};
+      if (fechaInicio) whereClause.fecha.gte = new Date(fechaInicio as string);
+      if (fechaFin) whereClause.fecha.lte = new Date(fechaFin as string);
+    }
+
+    const movimientos = await prisma.kardex.findMany({
+      where: whereClause,
+      include: {
+        productos_inventario: {
+          select: { 
+            nombre: true, 
+            unidades_medida: { select: { abreviatura: true } } 
+          }
+        },
+        empleados: {
+          select: { nombre: true }
+        }
+      },
+      orderBy: { fecha: 'desc' },
+      take: 100 // Límite inicial para no saturar
+    });
+
+    res.json(movimientos);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al obtener reporte de Kardex' });
   }
 };

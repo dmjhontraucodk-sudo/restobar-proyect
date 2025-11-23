@@ -83,6 +83,7 @@ export interface MenuItem {
   visible_en_web: boolean;
   foto_url: string | null;
   categoria?: string;
+  producto_inventario_id?: number | null;
 }
 
 export interface Category {
@@ -710,4 +711,72 @@ export interface GetGastosFilters {
   tipo_gasto_id?: number;
   fechaInicio?: string;
   fechaFin?: string;
+}
+
+export interface Caja {
+  id: number;
+  fecha_apertura: string;
+  fecha_cierre?: string;
+  monto_inicial: number;
+  monto_esperado: number;
+  monto_real?: number;
+  diferencia?: number;
+  estado: 'Abierta' | 'Cerrada';
+  observaciones?: string;
+}
+
+export interface CajaMovimiento {
+  id: number;
+  tipo: 'INGRESO' | 'EGRESO';
+  concepto: string;
+  monto: number;
+  metodo_pago: string;
+  fecha_hora: string;
+}
+
+export interface EstadoCajaResponse {
+  caja: Caja & { movimientos: CajaMovimiento[] };
+  resumen: {
+    inicial: number;
+    ingresos: number;
+    egresos: number;
+    saldo_teorico: number;
+  };
+}
+
+export interface AbrirCajaData {
+  monto_inicial: number;
+  observaciones?: string;
+}
+
+export interface RegistrarMovimientoData {
+  tipo: 'INGRESO' | 'EGRESO';
+  concepto: string;
+  monto: number;
+  metodo_pago: 'Efectivo' | 'Tarjeta' | 'Transferencia' | 'Otro';
+  notas?: string;
+}
+
+export interface CerrarCajaData {
+  monto_real: number;
+  observaciones?: string;
+}
+
+export interface InsumoOption {
+  id: number;
+  nombre: string;
+  stock_actual: number;
+  unidad_medida?: { abreviatura: string };
+}
+
+export interface CajaHistorialItem {
+  id: number;
+  fecha_apertura: string;
+  fecha_cierre: string;
+  monto_inicial: number;
+  monto_esperado: number;
+  monto_real: number;
+  diferencia: number;
+  empleados: { nombre: string | null };
+  _count: { movimientos: number };
 }

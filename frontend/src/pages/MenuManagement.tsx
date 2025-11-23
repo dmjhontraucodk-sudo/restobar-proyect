@@ -1,13 +1,13 @@
 // src/pages/MenuManagementPage.tsx - VERSIÓN MEJORADA
-import React from 'react';
-import { useMenuManagement } from '../hooks/useMenuManagement';
-import MenuHeader from '../components/menu/MenuHeader';
-import CategorySection from '../components/menu/CategorySection';
-import AddCategoryModal from '../components/menu/AddCategoryModal';
-import AddPlatoModal from '../components/menu/AddPlatoModal';
-import { FilterIcon, RotateCcwIcon } from '../components/icons';
-import toast from 'react-hot-toast';
-import { type Category, type MenuItem, type TipoCategoria } from '../types';
+import React from "react";
+import { useMenuManagement } from "../hooks/useMenuManagement";
+import MenuHeader from "../components/menu/MenuHeader";
+import CategorySection from "../components/menu/CategorySection";
+import AddCategoryModal from "../components/menu/AddCategoryModal";
+import AddPlatoModal from "../components/menu/AddPlatoModal";
+import { FilterIcon, RotateCcwIcon } from "../components/icons";
+import toast from "react-hot-toast";
+import { type Category, type MenuItem, type TipoCategoria } from "../types";
 
 interface MenuManagementPageProps {
   tipo: TipoCategoria;
@@ -20,6 +20,10 @@ const MenuManagementPage: React.FC<MenuManagementPageProps> = ({ tipo }) => {
     apiError,
     categories,
     filteredCategories,
+
+    insumosDisponibles,
+    selectedInsumoId,
+    setSelectedInsumoId,
     isSubmitting,
     isSubmittingCategory,
     isUploading,
@@ -34,7 +38,7 @@ const MenuManagementPage: React.FC<MenuManagementPageProps> = ({ tipo }) => {
     itemImagePreview,
     inactiveItemsCount,
     hasActiveFilters,
-    
+
     // Setters
     setCategoryName,
     setShowCategoryModal,
@@ -43,10 +47,10 @@ const MenuManagementPage: React.FC<MenuManagementPageProps> = ({ tipo }) => {
     setItemPrice,
     setItemDescription,
     setItemImagePreview,
-    
+
     // Handlers de Filtros
     filterHandlers,
-    
+
     // Funciones
     handleAddCategory,
     handleSaveCategory,
@@ -60,10 +64,12 @@ const MenuManagementPage: React.FC<MenuManagementPageProps> = ({ tipo }) => {
     handleCloseModal,
   } = useMenuManagement(tipo);
 
-  const pageTitle = tipo === 'COMIDA' ? 'Gestión de Menú' : 'Gestión de Bebidas & Bar';
-  const pageDescription = tipo === 'COMIDA' 
-    ? 'Administra las categorías y platos de tu restaurante'
-    : 'Administra las categorías y bebidas de tu bar';
+  const pageTitle =
+    tipo === "COMIDA" ? "Gestión de Menú" : "Gestión de Bebidas & Bar";
+  const pageDescription =
+    tipo === "COMIDA"
+      ? "Administra las categorías y platos de tu restaurante"
+      : "Administra las categorías y bebidas de tu bar";
 
   // --- RENDERIZADO DE CARGA ---
   if (isLoading) {
@@ -71,7 +77,9 @@ const MenuManagementPage: React.FC<MenuManagementPageProps> = ({ tipo }) => {
       <div className="flex flex-col justify-center items-center h-screen bg-gray-50">
         <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mb-4"></div>
         <p className="text-lg text-gray-600 font-medium">Cargando menú...</p>
-        <p className="text-sm text-gray-500 mt-2">Por favor espera un momento</p>
+        <p className="text-sm text-gray-500 mt-2">
+          Por favor espera un momento
+        </p>
       </div>
     );
   }
@@ -82,18 +90,26 @@ const MenuManagementPage: React.FC<MenuManagementPageProps> = ({ tipo }) => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-8 max-w-md w-full">
           <div className="text-red-600 mb-4">
-            <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              className="w-16 h-16 mx-auto"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
           </div>
           <h3 className="text-xl font-bold text-red-900 mb-2 text-center">
             Error al Cargar el Menú
           </h3>
-          <p className="text-red-700 text-center mb-6">
-            {apiError}
-          </p>
-          <button 
-            onClick={() => window.location.reload()} 
+          <p className="text-red-700 text-center mb-6">{apiError}</p>
+          <button
+            onClick={() => window.location.reload()}
             className="w-full px-4 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors font-medium"
           >
             Reintentar
@@ -105,7 +121,9 @@ const MenuManagementPage: React.FC<MenuManagementPageProps> = ({ tipo }) => {
 
   // ✅ VALIDACIÓN DEFENSIVA: Asegurar que categories y filteredCategories sean arrays
   const safeCategories = Array.isArray(categories) ? categories : [];
-  const safeFilteredCategories = Array.isArray(filteredCategories) ? filteredCategories : [];
+  const safeFilteredCategories = Array.isArray(filteredCategories)
+    ? filteredCategories
+    : [];
 
   // --- RENDERIZADO PRINCIPAL ---
   return (
@@ -136,7 +154,8 @@ const MenuManagementPage: React.FC<MenuManagementPageProps> = ({ tipo }) => {
               <div className="text-yellow-600 mr-3">⚠️</div>
               <div className="flex-1">
                 <p className="text-sm text-yellow-800 font-medium">
-                  Mostrando datos guardados. Algunos cambios recientes pueden no estar visibles.
+                  Mostrando datos guardados. Algunos cambios recientes pueden no
+                  estar visibles.
                 </p>
                 <p className="text-xs text-yellow-700 mt-1">{apiError}</p>
               </div>
@@ -155,7 +174,9 @@ const MenuManagementPage: React.FC<MenuManagementPageProps> = ({ tipo }) => {
                 onToggleItemStatus={handleToggleItemStatus}
                 onToggleWebVisibility={handleToggleWebVisibility}
                 onEditItem={handleEditItem}
-                onDeleteItem={(item: MenuItem) => toast.error(`Borrar "${item.name}" no implementado.`)}
+                onDeleteItem={(item: MenuItem) =>
+                  toast.error(`Borrar "${item.name}" no implementado.`)
+                }
               />
             ))
           ) : (
@@ -165,28 +186,34 @@ const MenuManagementPage: React.FC<MenuManagementPageProps> = ({ tipo }) => {
                 <FilterIcon className="w-16 h-16 mx-auto" />
               </div>
               <h3 className="text-xl font-medium text-gray-900 mb-2">
-                {hasActiveFilters 
-                  ? `No se encontraron ${tipo === 'COMIDA' ? 'platos' : 'bebidas'}`
-                  : `No hay ${tipo === 'COMIDA' ? 'categorías' : 'categorías'} creadas`
-                }
+                {hasActiveFilters
+                  ? `No se encontraron ${
+                      tipo === "COMIDA" ? "platos" : "bebidas"
+                    }`
+                  : `No hay ${
+                      tipo === "COMIDA" ? "categorías" : "categorías"
+                    } creadas`}
               </h3>
               <p className="text-gray-500 mb-6">
-                {hasActiveFilters 
-                  ? `Intenta ajustar los filtros de búsqueda o añade nuevos ${tipo === 'COMIDA' ? 'platos' : 'bebidas'} al menú.`
-                  : `Comienza creando una categoría para organizar tu ${tipo === 'COMIDA' ? 'menú' : 'carta de bebidas'}.`
-                }
+                {hasActiveFilters
+                  ? `Intenta ajustar los filtros de búsqueda o añade nuevos ${
+                      tipo === "COMIDA" ? "platos" : "bebidas"
+                    } al menú.`
+                  : `Comienza creando una categoría para organizar tu ${
+                      tipo === "COMIDA" ? "menú" : "carta de bebidas"
+                    }.`}
               </p>
               {hasActiveFilters ? (
-                <button 
-                  onClick={filterHandlers.handleClearFilters} 
+                <button
+                  onClick={filterHandlers.handleClearFilters}
                   className="inline-flex items-center px-5 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors duration-200 font-medium"
                 >
                   <RotateCcwIcon className="w-4 h-4 mr-2" />
                   Limpiar Filtros
                 </button>
               ) : (
-                <button 
-                  onClick={handleAddCategory} 
+                <button
+                  onClick={handleAddCategory}
                   className="inline-flex items-center px-5 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors duration-200 font-medium"
                 >
                   Crear Primera Categoría
@@ -219,6 +246,9 @@ const MenuManagementPage: React.FC<MenuManagementPageProps> = ({ tipo }) => {
         onItemPriceChange={setItemPrice}
         itemDescription={itemDescription}
         onItemDescriptionChange={setItemDescription}
+        insumos={insumosDisponibles}
+        selectedInsumoId={selectedInsumoId}
+        onInsumoChange={setSelectedInsumoId}
         itemImagePreview={itemImagePreview}
         onImageChange={handleImageChange}
         onRemoveImage={handleRemoveImage}

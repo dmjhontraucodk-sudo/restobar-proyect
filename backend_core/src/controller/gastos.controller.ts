@@ -1,9 +1,6 @@
-// backend/src/controller/gastos.controller.ts - NUEVO CONTROLADOR
-
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+// ✅ 1. CORRECCIÓN: Ruta ajustada (un solo punto ..)
+import { prisma } from '../lib/prisma';
 
 // ========== LISTAR GASTOS OPERATIVOS ==========
 export const getGastos = async (req: Request, res: Response) => {
@@ -37,6 +34,7 @@ export const getGastos = async (req: Request, res: Response) => {
             email: true,
           },
         },
+        descuentos_aplicados: true 
       },
       orderBy: {
         fecha: 'desc',
@@ -71,6 +69,11 @@ export const getGastoById = async (req: Request, res: Response) => {
             email: true,
           },
         },
+        descuentos_aplicados: {
+            include: {
+                empleados: { select: { nombre: true } }
+            }
+        }
       },
     });
 
@@ -85,7 +88,7 @@ export const getGastoById = async (req: Request, res: Response) => {
   }
 };
 
-// ========== CREAR GASTO ==========
+// ========== CREAR GASTO (CON SOPORTE PARA NÓMINA) ==========
 export const createGasto = async (req: Request, res: Response) => {
   try {
     const tenantId = (req as any).tenantId;
@@ -98,9 +101,9 @@ export const createGasto = async (req: Request, res: Response) => {
       numero_documento,
       descripcion,
       metodo_pago,
+      descuentos_ids 
     } = req.body;
 
-    // Validaciones
     if (!tipo_gasto_id || !fecha || !monto) {
       return res.status(400).json({
         error: 'Faltan campos requeridos: tipo_gasto_id, fecha, monto',
@@ -113,7 +116,6 @@ export const createGasto = async (req: Request, res: Response) => {
       });
     }
 
-    // Verificar que el tipo de gasto NO afecta inventario
     const tipoGasto = await prisma.tipos_gasto.findFirst({
       where: {
         id: tipo_gasto_id,
@@ -131,32 +133,53 @@ export const createGasto = async (req: Request, res: Response) => {
       });
     }
 
-    // Crear gasto
-    const nuevoGasto = await prisma.gastos.create({
-      data: {
-        tenant_id: tenantId,
-        tipo_gasto_id,
-        proveedor_id: proveedor_id || null,
-        fecha: new Date(fecha),
-        monto,
-        numero_documento: numero_documento || null,
-        descripcion: descripcion || null,
-        metodo_pago: metodo_pago || null,
-        aprobado_por_id: empleadoId,
-      },
-      include: {
-        tipos_gasto: true,
-        proveedores: true,
-        empleados: {
-          select: {
-            nombre: true,
-            email: true,
+    // ✅ 2. CORRECCIÓN: Tipar explícitamente 'tx' como any
+    const nuevoGasto = await prisma.$transaction(async (tx: any) => {
+        
+        // 1. Crear el registro de Gasto
+        const gasto = await tx.gastos.create({
+          data: {
+            tenant_id: tenantId,
+            tipo_gasto_id,
+            proveedor_id: proveedor_id || null,
+            fecha: new Date(fecha),
+            monto,
+            numero_documento: numero_documento || null,
+            descripcion: descripcion || null,
+            metodo_pago: metodo_pago || null,
+            aprobado_por_id: empleadoId,
           },
-        },
-      },
+          include: {
+            tipos_gasto: true,
+            proveedores: true,
+            empleados: {
+              select: {
+                nombre: true,
+                email: true,
+              },
+            },
+          },
+        });
+
+        // 2. Si vienen descuentos, vincularlos
+        if (descuentos_ids && Array.isArray(descuentos_ids) && descuentos_ids.length > 0) {
+            await tx.descuentos_empleados.updateMany({
+                where: {
+                    id: { in: descuentos_ids },
+                    tenant_id: tenantId
+                },
+                data: {
+                    estado: 'Aplicado', 
+                    gasto_id: gasto.id 
+                }
+            });
+        }
+
+        return gasto;
     });
 
     return res.status(201).json(nuevoGasto);
+
   } catch (error) {
     console.error('Error al crear gasto:', error);
     return res.status(500).json({ error: 'Error al crear gasto' });
@@ -178,7 +201,6 @@ export const updateGasto = async (req: Request, res: Response) => {
       metodo_pago,
     } = req.body;
 
-    // Verificar que existe
     const gastoExistente = await prisma.gastos.findFirst({
       where: {
         id: parseInt(id),
@@ -190,7 +212,6 @@ export const updateGasto = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Gasto no encontrado' });
     }
 
-    // Actualizar
     const gastoActualizado = await prisma.gastos.update({
       where: { id: parseInt(id) },
       data: {
@@ -238,9 +259,18 @@ export const deleteGasto = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Gasto no encontrado' });
     }
 
-    await prisma.gastos.delete({
-      where: { id: parseInt(id) },
-    });
+    await prisma.$transaction([
+        prisma.descuentos_empleados.updateMany({
+            where: { gasto_id: parseInt(id) },
+            data: { 
+                estado: 'Pendiente',
+                gasto_id: null
+            }
+        }),
+        prisma.gastos.delete({
+            where: { id: parseInt(id) },
+        })
+    ]);
 
     return res.json({ message: 'Gasto eliminado correctamente' });
   } catch (error) {
@@ -273,10 +303,11 @@ export const getGastosEstadisticas = async (req: Request, res: Response) => {
       },
     });
 
-    // Calcular estadísticas
-    const totalGastos = gastos.reduce((sum, g) => sum + Number(g.monto), 0);
+    // ✅ 3. CORRECCIÓN: Tipar explícitamente 'sum' y 'g'
+    const totalGastos = gastos.reduce((sum: number, g: any) => sum + Number(g.monto), 0);
     
-    const gastosPorTipo = gastos.reduce((acc: any, g) => {
+    // ✅ 4. CORRECCIÓN: Tipar explícitamente 'acc' y 'g'
+    const gastosPorTipo = gastos.reduce((acc: any, g: any) => {
       const tipoNombre = g.tipos_gasto.nombre;
       if (!acc[tipoNombre]) {
         acc[tipoNombre] = {
