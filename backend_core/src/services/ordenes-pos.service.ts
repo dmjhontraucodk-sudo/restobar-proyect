@@ -30,10 +30,34 @@ export const ordenesPosService = {
     /**
      * Consulta y devuelve las órdenes POS (de mesa) activas para ser enviadas a Cocina.
      */
-    async getOrdenesActivasParaCocina(tenantId: number): Promise<OrdenesQuery[]> {
-        return [];
-    },
-
+        async getOrdenesActivasParaCocina(tenantId: number): Promise<OrdenesQuery[]> {
+                
+                const ordenes = await prisma.ordenes.findMany({
+                where: { 
+                        tenant_id: tenantId,
+                        // Filtro de estado para órdenes activas
+                        estado: { notIn: [ordenes_estado.Cerrada, ordenes_estado.Pagada, ordenes_estado.Cancelada] } 
+                },
+                include: {
+                        mesas: { select: { nombre_o_numero: true } },
+                        ordendetalles: {
+                        // ✅ CAMBIO CRUCIAL: Filtramos los detalles para excluir productos procesados.
+                        where: { 
+                                productos: { 
+                                producto_inventario_id: null // ⬅️ FILTRO USANDO LA LÓGICA DE INVENTARIO
+                                }
+                        },
+                        include: {
+                                productos: { select: { nombre: true } }
+                        }
+                        }
+                }
+                });
+                
+                // Filtra órdenes que quedaron sin ítems de preparación
+                return ordenes
+                .filter(o => o.ordendetalles.length > 0) as OrdenesQuery[];
+        },
     /**
      * Mapea una orden POS a la estructura unificada (KitchenOrderDto).
      */
