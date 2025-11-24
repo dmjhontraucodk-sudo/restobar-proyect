@@ -78,6 +78,13 @@ export const pedidosWebFlowService = {
             },
             include: {
                 webpedidos_detalles: {
+                    where: { 
+                        productos: { 
+                            // Solo incluimos productos que NO tienen un producto de inventario asociado,
+                            // asumiendo que estos son los que requieren PREPARACIÓN.
+                            producto_inventario_id: null // ⬅️ FILTRO USANDO LA LÓGICA DE INVENTARIO
+                        }
+                    },
                     include: {
                         productos: {
                             select: { nombre: true }
@@ -87,11 +94,14 @@ export const pedidosWebFlowService = {
             },
         });
         
+        const webPedidosFiltrados = webPedidos.filter(
+            pedido => pedido.webpedidos_detalles.length > 0
+        );
         // 2. OBTENER ÓRDENES POS (Mesa)
         const posOrdenes: OrdenesQuery[] = [];
 
         // 3. MAPEO
-        const webDtos = webPedidos.map(this.mapWebPedidoToDto);
+        const webDtos = webPedidosFiltrados.map(this.mapWebPedidoToDto);
         const posDtos = posOrdenes.map(ordenesPosService.mapOrdenToDto);
 
         // 4. UNIFICACIÓN Y ORDENACIÓN
