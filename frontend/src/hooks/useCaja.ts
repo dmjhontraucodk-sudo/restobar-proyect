@@ -1,7 +1,29 @@
+// frontend/src/hooks/useCaja.ts - MEJORADO CON ESTADÍSTICAS
+
 import { useState, useEffect, useCallback } from 'react';
 import { useDashboardApi } from './useDashboardApi';
 import { type EstadoCajaResponse, type CajaHistorialItem } from '../types';
 import toast from 'react-hot-toast';
+
+// ✨ NUEVA INTERFAZ PARA ESTADÍSTICAS POR MÉTODO DE PAGO ✨
+export interface EstadisticasPorMetodo {
+  metodo: string;
+  total: number;
+  cantidad: number;
+  porcentaje: number;
+}
+
+export interface ResumenCajaExtendido {
+  inicial: number;
+  ingresos: number;
+  egresos: number;
+  saldo_teorico: number;
+  
+  // ✨ NUEVOS CAMPOS
+  por_metodo: EstadisticasPorMetodo[];
+  total_transacciones: number;
+  ticket_promedio: number;
+}
 
 export const useCaja = () => {
   const { abrirCaja, getEstadoCaja, registrarMovimientoCaja, cerrarCaja } = useDashboardApi();
@@ -49,7 +71,13 @@ export const useCaja = () => {
     }
   };
 
-  const handleRegistrarMovimiento = async (tipo: 'INGRESO' | 'EGRESO', concepto: string, monto: number, metodo: any, notas?: string) => {
+  const handleRegistrarMovimiento = async (
+    tipo: 'INGRESO' | 'EGRESO', 
+    concepto: string, 
+    monto: number, 
+    metodo: any, 
+    notas?: string
+  ) => {
     try {
       await registrarMovimientoCaja({ 
         tipo, 
@@ -71,7 +99,7 @@ export const useCaja = () => {
     try {
       await cerrarCaja({ monto_real: montoReal, observaciones });
       toast.success('Caja cerrada correctamente');
-      setCajaData(null); // Limpiamos el estado local
+      setCajaData(null);
       return true;
     } catch (err: any) {
       toast.error(err.message || 'Error al cerrar caja');
@@ -79,23 +107,59 @@ export const useCaja = () => {
     }
   };
 
-  const getHistorial = useCallback(async (filtros?: { fechaInicio?: string, fechaFin?: string }) => {
-    const params = new URLSearchParams();
-    if (filtros?.fechaInicio) params.append('fechaInicio', filtros.fechaInicio);
-    if (filtros?.fechaFin) params.append('fechaFin', filtros.fechaFin);
+  // ✨ NUEVA FUNCIÓN: Calcular estadísticas por método de pago ✨
+  const calcularEstadisticasPorMetodo = useCallback((): ResumenCajaExtendido | null => {
+    if (!cajaData) return null;
+
+    const movimientos = cajaData.caja.movimientos;
     
-    // Usamos makeRequest que ya existe en useDashboardApi (tienes que importarlo o pasarlo)
-    // Si useCaja usa useDashboardApi internamente:
-    const { makeRequest } = useDashboardApi(); 
-    return makeRequest<CajaHistorialItem[]>(`/caja/historial?${params.toString()}`);
-}, []);
+    // Filtrar solo INGRESOS (ventas)
+    const ingresos = movimientos.filter(m => m.tipo === 'INGRESO');
+    
+    // Agrupar por método de pago
+    const porMetodo: { [key: string]: { total: number; cantidad: number } } = {};
+    
+    ingresos.forEach(mov => {
+      const metodo = mov.metodo_pago || 'No especificado';
+      if (!porMetodo[metodo]) {
+        porMetodo[metodo] = { total: 0, cantidad: 0 };
+      }
+      porMetodo[metodo].total += Number(mov.monto);
+      porMetodo[metodo].cantidad += 1;
+    });
+
+    // Calcular totales
+    const totalIngresos = cajaData.resumen.ingresos;
+    
+    // Convertir a array y calcular porcentajes
+    const estadisticas: EstadisticasPorMetodo[] = Object.entries(porMetodo).map(([metodo, data]) => ({
+      metodo,
+      total: data.total,
+      cantidad: data.cantidad,
+      porcentaje: totalIngresos > 0 ? (data.total / totalIngresos) * 100 : 0
+    }));
+
+    // Ordenar por total descendente
+    estadisticas.sort((a, b) => b.total - a.total);
+
+    // Calcular ticket promedio
+    const totalTransacciones = ingresos.length;
+    const ticketPromedio = totalTransacciones > 0 ? totalIngresos / totalTransacciones : 0;
+
+    return {
+      ...cajaData.resumen,
+      por_metodo: estadisticas,
+      total_transacciones: totalTransacciones,
+      ticket_promedio: ticketPromedio
+    };
+  }, [cajaData]);
 
   return {
     cajaData,
     isLoading,
     error,
-    getHistorial,
     refreshCaja: loadCaja,
+    estadisticasExtendidas: calcularEstadisticasPorMetodo(),
     actions: {
       abrirCaja: handleAbrirCaja,
       registrarMovimiento: handleRegistrarMovimiento,

@@ -1,3 +1,5 @@
+// frontend/src/pages/dashboard/Finanzas/CajaPage.tsx - MEJORADA CON ESTADÍSTICAS
+
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCaja } from '../../../hooks/useCaja';
@@ -9,7 +11,7 @@ import {
   LockIcon, 
   ClockIcon, 
   CurrencyDollarIcon,
-  ClipboardListIcon // Asegúrate de tener este o usa otro para el historial
+  ClipboardListIcon
 } from '../../../components/icons'; 
 
 // Definimos MinusIcon localmente
@@ -19,9 +21,18 @@ const MinusIcon = (props: React.SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
+// ✨ Icono de Gráfico de Barras
+const ChartBarIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <line x1="12" y1="20" x2="12" y2="10" />
+    <line x1="18" y1="20" x2="18" y2="4" />
+    <line x1="6" y1="20" x2="6" y2="16" />
+  </svg>
+);
+
 // Componente Principal
 const CajaPage = () => {
-  const { cajaData, isLoading, actions } = useCaja();
+  const { cajaData, isLoading, estadisticasExtendidas, actions } = useCaja();
   
   // Estados para Modales
   const [showAbrirModal, setShowAbrirModal] = useState(false);
@@ -61,7 +72,6 @@ const CajaPage = () => {
             Abrir Caja
           </button>
 
-          {/* ✅ ENLACE AL HISTORIAL (VISIBLE AUNQUE LA CAJA ESTÉ CERRADA) */}
           <Link 
             to="/dashboard/caja/historial" 
             className="text-sm text-blue-600 hover:text-blue-800 hover:underline block mt-4 pt-4 border-t border-gray-100"
@@ -128,7 +138,6 @@ const CajaPage = () => {
           <div className="flex items-center gap-3">
              <h1 className="text-2xl font-bold text-gray-900">Gestión de Caja</h1>
              
-             {/* ✅ ENLACE AL HISTORIAL (BOTÓN PEQUEÑO) */}
              <Link 
                to="/dashboard/caja/historial" 
                className="text-sm bg-blue-50 text-blue-600 px-3 py-1 rounded-full hover:bg-blue-100 transition-colors font-medium flex items-center gap-1"
@@ -156,6 +165,42 @@ const CajaPage = () => {
         <StatCard title="Egresos (Gastos)" amount={resumen.egresos} color="red" />
         <StatCard title="Saldo en Caja (Teórico)" amount={resumen.saldo_teorico} color="blue" big />
       </div>
+
+      {/* ✨ NUEVA SECCIÓN: Estadísticas por Método de Pago ✨ */}
+      {estadisticasExtendidas && estadisticasExtendidas.por_metodo.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+          <h3 className="font-semibold text-gray-800 flex items-center gap-2 mb-4">
+            <ChartBarIcon className="w-5 h-5 text-gray-500" />
+            Desglose por Método de Pago
+          </h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            {estadisticasExtendidas.por_metodo.map((stat) => (
+              <div key={stat.metodo} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <div className="flex justify-between items-start mb-2">
+                  <span className="text-sm font-medium text-gray-600">{stat.metodo}</span>
+                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">
+                    {stat.porcentaje.toFixed(1)}%
+                  </span>
+                </div>
+                <p className="text-2xl font-bold text-gray-900">S/ {stat.total.toFixed(2)}</p>
+                <p className="text-xs text-gray-500 mt-1">{stat.cantidad} transacciones</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex gap-4 pt-4 border-t border-gray-100">
+            <div className="flex-1">
+              <p className="text-sm text-gray-500">Total Transacciones</p>
+              <p className="text-xl font-bold text-gray-900">{estadisticasExtendidas.total_transacciones}</p>
+            </div>
+            <div className="flex-1">
+              <p className="text-sm text-gray-500">Ticket Promedio</p>
+              <p className="text-xl font-bold text-gray-900">S/ {estadisticasExtendidas.ticket_promedio.toFixed(2)}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tabla de Movimientos */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -218,7 +263,10 @@ const CajaPage = () => {
           <form onSubmit={async (e) => {
             e.preventDefault();
             const success = await actions.registrarMovimiento(formData.tipo, formData.concepto, Number(formData.monto), 'Efectivo', formData.notas);
-            if(success) setShowMovimientoModal(false);
+            if(success) {
+              setShowMovimientoModal(false);
+              setFormData({ monto: '', concepto: '', notas: '', tipo: 'EGRESO' });
+            }
           }}>
             <div className="space-y-4">
               <div>
@@ -248,7 +296,10 @@ const CajaPage = () => {
           <form onSubmit={async (e) => {
             e.preventDefault();
             const success = await actions.cerrarCaja(Number(formData.monto), formData.notas);
-            if(success) setShowCerrarModal(false);
+            if(success) {
+              setShowCerrarModal(false);
+              setFormData({ monto: '', concepto: '', notas: '', tipo: 'EGRESO' });
+            }
           }}>
             <div className="space-y-4">
               <div className="bg-blue-50 p-4 rounded-lg">

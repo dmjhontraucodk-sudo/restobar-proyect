@@ -1,4 +1,4 @@
-// src/routes/dashboard.routes.ts - VERSIÓN FINAL CON FINANZAS
+// src/routes/dashboard.routes.ts - VERSIÓN ACTUALIZADA CON CAJA CORREGIDA
 
 import { Router } from 'express';
 import { validateToken } from '../middleware/auth.middleware';
@@ -63,14 +63,8 @@ import {
   getGastosEstadisticas,
 } from '../controller/gastos.controller';
 
-// ✨ IMPORTACIÓN NUEVA: CONTROLADOR DE CAJA
-import {
-  abrirCaja,
-  getEstadoCaja,
-  registrarMovimientoCaja,
-  cerrarCaja,
-  getHistorialCajas
-} from '../controller/app/caja.controller';
+// ✅ IMPORTACIÓN CORREGIDA: CONTROLADOR DE CAJA (NUEVO SISTEMA)
+import { cajaController } from '../controller/app/caja.controller';
 
 import { getResumenFinanciero } from '../controller/app/finanzas.controller';
 
@@ -83,7 +77,7 @@ import { nominaController, calcularPagoEmpleado } from '../controller/app/nomina
 
 import { cierrePosController } from '../controller/app/cierre-pos.controller';
 
-// ✅ IMPORTAMOS EL CONTROLADOR CORRECTO (El que tiene la lógica de Inventario)
+// ✅ IMPORTAMOS EL CONTROLADOR CORRECTO (El que tiene la lógica de Inventario y Caja)
 import { webOrdersController } from '../controller/web-orders.controller';
 
 const router = Router();
@@ -115,8 +109,8 @@ router.patch('/ordenes/:id/estado', validateToken, updateOrdenEstado);
 router.patch('/ordenes/:id/cierre', validateToken, cierrePosController.closeOrder);
 router.post('/ordenes/:id/items', validateToken, addItemsToOrden);
 
-// ========== ✨ NUEVA SECCIÓN: PEDIDOS WEB LISTOS ✨ ==========
-// Estas rutas ahora usan webOrdersController para gestionar el inventario automáticamente
+// ========== ✨ PEDIDOS WEB CON AUTO-REGISTRO EN CAJA ✨ ==========
+// Estas rutas ahora usan webOrdersController que registra automáticamente en caja
 router.get('/web-ready-orders', validateToken, webOrdersController.getWebOrders);
 router.patch('/web-ready-orders/:id/status', validateToken, webOrdersController.updateOrderStatus);
 
@@ -149,12 +143,13 @@ router.put('/productos-inventario/:id', validateToken, updateProductoInventario)
 
 router.get('/kardex', validateToken, getKardexReport);
 
-// ========== 💰 FINANZAS Y CAJA (NUEVO) ==========
-router.post('/caja/abrir', validateToken, abrirCaja);
-router.get('/caja/estado', validateToken, getEstadoCaja);
-router.post('/caja/movimiento', validateToken, registrarMovimientoCaja);
-router.post('/caja/cerrar', validateToken, cerrarCaja);
-router.get('/caja/historial', validateToken, getHistorialCajas);
+// ========== 💰 FINANZAS Y CAJA (SISTEMA AUTOMATIZADO) ==========
+// ✅ Usando el nuevo cajaController con todas las mejoras
+router.post('/caja/abrir', validateToken, cajaController.abrirCaja);
+router.get('/caja/estado', validateToken, cajaController.getEstadoCaja);
+router.post('/caja/movimiento', validateToken, cajaController.registrarMovimiento);
+router.post('/caja/cerrar', validateToken, cajaController.cerrarCaja);
+router.get('/caja/historial', validateToken, cajaController.getHistorial);
 router.get('/finanzas/resumen', validateToken, getResumenFinanciero);
 
 // ========== 🚚 COMPRAS (Entradas Kardex) ==========
