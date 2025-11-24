@@ -1,4 +1,4 @@
-// src/components/dashboard/Sidebar/NavigationContent.tsx - ACTUALIZADO CON INVENTARIO
+// src/components/dashboard/Sidebar/NavigationContent.tsx - ACTUALIZADO
 
 import React from "react";
 import { useAuth } from "../../../context/AuthContext";
@@ -25,14 +25,14 @@ export const NavigationContent: React.FC<NavigationContentProps> = ({
         }`}
       >
         {isCollapsed ? (
-          <div className="flex items-center justify-center w-8 h-8 bg-linear-to-br from-blue-600 to-blue-800 rounded-lg shadow-lg">
+          <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg shadow-lg">
             <span className="text-sm font-bold text-white">
               {user?.name?.charAt(0) || "R"}
             </span>
           </div>
         ) : (
           <div className="flex items-center space-x-2">
-            <div className="flex items-center justify-center w-8 h-8 bg-linear-to-br from-blue-600 to-blue-800 rounded-lg shadow-lg">
+            <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg shadow-lg">
               <span className="text-sm font-bold text-white">
                 {user?.name?.charAt(0) || "R"}
               </span>
@@ -76,12 +76,12 @@ export const NavigationContent: React.FC<NavigationContentProps> = ({
               onClick={onLinkClick}
             />
             <SidebarLink
-              to="/dashboard/web-orders" 
-              icon={<Icons.GlobeIcon />} 
-              label="Pedidos Web"
-              isCollapsed={isCollapsed}
-              onClick={onLinkClick}
-            />
+              to="/dashboard/web-orders" 
+              icon={<Icons.GlobeIcon />} 
+              label="Pedidos Web"
+              isCollapsed={isCollapsed}
+              onClick={onLinkClick}
+            />
             <SidebarLink
               to="/dashboard/tables"
               icon={<Icons.TableIcon />}
@@ -139,10 +139,11 @@ export const NavigationContent: React.FC<NavigationContentProps> = ({
             </h3>
           )}
           <div className="space-y-1">
+            {/* ⭐ CAMBIADO: Ahora apunta a /dashboard/inventario */}
             <SidebarLink
-              to="/dashboard/productos-inventario"
+              to="/dashboard/inventario"
               icon={<Icons.PackageIcon />}
-              label="Productos"
+              label="Gestión de Inventario"
               isCollapsed={isCollapsed}
               onClick={onLinkClick}
             />
@@ -153,7 +154,6 @@ export const NavigationContent: React.FC<NavigationContentProps> = ({
               isCollapsed={isCollapsed}
               onClick={onLinkClick}
             />
-            {/* ✨ NUEVO: Compras (Solo Inventario) */}
             <SidebarLink
               to="/dashboard/compras"
               icon={<Icons.ShoppingCartIcon />}
@@ -161,7 +161,6 @@ export const NavigationContent: React.FC<NavigationContentProps> = ({
               isCollapsed={isCollapsed}
               onClick={onLinkClick}
             />
-            {/* ✨ NUEVO: Cierre de Inventario */}
             <SidebarLink
               to="/dashboard/cierre-inventario"
               icon={<Icons.ClipboardCheckIcon />}
@@ -170,27 +169,14 @@ export const NavigationContent: React.FC<NavigationContentProps> = ({
               onClick={onLinkClick}
             />
 
-            {/* Configuración de Inventario (solo cuando no está colapsado) */}
+            {/* ❌ ELIMINADO: Categorías y Unidades (ahora están en tabs) */}
+            {/* Solo dejamos Tipos de Gasto */}
             {!isCollapsed && (
               <div className="ml-2 mt-2 pt-2 border-t border-gray-100">
-                <SidebarLink
-                  to="/dashboard/categorias-inventario"
-                  icon={<Icons.TagIcon />}
-                  label="Categorías"
-                  isCollapsed={isCollapsed}
-                  onClick={onLinkClick}
-                />
                 <SidebarLink
                   to="/dashboard/tipos-gasto"
                   icon={<Icons.ListIcon />}
                   label="Tipos de Gasto"
-                  isCollapsed={isCollapsed}
-                  onClick={onLinkClick}
-                />
-                <SidebarLink
-                  to="/dashboard/unidades-medida"
-                  icon={<Icons.RulerIcon />}
-                  label="Unidades"
                   isCollapsed={isCollapsed}
                   onClick={onLinkClick}
                 />
@@ -199,7 +185,7 @@ export const NavigationContent: React.FC<NavigationContentProps> = ({
           </div>
         </div>
 
-        {/* ✨ GRUPO 4: FINANZAS (NUEVO) ✨ */}
+        {/* ✨ GRUPO 4: FINANZAS ✨ */}
         <div className={`${isCollapsed ? "pt-0" : "pt-2"}`}>
           {!isCollapsed && (
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 px-3">
@@ -211,7 +197,7 @@ export const NavigationContent: React.FC<NavigationContentProps> = ({
               to="/dashboard/caja"
               icon={<Icons.CurrencyDollarIcon />}
               label="Caja y Turnos"
-              isCollapsed={false}
+              isCollapsed={isCollapsed}
               onClick={onLinkClick}
             />
             <SidebarLink
@@ -273,9 +259,9 @@ export const NavigationContent: React.FC<NavigationContentProps> = ({
 
       {/* Información del Usuario - Solo cuando no está colapsado */}
       {!isCollapsed && user && (
-        <div className="p-2 mx-2 mt-auto mb-2 bg-linear-to-r from-gray-50 to-blue-50 rounded-lg border border-gray-200">
+        <div className="p-2 mx-2 mt-auto mb-2 bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg border border-gray-200">
           <div className="text-center">
-            <div className="w-8 h-8 bg-linear-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center mx-auto mb-1 shadow-lg">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center mx-auto mb-1 shadow-lg">
               <span className="text-white font-bold text-xs">
                 {user.name?.charAt(0) || "U"}
               </span>

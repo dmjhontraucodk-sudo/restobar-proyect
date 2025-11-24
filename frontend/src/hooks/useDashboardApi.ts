@@ -79,6 +79,7 @@ export interface CreateProductData {
   disponible?: boolean;
   visible_en_web?: boolean;
   receta?: RecipeItem[];
+  producto_inventario_id?: number | null;
 }
 
 export interface ApiProductWithRecipe {
@@ -89,6 +90,7 @@ export interface ApiProductWithRecipe {
   foto_url: string | null;
   disponible: boolean | null;
   visible_en_web: boolean | null;
+  producto_inventario_id?: number | null;
   categoriasmenu: {
     id: number;
     nombre: string;
@@ -106,6 +108,7 @@ export interface ApiProduct {
   foto_url: string | null;
   disponible: boolean | null;
   visible_en_web: boolean | null;
+  producto_inventario_id?: number | null;
   categoriasmenu: {
     nombre: string;
   };
@@ -135,6 +138,7 @@ export interface UpdateProductData {
   foto_url?: string | null;
   disponible?: boolean;
   visible_en_web?: boolean;
+  producto_inventario_id?: number | null;
 }
 
 export interface UpdateProductWithRecipeData {
@@ -147,6 +151,7 @@ export interface UpdateProductWithRecipeData {
   disponible?: boolean;
   visible_en_web?: boolean;
   receta?: RecipeItem[];
+  producto_inventario_id?: number | null;
 }
 
 export const useDashboardApi = () => {

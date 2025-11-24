@@ -60,6 +60,99 @@ export const webOrdersService = {
     });
   },
 
+  async processInventoryDeduction(tenantId: number, orderId: number, userId?: number) {
+    console.log(`🔍 [Inventario] Buscando pedido #${orderId} para tenant ${tenantId}...`);
+
+    const order = await prisma.webpedidos.findUnique({
+      where: { id: orderId },
+      include: {
+        webpedidos_detalles: {
+          include: {
+            productos: true // TRAE EL producto_inventario_id
+          }
+        }
+      }
+    });
+
+    if (!order) {
+        console.error(`❌ [Inventario] Pedido #${orderId} no encontrado.`);
+        return;
+    }
+    if (order.tenant_id !== tenantId) {
+        console.error(`❌ [Inventario] Mismatch de Tenant. Pedido: ${order.tenant_id}, Req: ${tenantId}`);
+        return;
+    }
+
+    console.log(`📦 [Inventario] Pedido encontrado. Procesando ${order.webpedidos_detalles.length} items...`);
+
+    // Transacción
+    await prisma.$transaction(async (tx) => {
+      let itemsProcesados = 0;
+
+      for (const detalle of order.webpedidos_detalles) {
+        const productoMenu = detalle.productos;
+        
+        // LOG PARA VERIFICAR VINCULACIÓN
+        if (!productoMenu.producto_inventario_id) {
+            console.log(`⚠️ [Inventario] Item "${productoMenu.nombre}" (ID: ${productoMenu.id}) NO tiene vínculo con inventario. Se salta.`);
+            continue;
+        }
+
+        console.log(`✅ [Inventario] Procesando item vinculados: "${productoMenu.nombre}" -> InvID: ${productoMenu.producto_inventario_id}`);
+        
+        const inventarioId = productoMenu.producto_inventario_id;
+        const cantidad = detalle.cantidad;
+
+        // A. Obtener datos
+        const productoInv = await tx.productos_inventario.findUnique({
+           where: { id: inventarioId }
+        });
+
+        if (!productoInv) {
+            console.error(`❌ [Inventario] El ID de inventario ${inventarioId} no existe en la tabla productos_inventario.`);
+            continue;
+        }
+
+        // B. Calcular nuevo stock
+        const stockActual = Number(productoInv.stock_actual);
+        const costoUnitario = Number(productoInv.costo_unitario);
+        const nuevoStock = stockActual - cantidad;
+
+        console.log(`📉 [Inventario] Descontando: Stock Actual ${stockActual} - Cantidad ${cantidad} = Nuevo ${nuevoStock}`);
+
+        // C. Actualizar
+        await tx.productos_inventario.update({
+          where: { id: inventarioId },
+          data: { stock_actual: nuevoStock }
+        });
+
+        // D. Kardex
+        await tx.kardex.create({
+          data: {
+            tenant_id: tenantId,
+            fecha: new Date(),
+            tipo_movimiento: 'SALIDA',
+            motivo: `Venta Web #${order.numero_pedido}`,
+            producto_inventario_id: inventarioId,
+            cantidad: cantidad,
+            costo_unitario: costoUnitario,
+            valor_total: cantidad * costoUnitario,
+            saldo_cantidad: nuevoStock, 
+            saldo_valor: nuevoStock * costoUnitario,
+            documento_tipo: 'PedidoWeb',
+            documento_id: orderId,
+            usuario_id: userId || null,
+            observaciones: 'Descuento automático por entrega de pedido web'
+          }
+        });
+
+        itemsProcesados++;
+      }
+
+      console.log(`🏁 [Inventario] Proceso finalizado. Items descontados: ${itemsProcesados}`);
+    });
+  },
+
   /**
    * Obtener un pedido web específico por ID
    */

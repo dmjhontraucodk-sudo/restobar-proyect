@@ -111,6 +111,7 @@ const createProductSchema = z.object({
   foto_url: z.string().url("URL de foto inválida").optional().nullable(),
   disponible: z.boolean().default(true),
   visible_en_web: z.boolean().default(true),
+  producto_inventario_id: z.number().int().positive().optional().nullable(),
 });
 
 export const createProduct = async (req: AuthRequest, res: Response) => {
@@ -133,7 +134,8 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
       descripcion, 
       foto_url, 
       disponible, 
-      visible_en_web
+      visible_en_web,
+      producto_inventario_id
     } = validation.data;
 
     const nuevoProducto = await prisma.$transaction(async (tx) => {
@@ -168,6 +170,7 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
           foto_url,
           disponible,
           visible_en_web,
+          producto_inventario_id: producto_inventario_id || null,
         },
       });
 
@@ -361,6 +364,7 @@ const updateProductDetailsSchema = z.object({
   foto_url: z.string().url("URL de foto inválida").optional().nullable(),
   disponible: z.boolean().optional(),
   visible_en_web: z.boolean().optional(),
+  producto_inventario_id: z.number().int().positive().optional().nullable(),
 });
 
 export const updateProductDetails = async (req: AuthRequest, res: Response) => {
@@ -388,7 +392,8 @@ export const updateProductDetails = async (req: AuthRequest, res: Response) => {
       descripcion, 
       foto_url, 
       disponible, 
-      visible_en_web
+      visible_en_web,
+      producto_inventario_id
     } = validation.data;
 
     const productoActualizado = await prisma.$transaction(async (tx) => {
@@ -425,6 +430,7 @@ export const updateProductDetails = async (req: AuthRequest, res: Response) => {
           disponible,
           visible_en_web,
           categoria_id: categoriaId,
+          producto_inventario_id: producto_inventario_id,
         },
       });
 
@@ -635,6 +641,8 @@ const updateEstadoSchema = z.object({
 
 export const updateOrdenEstado = async (req: AuthRequest, res: Response) => {
   try {
+    console.log("🔥 [DEBUG] updateOrdenEstado INICIADO"); // LOG 1
+
     const tenantId = req.user?.tenant_id;
     const usuarioId = req.user?.id;
     
@@ -643,106 +651,126 @@ export const updateOrdenEstado = async (req: AuthRequest, res: Response) => {
     }
 
     const ordenId = parseInt(req.params.id);
-    if (isNaN(ordenId)) return res.status(400).json({ error: 'ID inválido.' });
+    const { estado, metodo_pago } = req.body;
 
-    const validation = updateEstadoSchema.safeParse(req.body);
-    if (!validation.success) {
-      return res.status(400).json({ error: 'Datos inválidos', details: validation.error.issues });
-    }
+    console.log(`📡 [DEBUG] Recibido: Orden #${ordenId}, Nuevo Estado: "${estado}"`); // LOG 2
 
-    const { estado, metodo_pago } = validation.data;
-
-    // Buscar la orden actual
+    // 1. Buscar la orden actual
     const ordenActual = await prisma.ordenes.findUnique({
         where: { id: ordenId },
-        include: { ordendetalles: true } // Por si necesitamos info extra
+        include: { 
+            ordendetalles: {
+                include: {
+                    productos: true 
+                }
+            }
+        } 
     });
 
-    if (!ordenActual || ordenActual.tenant_id !== tenantId) {
-        return res.status(404).json({ error: 'Orden no encontrada.' });
+    if (!ordenActual) return res.status(404).json({ error: 'Orden no encontrada.' });
+
+    console.log(`📊 [DEBUG] Estado Actual en BD: "${ordenActual.estado}"`); // LOG 3
+
+    // VALIDACIÓN DE LÓGICA
+    if (estado === 'Pagada' && ordenActual.estado !== 'Pagada') {
+        console.log("✅ [DEBUG] Condición de PAGO detectada. Entrando a lógica de inventario..."); // LOG 4
+    } else {
+        console.log("⚠️ [DEBUG] NO se entró al bloque de pago. ¿Los estados son iguales?");
     }
 
-    // 🔥 TRANSACCIÓN DE COBRO
+    // 🔥 INICIO DE LA TRANSACCIÓN
     await prisma.$transaction(async (tx) => {
         
-        // 1. Si se está PAGANDO, mover dinero a CAJA
+        // SI SE ESTÁ PAGANDO LA ORDEN
         if (estado === 'Pagada' && ordenActual.estado !== 'Pagada') {
             
-            // Validar que se envió método de pago (por defecto Efectivo si no envían)
-            const metodo = metodo_pago || 'Efectivo'; 
-            const montoCobrar = Number(ordenActual.total);
+            console.log(`📦 [DEBUG] Revisando ${ordenActual.ordendetalles.length} items para descuento...`); // LOG 5
 
-            // A. Buscar Caja Abierta
-            const cajaAbierta = await tx.cajas.findFirst({
-                where: { 
-                    tenant_id: tenantId, 
-                    usuario_responsable_id: usuarioId, // La caja del cajero actual
-                    estado: 'Abierta' 
+            for (const detalle of ordenActual.ordendetalles) {
+                const productoMenu = detalle.productos;
+                console.log(`   🔎 Item: ${productoMenu.nombre} - Link ID: ${productoMenu.producto_inventario_id}`); // LOG 6
+
+                if (productoMenu.producto_inventario_id) {
+                    const inventarioId = productoMenu.producto_inventario_id;
+                    const cantidad = Number(detalle.cantidad);
+
+                    const itemInv = await tx.productos_inventario.findUnique({ where: { id: inventarioId }});
+                    
+                    if (itemInv) {
+                        const nuevoStock = Number(itemInv.stock_actual) - cantidad;
+                        console.log(`   📉 [DESCUENTO] ${itemInv.nombre}: Stock ${itemInv.stock_actual} -> ${nuevoStock}`); // LOG 7
+
+                        await tx.productos_inventario.update({
+                            where: { id: inventarioId },
+                            data: { stock_actual: nuevoStock }
+                        });
+
+                        await tx.kardex.create({
+                            data: {
+                                tenant_id: tenantId,
+                                fecha: new Date(),
+                                tipo_movimiento: 'SALIDA',
+                                motivo: `Venta POS #${ordenId}`,
+                                producto_inventario_id: inventarioId,
+                                cantidad: cantidad,
+                                costo_unitario: itemInv.costo_unitario || 0,
+                                valor_total: cantidad * Number(itemInv.costo_unitario || 0),
+                                saldo_cantidad: nuevoStock,
+                                saldo_valor: nuevoStock * Number(itemInv.costo_unitario || 0),
+                                documento_tipo: 'OrdenPOS',
+                                documento_id: ordenId,
+                                usuario_id: usuarioId
+                            }
+                        });
+                    }
+                } else {
+                    console.log(`   ⏩ Item ignorado (Sin vínculo): ${productoMenu.nombre}`);
                 }
-            });
-
-            if (!cajaAbierta) {
-                throw new Error('No tienes una caja abierta para cobrar esta orden.');
             }
 
-            // B. Registrar Movimiento en Caja (INGRESO)
+            // ... CÓDIGO DE CAJA (LO DEJAMOS IGUAL, PERO RESUMIDO AQUÍ) ...
+            const metodo = metodo_pago || 'Efectivo'; 
+            const montoCobrar = Number(ordenActual.total);
+            const cajaAbierta = await tx.cajas.findFirst({
+                where: { tenant_id: tenantId, usuario_responsable_id: usuarioId, estado: 'Abierta' }
+            });
+
+            if (!cajaAbierta) throw new Error('No tienes una caja abierta.');
+
             await tx.cajas_movimientos.create({
                 data: {
-                    tenant_id: tenantId,
-                    caja_id: cajaAbierta.id,
-                    usuario_id: usuarioId,
-                    tipo: 'INGRESO',
-                    concepto: `Cobro Orden #${ordenId}`,
-                    monto: montoCobrar,
-                    metodo_pago: metodo,
-                    documento_tipo: 'Orden',
-                    documento_id: ordenId
+                    tenant_id: tenantId, caja_id: cajaAbierta.id, usuario_id: usuarioId,
+                    tipo: 'INGRESO', concepto: `Cobro Orden #${ordenId}`,
+                    monto: montoCobrar, metodo_pago: metodo, documento_tipo: 'Orden', documento_id: ordenId
                 }
             });
-
-            // C. Actualizar saldo esperado en Caja
+            
             await tx.cajas.update({
                 where: { id: cajaAbierta.id },
-                data: {
-                    monto_esperado: { increment: montoCobrar }
-                }
+                data: { monto_esperado: { increment: montoCobrar } }
             });
 
-            // D. Registrar en historial de Pagos
             await tx.pagos.create({
-                data: {
-                    tenant_id: tenantId,
-                    orden_id: ordenId,
-                    empleado_id: usuarioId,
-                    metodo_pago: metodo,
-                    monto: montoCobrar
-                }
+                data: { tenant_id: tenantId, orden_id: ordenId, empleado_id: usuarioId, metodo_pago: metodo, monto: montoCobrar }
             });
         }
 
-        // 2. Actualizar estado de la Orden
+        // Actualizar Orden
         await tx.ordenes.update({
             where: { id: ordenId },
-            data: {
-                estado: estado,
-                closed_at: (estado === 'Pagada' || estado === 'Cancelada') ? new Date() : null
-            }
+            data: { estado: estado, closed_at: (estado === 'Pagada') ? new Date() : null }
         });
 
-        // 3. Liberar Mesa (Si se paga o cancela)
-        if (estado === 'Pagada' || estado === 'Cancelada') {
-            await tx.mesas.update({
-                where: { id: ordenActual.mesa_id },
-                data: { estado: 'Libre' }
-            });
+        if (estado === 'Pagada') {
+            await tx.mesas.update({ where: { id: ordenActual.mesa_id }, data: { estado: 'Libre' } });
         }
     });
 
+    console.log("✅ [DEBUG] Transacción completada exitosamente"); // LOG 8
     res.status(200).json({ message: `Orden actualizada a ${estado}` });
 
   } catch (error: any) {
-    console.error('Error en updateOrdenEstado:', error);
-    // Manejo de error específico si no hay caja
+    console.error('❌ [ERROR] en updateOrdenEstado:', error);
     if (error.message.includes('No tienes una caja abierta')) {
         return res.status(400).json({ error: error.message });
     }

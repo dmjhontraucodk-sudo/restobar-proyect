@@ -334,6 +334,24 @@ CREATE TABLE `empleados` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `descuentos_empleados` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `tenant_id` INTEGER NOT NULL,
+    `empleado_id` INTEGER NOT NULL,
+    `monto` DECIMAL(10, 2) NOT NULL,
+    `motivo` VARCHAR(255) NOT NULL,
+    `fecha` TIMESTAMP(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
+    `estado` VARCHAR(50) NOT NULL DEFAULT 'Pendiente',
+    `gasto_id` INTEGER NULL,
+    `created_at` TIMESTAMP(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
+
+    INDEX `descuentos_empleados_tenant_id_idx`(`tenant_id`),
+    INDEX `descuentos_empleados_empleado_id_idx`(`empleado_id`),
+    INDEX `descuentos_empleados_gasto_id_idx`(`gasto_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `ordenes` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `tenant_id` INTEGER NOT NULL,
@@ -509,7 +527,6 @@ CREATE TABLE `cierres_inventario_detalles` (
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-<<<<<<<< HEAD:backend_core/prisma/migrations/20251120055223_modulo_finanzas_completo/migration.sql
 -- CreateTable
 CREATE TABLE `kardex` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
@@ -577,8 +594,6 @@ CREATE TABLE `cajas_movimientos` (
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-========
->>>>>>>> origin/jcsc:backend_core/prisma/migrations/20251119200707/migration.sql
 -- AddForeignKey
 ALTER TABLE `categorias_inventario` ADD CONSTRAINT `categorias_inventario_tenant_id_fkey` FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -682,6 +697,15 @@ ALTER TABLE `empleados` ADD CONSTRAINT `empleados_ibfk_1` FOREIGN KEY (`tenant_i
 ALTER TABLE `empleados` ADD CONSTRAINT `empleados_ibfk_2` FOREIGN KEY (`rol_id`) REFERENCES `roles`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
 
 -- AddForeignKey
+ALTER TABLE `descuentos_empleados` ADD CONSTRAINT `descuentos_empleados_tenant_id_fkey` FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `descuentos_empleados` ADD CONSTRAINT `descuentos_empleados_empleado_id_fkey` FOREIGN KEY (`empleado_id`) REFERENCES `empleados`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `descuentos_empleados` ADD CONSTRAINT `descuentos_empleados_gasto_id_fkey` FOREIGN KEY (`gasto_id`) REFERENCES `gastos`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE `ordenes` ADD CONSTRAINT `ordenes_ibfk_1` FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE ON UPDATE RESTRICT;
 
 -- AddForeignKey
@@ -740,13 +764,15 @@ ALTER TABLE `cierres_inventario_detalles` ADD CONSTRAINT `cierres_inventario_det
 
 -- AddForeignKey
 ALTER TABLE `cierres_inventario_detalles` ADD CONSTRAINT `cierres_inventario_detalles_producto_inventario_id_fkey` FOREIGN KEY (`producto_inventario_id`) REFERENCES `productos_inventario`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-<<<<<<<< HEAD:backend_core/prisma/migrations/20251120055223_modulo_finanzas_completo/migration.sql
 
 -- AddForeignKey
 ALTER TABLE `kardex` ADD CONSTRAINT `kardex_tenant_id_fkey` FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `kardex` ADD CONSTRAINT `kardex_producto_inventario_id_fkey` FOREIGN KEY (`producto_inventario_id`) REFERENCES `productos_inventario`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `kardex` ADD CONSTRAINT `kardex_usuario_id_fkey` FOREIGN KEY (`usuario_id`) REFERENCES `empleados`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `cajas` ADD CONSTRAINT `cajas_tenant_id_fkey` FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
@@ -762,5 +788,3 @@ ALTER TABLE `cajas_movimientos` ADD CONSTRAINT `cajas_movimientos_tenant_id_fkey
 
 -- AddForeignKey
 ALTER TABLE `cajas_movimientos` ADD CONSTRAINT `cajas_movimientos_usuario_id_fkey` FOREIGN KEY (`usuario_id`) REFERENCES `empleados`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
-========
->>>>>>>> origin/jcsc:backend_core/prisma/migrations/20251119200707/migration.sql

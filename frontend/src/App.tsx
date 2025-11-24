@@ -20,10 +20,8 @@ import KitchenManagementPage from './pages/dashboard/KitchenManagement';
 import WebOrdersManagementPage from "./pages/WebOrdersManagement";
 
 // ✨ PÁGINAS DE INVENTARIO
-import CategoriasInventario from "./pages/dashboard/inventario/CategoriasInventario";
+import InventarioPage from "./pages/dashboard/inventario/InventarioPage"; // ⭐ NUEVO WRAPPER
 import TiposGasto from "./pages/dashboard/inventario/TiposGasto";
-import UnidadesMedida from "./pages/dashboard/inventario/UnidadesMedida";
-import ProductosInventario from "./pages/dashboard/inventario/ProductosInventario";
 import KardexPage from "./pages/dashboard/inventario/KardexPage";
 import Compras from "./pages/dashboard/inventario/Compras";
 
@@ -37,7 +35,7 @@ import Gastos from "./pages/dashboard/Finanzas/Gastos";
 import CajaPage from "./pages/dashboard/Finanzas/CajaPage";
 import HistorialCajasPage from "./pages/dashboard/Finanzas/HistorialCajasPage";
 import FinancialPage from "./pages/dashboard/Finanzas/FinancialPage";
-import NominaPage from "./pages/dashboard/Finanzas/NominaPage"; // ✅ AQUÍ ESTÁ LA NUEVA PÁGINA
+import NominaPage from "./pages/dashboard/Finanzas/NominaPage";
 
 // --- Páginas Públicas del Tenant (Restobar) ---
 import RestobarLanding from "./pages/public/RestobarLanding";
@@ -104,8 +102,6 @@ const TenantPrivateRoutes = () => (
           
           {/* 📊 DASHBOARD PRINCIPAL */}
           <Route index element={<Overview />} />
-          {/* Dashboard Principal */}
-          <Route index element={<Overview />} />
 
           {/* 🍔 MENÚ & COCINA */}
           <Route path="menu" element={<MenuManagementPage tipo="COMIDA" />} />
@@ -117,10 +113,10 @@ const TenantPrivateRoutes = () => (
           <Route path="web-orders" element={<WebOrdersManagementPage />} />
           <Route path="tables" element={<TablesManagementPage />} />
           <Route path="reservas" element={<ReservationsManagementPage />} />
-          <Route path="/dashboard/team" element={<TeamManagement />} />
+          <Route path="team" element={<TeamManagement />} />
 
           {/* 📦 INVENTARIO */}
-          <Route path="productos-inventario" element={<ProductosInventario />} />
+          <Route path="inventario" element={<InventarioPage />} /> {/* ⭐ NUEVA RUTA UNIFICADA CON TABS */}
           <Route path="kardex" element={<KardexPage />} />
           <Route path="compras" element={<Compras />} />
           
@@ -130,16 +126,14 @@ const TenantPrivateRoutes = () => (
           <Route path="cierre-inventario/:id" element={<DetalleCierreInventario />} />
           
           {/* Configuración de Inventario */}
-          <Route path="categorias-inventario" element={<CategoriasInventario />} />
           <Route path="tipos-gasto" element={<TiposGasto />} />
-          <Route path="unidades-medida" element={<UnidadesMedida />} />
 
           {/* 💰 FINANZAS */}
           <Route path="caja" element={<CajaPage />} />
           <Route path="caja/historial" element={<HistorialCajasPage />} />
           <Route path="gastos" element={<Gastos />} />
           <Route path="finances" element={<FinancialPage />} />
-          <Route path="nomina" element={<NominaPage />} /> {/* ✅ RUTA AGREGADA CORRECTAMENTE */}
+          <Route path="nomina" element={<NominaPage />} />
 
           {/* Ruta legacy (por compatibilidad) */}
           <Route path="inventory" element={<InventoryManagementPage />} />

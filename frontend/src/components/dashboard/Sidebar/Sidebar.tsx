@@ -123,13 +123,6 @@ const FlyoutNavigationContent: React.FC<{
             onClick={onLinkClick} 
           />
           <SidebarLink
-            to="/dashboard/tables"
-            icon={<Icons.TableIcon />}
-            label="Mesas"
-            isCollapsed={false}
-            onClick={onLinkClick}
-          />
-          <SidebarLink
             to="/dashboard/reservas"
             icon={<Icons.CalendarIcon />}
             label="Reservas"
@@ -175,10 +168,11 @@ const FlyoutNavigationContent: React.FC<{
           Inventario
         </h3>
         <div className="space-y-1">
+          {/* ⭐ CAMBIADO: Ahora apunta a /dashboard/inventario */}
           <SidebarLink
-            to="/dashboard/productos-inventario"
+            to="/dashboard/inventario"
             icon={<Icons.PackageIcon />}
-            label="Productos"
+            label="Gestión de Inventario"
             isCollapsed={false}
             onClick={onLinkClick}
           />
@@ -189,7 +183,6 @@ const FlyoutNavigationContent: React.FC<{
             isCollapsed={false} 
             onClick={onLinkClick}
           />
-          {/* ✨ NUEVO: Compras (Solo Inventario) */}
           <SidebarLink
             to="/dashboard/compras"
             icon={<Icons.ShoppingCartIcon />}
@@ -197,7 +190,6 @@ const FlyoutNavigationContent: React.FC<{
             isCollapsed={false}
             onClick={onLinkClick}
           />
-          {/* ✨ NUEVO: Cierre de Inventario */}
           <SidebarLink
             to="/dashboard/cierre-inventario"
             icon={<Icons.ClipboardCheckIcon />}
@@ -206,15 +198,17 @@ const FlyoutNavigationContent: React.FC<{
             onClick={onLinkClick}
           />
 
-          {/* Configuración de Inventario (submenu) */}
+          {/* ❌ ELIMINADO: Configuración de Inventario (ya están como tabs) */}
+          {/* Configuración de Inventario (submenu) - ELIMINADO
           <div className="ml-2 mt-2 pt-2 border-t border-gray-100">
-            <SidebarLink
-              to="/dashboard/categorias-inventario"
-              icon={<Icons.TagIcon />}
-              label="Categorías"
-              isCollapsed={false}
-              onClick={onLinkClick}
-            />
+            <SidebarLink to="/dashboard/categorias-inventario" ... />
+            <SidebarLink to="/dashboard/tipos-gasto" ... />
+            <SidebarLink to="/dashboard/unidades-medida" ... />
+          </div>
+          */}
+          
+          {/* Solo dejamos Tipos de Gasto porque no está en los tabs */}
+          <div className="ml-2 mt-2 pt-2 border-t border-gray-100">
             <SidebarLink
               to="/dashboard/tipos-gasto"
               icon={<Icons.ListIcon />}
@@ -222,18 +216,11 @@ const FlyoutNavigationContent: React.FC<{
               isCollapsed={false}
               onClick={onLinkClick}
             />
-            <SidebarLink
-              to="/dashboard/unidades-medida"
-              icon={<Icons.RulerIcon />}
-              label="Unidades"
-              isCollapsed={false}
-              onClick={onLinkClick}
-            />
           </div>
         </div>
       </div>
 
-      {/* ✨ GRUPO 4: FINANZAS (NUEVO) ✨ */}
+      {/* ✨ GRUPO 4: FINANZAS ✨ */}
       <div className="pt-2">
         <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 px-3">
           Finanzas

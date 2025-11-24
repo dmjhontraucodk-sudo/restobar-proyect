@@ -82,23 +82,22 @@ import { rolesController } from '../controller/app/roles.controller';
 import { nominaController, calcularPagoEmpleado } from '../controller/app/nomina.controller';
 
 import { cierrePosController } from '../controller/app/cierre-pos.controller';
-// ✨ NUEVA IMPORTACIÓN: Tu nuevo controlador de Pedidos Web Listos
-import { webReadyOrdersController } from '../controller/app/web-ready-orders.controller';
-const router = Router();
 
-// ========== 🖼️ IMÁGENES ==========
-router.post('/upload-image', validateToken, upload.single('image'), uploadImage);
+// ✅ IMPORTAMOS EL CONTROLADOR CORRECTO (El que tiene la lógica de Inventario)
+import { webOrdersController } from '../controller/web-orders.controller';
+
+const router = Router();
 
 // ========== 📊 DASHBOARD GENERAL ==========
 router.get('/info', validateToken, getDashboardInfo);
+router.get('/overview', validateToken, getOverviewData);
+
 // --- Subida de Imágenes ---
 router.post('/upload-image',
   validateToken,
   upload.single('image'),
   uploadImage
 );
-
-router.get('/overview', validateToken, getOverviewData);
 
 // ========== 🍔 MENÚ Y PRODUCTOS ==========
 router.get('/products', validateToken, getProducts);
@@ -117,8 +116,9 @@ router.patch('/ordenes/:id/cierre', validateToken, cierrePosController.closeOrde
 router.post('/ordenes/:id/items', validateToken, addItemsToOrden);
 
 // ========== ✨ NUEVA SECCIÓN: PEDIDOS WEB LISTOS ✨ ==========
-router.get('/web-ready-orders', validateToken, webReadyOrdersController.getReadyOrders);
-router.patch('/web-ready-orders/:id/status', validateToken, webReadyOrdersController.updateStatus);
+// Estas rutas ahora usan webOrdersController para gestionar el inventario automáticamente
+router.get('/web-ready-orders', validateToken, webOrdersController.getWebOrders);
+router.patch('/web-ready-orders/:id/status', validateToken, webOrdersController.updateOrderStatus);
 
 router.get('/cocina/pedidos', validateToken, cocinaController.getPedidosCocina);
 router.patch('/cocina/pedidos/:id/estado', validateToken, cocinaController.updateEstadoPedido);
@@ -202,6 +202,5 @@ router.post('/roles/:id/activar', validateToken, rolesController.activarRol);
 router.get('/nomina', validateToken, nominaController.getNomina);
 router.get('/nomina/estadisticas', validateToken, nominaController.getEstadisticasNomina);
 router.get('/nomina/calcular/:id', validateToken, calcularPagoEmpleado);
-
 
 export default router;

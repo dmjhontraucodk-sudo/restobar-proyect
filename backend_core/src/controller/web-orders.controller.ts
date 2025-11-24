@@ -166,6 +166,8 @@ export const webOrdersController = {
         return res.status(403).json({ error: 'Acceso no autorizado' });
       }
 
+      console.log(`📡 RECIBIDO cambio de estado para Pedido #${orderId}: ${nuevo_estado}`);
+
       if (!nuevo_estado) {
         return res.status(400).json({ error: 'Nuevo estado requerido' });
       }
@@ -178,38 +180,44 @@ export const webOrdersController = {
         });
       }
 
+      // 1. Actualizar el estado en BD
       const updatedOrder = await webOrdersService.updateOrderStatus(
         tenantId, 
         orderId, 
         nuevo_estado as webpedidos_estado
       );
 
-      // Obtener configuración para notificaciones
-      const tenantConfig = await webOrdersService.getOrderConfig(tenantId);
+      // 2. LÓGICA DE INVENTARIO (CORREGIDA)
+      // Usamos el Enum para comparar, es más seguro que el string 'Entregado'
+      if (nuevo_estado === webpedidos_estado.Entregado) {
+         console.log(`🚀 Iniciando descuento de inventario para pedido #${orderId}...`);
+         try {
+             // Llamamos al servicio
+             await webOrdersService.processInventoryDeduction(tenantId, orderId, req.user?.id);
+         } catch (invError) {
+             console.error('❌ ERROR CRÍTICO actualizando inventario:', invError);
+         }
+      } else {
+        console.log(`ℹ️ El estado "${nuevo_estado}" no requiere descuento de inventario.`);
+      }
 
-      // Enviar notificaciones según el estado
+      // 3. Notificaciones (Se mantiene tu código original)
+      const tenantConfig = await webOrdersService.getOrderConfig(tenantId);
       if (updatedOrder.cliente_email) {
         try {
           switch (nuevo_estado) {
-            case 'Confirmado':
-              if (tenantConfig.notif_pedido_confirmado) {
-                await emailService.sendOrderConfirmation(updatedOrder, tenantConfig);
-              }
+            case webpedidos_estado.Confirmado: // Usa el Enum
+              if (tenantConfig.notif_pedido_confirmado) await emailService.sendOrderConfirmation(updatedOrder, tenantConfig);
               break;
-            case 'Cancelado':
-              if (tenantConfig.notif_pedido_cancelado) {
-                await emailService.sendOrderCancellation(updatedOrder, tenantConfig, razon_cancelacion);
-              }
+            case webpedidos_estado.Cancelado:
+              if (tenantConfig.notif_pedido_cancelado) await emailService.sendOrderCancellation(updatedOrder, tenantConfig, razon_cancelacion);
               break;
-            case 'ListoParaRecoger':
-              if (tenantConfig.notif_pedido_listo) {
-                await emailService.sendOrderReady(updatedOrder, tenantConfig);
-              }
+            case webpedidos_estado.ListoParaRecoger:
+              if (tenantConfig.notif_pedido_listo) await emailService.sendOrderReady(updatedOrder, tenantConfig);
               break;
           }
         } catch (emailError) {
           console.error('Error al enviar notificación por email:', emailError);
-          // No fallar la actualización si el email falla
         }
       }
 

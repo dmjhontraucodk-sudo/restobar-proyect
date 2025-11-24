@@ -139,7 +139,7 @@ const CompactOrderCard: React.FC<{
         [WEBPEDIDOS_ESTADO.Cancelado]: { color: 'bg-red-100 text-red-800', badge: '❌' },
         [WEBPEDIDOS_ESTADO.EnPreparacion]: { color: 'bg-amber-100 text-amber-800', badge: '⏱️' },
     };
-
+ 
     const status = statusConfig[order.estado] || { color: 'bg-gray-100 text-gray-800', badge: '❓' };
 
     const getPriorityScore = (order: ApiWebPedido): number => {

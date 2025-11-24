@@ -1,4 +1,4 @@
-// src/pages/dashboard/ProductosInventario.tsx
+// src/pages/dashboard/ProductosInventario.tsx - VERSIÓN COMPACTA
 
 import React, { useState, useEffect } from 'react';
 import { useDashboardApi } from '../../../hooks/useDashboardApi';
@@ -163,114 +163,104 @@ const ProductosInventario: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        <p className="ml-4 text-lg text-gray-600">Cargando productos...</p>
+      <div className="flex justify-center items-center h-48 p-4">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+        <p className="ml-3 text-gray-600">Cargando productos...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Productos de Inventario</h1>
-              <p className="text-gray-600 mt-1">Gestiona los productos de tu inventario</p>
-            </div>
-            <button
-              onClick={() => handleOpenModal()}
-              className="bg-blue-600 text-white px-6 py-2.5 rounded-xl hover:bg-blue-700 transition-colors font-medium"
-            >
-              + Nuevo Producto
-            </button>
-          </div>
-
-          {/* Alertas */}
-          {productosStockBajo.length > 0 && (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl">⚠️</span>
-                <div>
-                  <p className="font-medium text-amber-900">
-                    {productosStockBajo.length} producto{productosStockBajo.length > 1 ? 's' : ''} con stock bajo
-                  </p>
-                  <p className="text-sm text-amber-700">Revisa tu inventario y considera hacer un pedido</p>
+    <div className="p-4">
+      <div className="space-y-4">
+        {/* Barra superior: Alertas + Botón */}
+        <div className="flex items-start justify-between gap-4">
+          {/* Alertas compactas */}
+          <div className="flex-1">
+            {productosStockBajo.length > 0 && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">⚠️</span>
+                  <div>
+                    <p className="text-sm font-medium text-amber-900">
+                      {productosStockBajo.length} producto{productosStockBajo.length > 1 ? 's' : ''} con stock bajo
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
-          {/* Filtros */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar producto..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
+          {/* Botón Nuevo Producto */}
+          <button
+            onClick={() => handleOpenModal()}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm whitespace-nowrap shadow-sm"
+          >
+            + Nuevo Producto
+          </button>
+        </div>
 
-            <div>
-              <select
-                value={categoriaFilter}
-                onChange={(e) => setCategoriaFilter(e.target.value === 'all' ? 'all' : parseInt(e.target.value))}
-                className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="all">Todas las categorías</option>
-                {categorias.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.icono} {cat.nombre}
-                  </option>
-                ))}
-              </select>
-            </div>
+        {/* Filtros compactos */}
+        <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Buscar producto..."
+              className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
 
-            <div>
-              <select
-                value={stockAlert}
-                onChange={(e) => setStockAlert(e.target.value as any)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="all">Todos los niveles de stock</option>
-                <option value="bajo">⚠️ Stock bajo</option>
-                <option value="ok">✅ Stock OK</option>
-              </select>
-            </div>
+            <select
+              value={categoriaFilter}
+              onChange={(e) => setCategoriaFilter(e.target.value === 'all' ? 'all' : parseInt(e.target.value))}
+              className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="all">Todas las categorías</option>
+              {categorias.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.icono} {cat.nombre}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={stockAlert}
+              onChange={(e) => setStockAlert(e.target.value as any)}
+              className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="all">Todos los niveles de stock</option>
+              <option value="bajo">⚠️ Stock bajo</option>
+              <option value="ok">✅ Stock OK</option>
+            </select>
           </div>
         </div>
-      </div>
 
-      {/* Tabla de productos */}
-      <div className="px-6 py-6 max-w-7xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        {/* Tabla de productos - compacta */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Producto
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Categoría
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Stock Actual
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Stock Mínimo
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Costo Unit.
                   </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-2.5 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Estado
                   </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-2.5 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Acciones
                   </th>
                 </tr>
@@ -283,23 +273,23 @@ const ProductosInventario: React.FC = () => {
 
                   return (
                     <tr key={producto.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className={`text-2xl ${!producto.activo && 'opacity-40'}`}>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <div className={`text-xl ${!producto.activo && 'opacity-40'}`}>
                             {producto.categorias_inventario?.icono || '📦'}
                           </div>
                           <div>
-                            <p className="font-medium text-gray-900">{producto.nombre}</p>
+                            <p className="font-medium text-gray-900 text-sm">{producto.nombre}</p>
                             {producto.codigo_barras && (
-                              <p className="text-sm text-gray-500">{producto.codigo_barras}</p>
+                              <p className="text-xs text-gray-500">{producto.codigo_barras}</p>
                             )}
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3">
                         {producto.categorias_inventario ? (
                           <span
-                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
                             style={{
                               backgroundColor: `${producto.categorias_inventario.color}20`,
                               color: producto.categorias_inventario.color || '#000',
@@ -308,34 +298,34 @@ const ProductosInventario: React.FC = () => {
                             {producto.categorias_inventario.nombre}
                           </span>
                         ) : (
-                          <span className="text-gray-400 text-sm">Sin categoría</span>
+                          <span className="text-gray-400 text-xs">Sin categoría</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          {isBajoStock && <span className="text-amber-500">⚠️</span>}
-                          <span className={`font-semibold ${isBajoStock ? 'text-amber-600' : 'text-gray-900'}`}>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {isBajoStock && <span className="text-amber-500 text-sm">⚠️</span>}
+                          <span className={`font-semibold text-sm ${isBajoStock ? 'text-amber-600' : 'text-gray-900'}`}>
                             {stockActual}
                           </span>
-                          <span className="text-gray-500 text-sm">
+                          <span className="text-gray-500 text-xs">
                             {producto.unidades_medida?.abreviatura || 'un'}
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-right">
-                        <span className="text-gray-600">
+                      <td className="px-4 py-3 text-right">
+                        <span className="text-gray-600 text-sm">
                           {stockMinimo} {producto.unidades_medida?.abreviatura || 'un'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-right">
-                        <span className="font-medium text-gray-900">
+                      <td className="px-4 py-3 text-right">
+                        <span className="font-medium text-gray-900 text-sm">
                           S/. {Number(producto.costo_unitario).toFixed(2)}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-center">
+                      <td className="px-4 py-3 text-center">
                         <button
                           onClick={() => handleToggleActivo(producto)}
-                          className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                          className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
                             producto.activo
                               ? 'bg-green-100 text-green-700 hover:bg-green-200'
                               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -344,7 +334,7 @@ const ProductosInventario: React.FC = () => {
                           {producto.activo ? 'Activo' : 'Inactivo'}
                         </button>
                       </td>
-                      <td className="px-6 py-4 text-center">
+                      <td className="px-4 py-3 text-center">
                         <button
                           onClick={() => handleOpenModal(producto)}
                           className="text-blue-600 hover:text-blue-800 font-medium text-sm"
@@ -359,15 +349,15 @@ const ProductosInventario: React.FC = () => {
             </table>
 
             {productosFiltrados.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-gray-500">No se encontraron productos</p>
+              <div className="text-center py-8">
+                <p className="text-gray-500 text-sm">No se encontraron productos</p>
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* MODAL*/}
+      {/* MODAL */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
