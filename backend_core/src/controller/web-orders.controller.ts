@@ -1,4 +1,5 @@
-// backend_core/src/controller/auth/web-orders.controller.ts - CON CAJA AUTOMÁTICA
+// backend_core/src/controller/auth/web-orders.controller.ts
+// ✅ VERSIÓN CORREGIDA: BLOQUEA si no hay caja abierta
 
 import { Request, Response } from 'express';
 import { webOrdersService, webpedidos_estado } from '../services/web-orders.service';
@@ -157,11 +158,11 @@ export const webOrdersController = {
     }
   },
 
-  // ✨ CAMBIAR ESTADO DEL PEDIDO (ADMIN) - CON CAJA AUTOMÁTICA ✨
+  // ✅ CAMBIAR ESTADO DEL PEDIDO (ADMIN) - CON VALIDACIÓN BLOQUEANTE DE CAJA
   async updateOrderStatus(req: AuthRequest, res: Response) {
     try {
       const tenantId = req.user?.tenant_id;
-      const empleadoId = req.user?.id; // ✅ NECESARIO PARA CAJA
+      const empleadoId = req.user?.id;
       const orderId = parseInt(req.params.id);
       const { nuevo_estado, razon_cancelacion } = req.body;
 
@@ -169,7 +170,7 @@ export const webOrdersController = {
         return res.status(403).json({ error: 'Acceso no autorizado' });
       }
 
-      console.log(`📡 RECIBIDO cambio de estado para Pedido Web #${orderId}: ${nuevo_estado}`);
+      console.log(`📡 [WEB-ORDER] Cambio de estado solicitado para Pedido #${orderId}: ${nuevo_estado}`);
 
       if (!nuevo_estado) {
         return res.status(400).json({ error: 'Nuevo estado requerido' });
@@ -183,71 +184,113 @@ export const webOrdersController = {
         });
       }
 
-      // 1. Actualizar el estado en BD
+      // ========== 🔒 VALIDACIÓN CRÍTICA: CAJA ABIERTA OBLIGATORIA ==========
+      if (nuevo_estado === webpedidos_estado.Entregado) {
+        console.log(`🔍 [WEB-ORDER] Verificando caja abierta para finalizar pedido #${orderId}...`);
+        
+        // Verificar si hay caja abierta
+        const cajaAbierta = await cierrePosService.verificarCajaAbierta(tenantId, empleadoId);
+        
+        if (!cajaAbierta) {
+          console.error(`❌ [WEB-ORDER] NO hay caja abierta. Bloqueando finalización del pedido #${orderId}`);
+          return res.status(400).json({ 
+            success: false,
+            error: 'No se puede finalizar el pedido',
+            message: 'Debe haber una caja abierta para poder finalizar pedidos web. Por favor, abre una caja primero desde el módulo de Caja.',
+            codigo: 'CAJA_NO_ABIERTA',
+            accion_requerida: 'Abrir Caja'
+          });
+        }
+
+        console.log(`✅ [WEB-ORDER] Caja #${cajaAbierta.id} está abierta. Procediendo...`);
+
+        // ========== 💰 REGISTRAR VENTA EN CAJA ==========
+        console.log(`💰 [WEB-ORDER] Registrando venta en caja para pedido #${orderId}...`);
+        
+        try {
+          // Obtener el pedido para el monto
+          const pedidoParaCaja = await webOrdersService.getWebOrderById(tenantId, orderId);
+          
+          if (!pedidoParaCaja) {
+            return res.status(404).json({ error: 'Pedido no encontrado' });
+          }
+
+          // Determinar método de pago (por defecto Efectivo)
+          // TODO: Añadir campo "metodo_pago" en webpedidos si quieres más control
+          const metodoPago: pagos_metodo_pago = pagos_metodo_pago.Efectivo;
+          const montoTotal = Number(pedidoParaCaja.total);
+
+          // Registrar en caja usando el service centralizado
+          await cierrePosService.registrarVentaEnCaja({
+            tenantId,
+            empleadoId,
+            ordenId: orderId,
+            monto: montoTotal,
+            metodoPago: metodoPago,
+            tipoDocumento: 'WebPedido'
+          });
+
+          console.log(`✅ [WEB-ORDER] Venta registrada exitosamente: S/ ${montoTotal.toFixed(2)}`);
+        } catch (cajaError: any) {
+          console.error('❌ [WEB-ORDER] Error al registrar venta en caja:', cajaError);
+          return res.status(500).json({ 
+            success: false,
+            error: 'Error al registrar la venta en caja',
+            details: cajaError.message
+          });
+        }
+
+        // ========== 📦 DESCONTAR INVENTARIO ==========
+        console.log(`📦 [WEB-ORDER] Descontando inventario para pedido #${orderId}...`);
+        try {
+          await webOrdersService.processInventoryDeduction(tenantId, orderId, empleadoId);
+          console.log(`✅ [WEB-ORDER] Inventario descontado correctamente`);
+        } catch (invError: any) {
+          console.error('❌ [WEB-ORDER] Error al descontar inventario:', invError);
+          return res.status(500).json({ 
+            success: false,
+            error: 'Error al actualizar el inventario',
+            details: invError.message
+          });
+        }
+      }
+
+      // ========== 📝 ACTUALIZAR ESTADO DEL PEDIDO ==========
       const updatedOrder = await webOrdersService.updateOrderStatus(
         tenantId, 
         orderId, 
         nuevo_estado as webpedidos_estado
       );
 
-      // 2. ✨ REGISTRAR EN CAJA SI SE MARCA COMO "Entregado" ✨
-      if (nuevo_estado === webpedidos_estado.Entregado) {
-         console.log(`💰 [WEB] Registrando venta en caja para Pedido Web #${orderId}...`);
-         
-         try {
-             // Determinar método de pago (por defecto Efectivo, puedes mejorarlo)
-             // TODO: Añadir campo "metodo_pago" en el modelo webpedidos si quieres más control
-             const metodoPago: pagos_metodo_pago = pagos_metodo_pago.Efectivo;
-             const montoTotal = Number(updatedOrder.total);
+      console.log(`✅ [WEB-ORDER] Estado actualizado correctamente a: ${nuevo_estado}`);
 
-             // Llamar al servicio centralizado para registrar en caja
-             await cierrePosService.registrarVentaEnCaja({
-                 tenantId,
-                 empleadoId,
-                 ordenId: orderId,
-                 monto: montoTotal,
-                 metodoPago: metodoPago,
-                 tipoDocumento: 'WebPedido'
-             });
-
-             console.log(`✅ [WEB] Venta registrada en caja: S/ ${montoTotal}`);
-         } catch (cajaError) {
-             console.error('❌ ERROR registrando venta en caja:', cajaError);
-             // NO fallar la respuesta, solo logueamos el error
-             // Puedes decidir si quieres notificar al admin de alguna forma
-         }
-      }
-
-      // 3. Descontar inventario (Ya lo tenías)
-      if (nuevo_estado === webpedidos_estado.Entregado) {
-         console.log(`📦 [WEB] Descontando inventario para Pedido Web #${orderId}...`);
-         try {
-             await webOrdersService.processInventoryDeduction(tenantId, orderId, empleadoId);
-         } catch (invError) {
-             console.error('❌ ERROR actualizando inventario:', invError);
-         }
-      }
-
-      // 4. Notificaciones por Email (Ya lo tenías)
+      // ========== 📧 ENVIAR NOTIFICACIONES POR EMAIL ==========
       const tenantConfig = await webOrdersService.getOrderConfig(tenantId);
       if (updatedOrder.cliente_email) {
         try {
           switch (nuevo_estado) {
             case webpedidos_estado.Confirmado:
-              if (tenantConfig.notif_pedido_confirmado) 
+              if (tenantConfig.notif_pedido_confirmado) {
                 await emailService.sendOrderConfirmation(updatedOrder, tenantConfig);
+                console.log(`📧 [WEB-ORDER] Email de confirmación enviado`);
+              }
               break;
             case webpedidos_estado.Cancelado:
-              if (tenantConfig.notif_pedido_cancelado) 
+              if (tenantConfig.notif_pedido_cancelado) {
                 await emailService.sendOrderCancellation(updatedOrder, tenantConfig, razon_cancelacion);
+                console.log(`📧 [WEB-ORDER] Email de cancelación enviado`);
+              }
               break;
             case webpedidos_estado.ListoParaRecoger:
-              if (tenantConfig.notif_pedido_listo) 
+              if (tenantConfig.notif_pedido_listo) {
                 await emailService.sendOrderReady(updatedOrder, tenantConfig);
+                console.log(`📧 [WEB-ORDER] Email de pedido listo enviado`);
+              }
               break;
           }
         } catch (emailError) {
-          console.error('Error al enviar notificación por email:', emailError);
+          console.error('⚠️ [WEB-ORDER] Error al enviar email (no crítico):', emailError);
+          // No bloqueamos por errores de email
         }
       }
 
@@ -256,8 +299,9 @@ export const webOrdersController = {
         message: `Estado del pedido actualizado a ${nuevo_estado}`,
         order: updatedOrder
       });
+
     } catch (error: any) {
-      console.error('Error en updateOrderStatus:', error);
+      console.error('❌ [WEB-ORDER] Error en updateOrderStatus:', error);
       res.status(500).json({ 
         success: false,
         error: error.message || 'Error interno del servidor al actualizar el estado' 
