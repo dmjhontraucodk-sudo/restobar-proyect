@@ -878,3 +878,48 @@ export interface DashboardOverview {
     topPlatos: TopProductoData[];
     topBebidas: TopProductoData[];
 }
+
+// === 1. Tipos de Ventas y Órdenes ===
+export interface SalesTrendData {
+    dia: string; // YYYY-MM-DD
+    total: number;
+}
+
+export interface SalesReport {
+    totalVentas: number;
+    totalDescuentos: number;
+    ordenesPOS: number;
+    webPedidos: number;
+    ventaPromedio: number;
+    tendencia: SalesTrendData[];
+}
+
+// === 2. Tipos de Inventario y Costos ===
+export interface InventoryReport {
+    lowStockCount: number;
+    inventoryValue: number;
+    totalMermas: number;
+    totalCompras: number; // Compras en el rango de fecha
+}
+
+// === 3. Tipos de Finanzas, Gastos y Caja ===
+export interface PaymentMethodData {
+    metodo: 'Efectivo' | 'Tarjeta' | 'Transferencia' | 'Otro';
+    total: number;
+}
+
+export interface ExpenseByCategoryData {
+    nombre: string;
+    total: number;
+}
+
+export interface FinanceReport {
+    totalIngresos: number;
+    totalGastos: number;
+    margenBruto: number;
+    ingresosPorMetodo: PaymentMethodData[];
+    gastosPorTipo: ExpenseByCategoryData[];
+    totalSobrante: number;
+    totalDesfalco: number;
+    cierresConDiferencia: number;
+}

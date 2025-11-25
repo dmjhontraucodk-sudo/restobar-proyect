@@ -36,6 +36,8 @@ import CajaPage from "./pages/dashboard/Finanzas/CajaPage";
 import HistorialCajasPage from "./pages/dashboard/Finanzas/HistorialCajasPage";
 import FinancialPage from "./pages/dashboard/Finanzas/FinancialPage";
 import NominaPage from "./pages/dashboard/Finanzas/NominaPage";
+// 📈 PÁGINA DE REPORTES (NUEVA RUTA)
+import ReportsPage from './pages/ReportsPage'; 
 
 // --- Páginas Públicas del Tenant (Restobar) ---
 import RestobarLanding from "./pages/public/RestobarLanding";
@@ -137,6 +139,9 @@ const TenantPrivateRoutes = () => (
 
           {/* Ruta legacy (por compatibilidad) */}
           <Route path="inventory" element={<InventoryManagementPage />} />
+
+          {/* 📈 RUTA DE REPORTES */}
+          <Route path="reports" element={<ReportsPage />} />
         </Route>
       </Route>
     </Route>

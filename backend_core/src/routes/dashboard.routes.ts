@@ -1,5 +1,4 @@
 // src/routes/dashboard.routes.ts - VERSIÓN ACTUALIZADA CON CAJA CORREGIDA
-
 import { Router } from 'express';
 import { validateToken } from '../middleware/auth.middleware';
 import upload from '../middleware/upload.middleware'; 
@@ -79,6 +78,8 @@ import { cierrePosController } from '../controller/app/cierre-pos.controller';
 
 // ✅ IMPORTAMOS EL CONTROLADOR CORRECTO (El que tiene la lógica de Inventario y Caja)
 import { webOrdersController } from '../controller/web-orders.controller';
+// 📊 IMPORTAMOS EL NUEVO CONTROLADOR DE REPORTES
+import { reportsController } from '../controller/app/reports.controller';
 
 const router = Router();
 
@@ -173,6 +174,11 @@ router.get('/cierres-inventario/:id/estadisticas', validateToken, getCierreEstad
 router.post('/cierres-inventario', validateToken, createCierreInventario);
 router.put('/cierres-inventario/:id', validateToken, updateCierreInventario);
 router.post('/cierres-inventario/:id/finalizar', validateToken, finalizarCierre);
+
+// ========== 📈 RUTAS DE REPORTES (NUEVO MÓDULO) ==========
+router.get('/reports/sales/summary', validateToken, reportsController.getSalesSummary);
+router.get('/reports/inventory/summary', validateToken, reportsController.getInventorySummary);
+router.get('/reports/finance/summary', validateToken, reportsController.getFinanceSummary);
 
 // ========== 👥 EQUIPO Y RRHH ==========
 router.get('/empleados', validateToken, empleadosController.getAllEmpleados);
