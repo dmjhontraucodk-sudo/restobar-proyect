@@ -1,4 +1,4 @@
-// src/services/web-orders.service.ts - VERSIÓN CORREGIDA PARA ERRORES DE TIPOS
+// src/services/web-orders.service.ts - VERSIÓN CORREGIDA CON producto_inventario_id
 import { prisma } from '../lib/prisma';
 
 // Definir enums manualmente hasta que Prisma los genere
@@ -44,7 +44,8 @@ export const webOrdersService = {
                 nombre: true,
                 precio: true,
                 foto_url: true,
-                descripcion: true
+                descripcion: true,
+                producto_inventario_id: true // ✅ AGREGADO
               }
             }
           }
@@ -68,7 +69,7 @@ export const webOrdersService = {
       include: {
         webpedidos_detalles: {
           include: {
-            productos: true // TRAE EL producto_inventario_id
+            productos: true // ✅ YA ESTABA BIEN - TRAE EL producto_inventario_id
           }
         }
       }
@@ -171,7 +172,8 @@ export const webOrdersService = {
                 nombre: true,
                 descripcion: true,
                 precio: true,
-                foto_url: true
+                foto_url: true,
+                producto_inventario_id: true // ✅ AGREGADO
               }
             }
           }
@@ -311,7 +313,8 @@ export const webOrdersService = {
                 id: true,
                 nombre: true,
                 precio: true,
-                foto_url: true
+                foto_url: true,
+                producto_inventario_id: true // ✅ AGREGADO
               }
             }
           }
@@ -364,7 +367,8 @@ export const webOrdersService = {
                 id: true,
                 nombre: true,
                 precio: true,
-                foto_url: true
+                foto_url: true,
+                producto_inventario_id: true // ✅ AGREGADO
               }
             }
           }
@@ -685,7 +689,8 @@ export const webOrdersService = {
               select: {
                 id: true,
                 nombre: true,
-                precio: true
+                precio: true,
+                producto_inventario_id: true // ✅ AGREGADO
               }
             }
           }

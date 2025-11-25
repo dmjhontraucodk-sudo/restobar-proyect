@@ -221,6 +221,7 @@ export interface ApiWebPedidoDetalle {
   productos: {
     id: number;
     nombre: string;
+    producto_inventario_id: number | null;
   };
 }
 
