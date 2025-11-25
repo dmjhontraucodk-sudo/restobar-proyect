@@ -1,9 +1,8 @@
-// frontend/src/pages/ReservationsManagement.tsx
-
 import React, { useState } from 'react';
-import { useReservations, type ReservationFilter } from '../hooks/useReservations';
+// Rutas de importación corregidas
+import { useReservations, type ReservationFilter } from '../hooks/useReservations'; 
 import { type ApiReservation, type ApiMesa } from '../types/index'; 
-import { RefreshIcon, XIcon, UserIcon, ClockIcon, CalendarIcon, TableIcon } from './public/components/icons';
+import { RefreshIcon, XIcon, UserIcon, ClockIcon, CalendarIcon, TableIcon } from '../components/icons';
 
 // Estados de la reserva para el filtro
 const STATUS_OPTIONS: { label: string, value: ReservationFilter }[] = [
@@ -14,7 +13,7 @@ const STATUS_OPTIONS: { label: string, value: ReservationFilter }[] = [
 ];
 
 // Componente para la tarjeta de reserva mejorada
-interface ReservationCardProps {  
+interface ReservationCardProps { 
     reservation: ApiReservation;
     mesas: ApiMesa[];
     onConfirm: (reservationId: number, mesaId: number) => void;
@@ -22,10 +21,23 @@ interface ReservationCardProps {
     isProcessing: boolean;
 }
 
-    const ReservationCard: React.FC<ReservationCardProps> = ({ reservation, mesas, onConfirm, onCancel, isProcessing }) => {
-    const [selectedMesa, setSelectedMesa] = useState<number | ''>('');
-    const availableMesas = mesas.filter(m => m.estado === 'Libre' || (m.estado === 'Reservada' && m.id === reservation.mesa_id));
+const ReservationCard: React.FC<ReservationCardProps> = ({ reservation, mesas, onConfirm, onCancel, isProcessing }) => {
+    
+    const mesaClienteOriginal = mesas.find(m => m.id === reservation.mesa_id);
+    
+    const initialSelectedMesa = reservation.estado === 'Pendiente' && reservation.mesa_id 
+        ? reservation.mesa_id 
+        : '';
 
+    const [selectedMesa, setSelectedMesa] = useState<number | ''>(initialSelectedMesa);
+
+    const availableMesas = mesas.filter(m => 
+        m.estado === 'Libre' || 
+        (m.estado === 'Reservada' && m.id === reservation.mesa_id) ||
+        (reservation.mesa_id === m.id) 
+    );
+    
+    
     const isConfirmable = reservation.estado === 'Pendiente' && selectedMesa !== '' && !isProcessing;
     const isCancelable = reservation.estado !== 'Cancelada' && reservation.estado !== 'Completada' && !isProcessing;
 
@@ -34,7 +46,7 @@ interface ReservationCardProps {
             case 'Confirmada': return 'bg-green-100 text-green-800 border-green-200';
             case 'Pendiente': return 'bg-amber-100 text-amber-800 border-amber-200';
             case 'Cancelada': return 'bg-red-100 text-red-800 border-red-200';
-            default: return 'bg-gray-100 text-gray-800 border-gray-200'; // CORREGIDO: "text" no "tesxt"
+            default: return 'bg-gray-100 text-gray-800 border-gray-200'; 
         }
     };
 
@@ -71,6 +83,9 @@ interface ReservationCardProps {
                     <div>
                         <p className="font-semibold text-gray-900">{reservation.cliente_nombre}</p>
                         <p className="text-sm text-gray-600">{reservation.cliente_telefono || 'Sin teléfono'}</p>
+                        {reservation.cliente_email && (
+                             <p className="text-xs text-gray-600 mt-1 truncate max-w-[200px]">{reservation.cliente_email}</p>
+                        )}
                     </div>
                 </div>
             </div>
@@ -111,15 +126,28 @@ interface ReservationCardProps {
                     </div>
                 </div>
 
-                {/* Mesa asignada */}
-                {reservation.mesas && reservation.estado === 'Confirmada' && (
-                    <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg border border-green-200">
-                        <div className="flex items-center justify-center w-8 h-8 bg-green-100 rounded-lg">
-                            <TableIcon className="w-4 h-4 text-green-600" />
+                {/* MODIFICADO: Muestra la mesa seleccionada por el cliente si está pendiente o la asignada si está confirmada */}
+                {(mesaClienteOriginal || (reservation.mesas && reservation.estado === 'Confirmada')) && (
+                    <div className={`flex items-center space-x-3 p-3 rounded-lg border ${
+                        reservation.estado === 'Confirmada' ? 'bg-green-50 border-green-200' : 'bg-gray-100 border-gray-200'
+                    }`}>
+                        <div className={`flex items-center justify-center w-8 h-8 rounded-lg ${
+                            reservation.estado === 'Confirmada' ? 'bg-green-100' : 'bg-gray-200'
+                        }`}>
+                            <TableIcon className={`w-4 h-4 ${
+                                reservation.estado === 'Confirmada' ? 'text-green-600' : 'text-gray-600'
+                            }`} />
                         </div>
                         <div>
-                            <p className="text-sm font-medium text-gray-500">Mesa Asignada</p>
-                            <p className="font-semibold text-green-700">{reservation.mesas.nombre_o_numero}</p>
+                            <p className="text-sm font-medium text-gray-500">
+                                {reservation.estado === 'Confirmada' ? 'Mesa Asignada' : 'Preferencia de Mesa (Cliente)'}
+                            </p>
+                            <p className={`font-semibold ${reservation.estado === 'Confirmada' ? 'text-green-700' : 'text-gray-900'}`}>
+                                {mesaClienteOriginal?.nombre_o_numero || reservation.mesas?.nombre_o_numero || 'No especificada'}
+                            </p>
+                            {mesaClienteOriginal && (
+                                <p className="text-xs text-gray-500">Capacidad: {mesaClienteOriginal.capacidad} pers.</p>
+                            )}
                         </div>
                     </div>
                 )}
@@ -129,6 +157,7 @@ interface ReservationCardProps {
             <div className="p-6 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
                 {reservation.estado === 'Pendiente' && (
                     <div className="space-y-3">
+                        <label className="block text-sm font-medium text-gray-700">Asignar/Confirmar Mesa</label>
                         <select 
                             value={selectedMesa} 
                             onChange={(e) => setSelectedMesa(Number(e.target.value))}
@@ -137,9 +166,13 @@ interface ReservationCardProps {
                         >
                             <option value="">Seleccionar mesa...</option>
                             {availableMesas
-                                .filter(m => m.estado === 'Libre')
+                                // Filtra para mostrar solo las libres y la que el cliente ya había seleccionado (si aplica)
+                                .filter(m => m.estado === 'Libre' || m.id === initialSelectedMesa) 
                                 .map(m => (
-                                    <option key={m.id} value={m.id}>
+                                    <option 
+                                        key={m.id} 
+                                        value={m.id}
+                                    >
                                         {m.nombre_o_numero} - Capacidad: {m.capacidad} personas
                                     </option>
                                 ))}
@@ -175,7 +208,7 @@ interface ReservationCardProps {
     );
 };
 
-// Componente de estadísticas
+// Componente de estadísticas (sin cambios)
 const StatsCard: React.FC<{ title: string; value: number; color: string; icon: React.ReactNode }> = ({ title, value, color, icon }) => (
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
         <div className="flex items-center justify-between">

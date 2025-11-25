@@ -20,14 +20,11 @@ export interface CreateReservationData {
 }
 
 export const reservationsService = {
-  /**
-  * 1. Crea una nueva solicitud de reserva desde el formulario público.
-  * ✅ ACTUALIZADO: Ahora acepta mesa_id como tercer parámetro opcional
-  */
+  
   async createReservation(
     tenantId: number, 
     data: CreateReservationData,
-    mesaId?: number | null // ✅ NUEVO: Tercer parámetro para mesa_id
+    mesaId?: number | null 
   ) {
     const { cliente_nombre, cliente_email, cliente_telefono, fecha_hora, cantidad_personas, notas } = data;
     
