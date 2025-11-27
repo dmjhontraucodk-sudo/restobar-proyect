@@ -124,7 +124,7 @@ export const useOrdersManagement = () => {
         const intervalId = setInterval(() => {
             console.log("🔄 Recargando pedidos (polling)...");
             loadOrders(); 
-        }, 10000); 
+        }, 1000000); 
 
         return () => {
             console.log("❌ Limpiando intervalo de polling.");
