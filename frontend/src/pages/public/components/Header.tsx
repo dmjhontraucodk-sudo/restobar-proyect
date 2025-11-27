@@ -1,22 +1,37 @@
-// src/pages/public/components/Header.tsx
+// src/pages/public/components/Header.tsx - CON CONFIGURACIÓN GLOBAL
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ShoppingBag, Phone, Clock, UserPlus, CalendarCheck, Menu, X } from 'lucide-react';
 import { useCart } from '../../../context/CartContext';
+import { useGlobalConfig } from '../../../hooks/useGlobalConfig'; // ⭐ NUEVO
 
 interface HeaderProps {
-  tenantName?: string;
+  tenantName?: string; // ⚠️ Ahora opcional, se usa solo como fallback
   isDemo?: boolean; 
 }
 
 export default function Header({ 
-  tenantName = 'RestoBar Premium', 
+  tenantName, // Ya no tiene valor por defecto
   isDemo = false,
 }: HeaderProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { getTotalItems } = useCart();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // ⭐ NUEVO: Usar configuración global
+  const { 
+    nombreNegocio, 
+    logoUrl, 
+    telefono, 
+    horarios,
+    eslogan 
+  } = useGlobalConfig();
+
+  // ⭐ Usar nombre configurado o fallback
+  const displayName = nombreNegocio || tenantName || 'RestoBar';
+  const displayPhone = telefono || (isDemo ? '944 429 458' : '987 654 321');
+  const displaySchedule = `${horarios.apertura} - ${horarios.cierre}`;
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -93,17 +108,26 @@ export default function Header({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             
-            {/* Logo y Nombre */}
+            {/* ⭐ Logo y Nombre CON CONFIGURACIÓN */}
             <button
               onClick={handleLogoClick}
               className="flex items-center space-x-4 group flex-shrink-0"
             >
+              {/* ⭐ NUEVO: Logo si existe */}
+              {logoUrl && (
+                <img 
+                  src={logoUrl} 
+                  alt={displayName}
+                  className="w-12 h-12 object-cover rounded-lg shadow-md"
+                />
+              )}
+              
               <div className="text-left">
                 <h1 className="text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
-                  {tenantName}
+                  {displayName}
                 </h1>
                 <p className="text-blue-600 text-sm font-medium">
-                  {isDemo ? 'Demo Interactiva' : 'Experiencia Gastronómica'}
+                  {isDemo ? 'Demo Interactiva' : (eslogan || 'Experiencia Gastronómica')}
                 </p>
               </div>
             </button>
@@ -155,7 +179,7 @@ export default function Header({
               )}
             </nav>
 
-            {/* Información de Contacto Desktop */}
+            {/* ⭐ Información de Contacto Desktop CON CONFIGURACIÓN */}
             <div className="hidden lg:flex items-center space-x-4 text-sm">
               <div className="flex items-center space-x-3 bg-gradient-to-r from-blue-50 to-blue-100 px-4 py-2 rounded-xl border border-blue-200">
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow-lg">
@@ -163,7 +187,7 @@ export default function Header({
                 </div>
                 <div>
                   <p className="font-semibold text-blue-900">
-                    {isDemo ? '944 429 458' : '987 654 321'}
+                    {displayPhone}
                   </p>
                   <p className="text-blue-600 text-xs">Llámanos</p>
                 </div>
@@ -173,7 +197,7 @@ export default function Header({
                   <Clock size={16} className="text-white" />
                 </div>
                 <div>
-                  <p className="font-semibold text-blue-900">8:00 - 23:00</p>
+                  <p className="font-semibold text-blue-900">{displaySchedule}</p>
                   <p className="text-blue-600 text-xs">Todos los días</p>
                 </div>
               </div>
@@ -208,7 +232,7 @@ export default function Header({
             </div>
           </div>
 
-          {/* Menú Mobile Desplegable */}
+          {/* ⭐ Menú Mobile Desplegable CON CONFIGURACIÓN */}
           {isMobileMenuOpen && (
             <div className="md:hidden absolute top-20 left-0 right-0 bg-white/95 backdrop-blur-lg border-b border-blue-100 shadow-xl">
               <div className="px-4 py-4 space-y-2">
@@ -227,13 +251,13 @@ export default function Header({
                   </button>
                 ))}
                 
-                {/* Información de Contacto Mobile */}
+                {/* Información de Contacto Mobile CON CONFIGURACIÓN */}
                 <div className="pt-4 border-t border-blue-100 space-y-3">
                   <div className="flex items-center space-x-3 bg-blue-50 px-4 py-3 rounded-xl">
                     <Phone size={18} className="text-blue-600" />
                     <div>
                       <p className="font-semibold text-blue-900">
-                        {isDemo ? '944 429 458' : '987 654 321'}
+                        {displayPhone}
                       </p>
                       <p className="text-blue-600 text-sm">Llámanos</p>
                     </div>
@@ -241,7 +265,7 @@ export default function Header({
                   <div className="flex items-center space-x-3 bg-blue-50 px-4 py-3 rounded-xl">
                     <Clock size={18} className="text-blue-600" />
                     <div>
-                      <p className="font-semibold text-blue-900">8:00 - 23:00</p>
+                      <p className="font-semibold text-blue-900">{displaySchedule}</p>
                       <p className="text-blue-600 text-sm">Todos los días</p>
                     </div>
                   </div>

@@ -1,4 +1,4 @@
-// src/routes/dashboard.routes.ts - VERSIÓN ACTUALIZADA CON CAJA CORREGIDA
+// src/routes/dashboard.routes.ts - VERSIÓN COMPLETA CON CONFIGURACIÓN
 import { Router } from 'express';
 import { validateToken } from '../middleware/auth.middleware';
 import upload from '../middleware/upload.middleware'; 
@@ -73,13 +73,19 @@ import { cocinaController } from '../controller/app/cocina.controller';
 import { empleadosController } from '../controller/app/empleados.controller';
 import { rolesController } from '../controller/app/roles.controller';
 import { nominaController, calcularPagoEmpleado } from '../controller/app/nomina.controller';
+import { inventoryController } from '../controller/inventory.controller';
+import { cronController } from '../controller/cron.controller';
 
 import { cierrePosController } from '../controller/app/cierre-pos.controller';
 
 // ✅ IMPORTAMOS EL CONTROLADOR CORRECTO (El que tiene la lógica de Inventario y Caja)
 import { webOrdersController } from '../controller/web-orders.controller';
+
 // 📊 IMPORTAMOS EL NUEVO CONTROLADOR DE REPORTES
 import { reportsController } from '../controller/app/reports.controller';
+
+// ⚙️ IMPORTAMOS EL CONTROLADOR DE CONFIGURACIÓN (NUEVO)
+import { tenantConfigController } from '../controller/app/tenant-config.controller';
 
 const router = Router();
 
@@ -114,6 +120,12 @@ router.post('/ordenes/:id/items', validateToken, addItemsToOrden);
 // Estas rutas ahora usan webOrdersController que registra automáticamente en caja
 router.get('/web-ready-orders', validateToken, webOrdersController.getWebOrders);
 router.patch('/web-ready-orders/:id/status', validateToken, webOrdersController.updateOrderStatus);
+
+// ========== ⚙️ CONFIGURACIÓN GENERAL DEL TENANT (NUEVO) ==========
+router.get('/config', validateToken, tenantConfigController.getConfig);
+router.put('/config', validateToken, tenantConfigController.updateConfig);
+router.put('/config/:section', validateToken, tenantConfigController.updateSection);
+router.post('/config/reset', validateToken, tenantConfigController.resetConfig);
 
 router.get('/cocina/pedidos', validateToken, cocinaController.getPedidosCocina);
 router.patch('/cocina/pedidos/:id/estado', validateToken, cocinaController.updateEstadoPedido);
@@ -203,5 +215,16 @@ router.post('/roles/:id/activar', validateToken, rolesController.activarRol);
 router.get('/nomina', validateToken, nominaController.getNomina);
 router.get('/nomina/estadisticas', validateToken, nominaController.getEstadisticasNomina);
 router.get('/nomina/calcular/:id', validateToken, calcularPagoEmpleado);
+
+// ========== 📦 ALERTAS DE INVENTARIO ==========
+router.get('/inventory/stock-bajo', validateToken, inventoryController.verificarStockBajo);
+router.get('/inventory/stock-critico', validateToken, inventoryController.getProductosStockCritico);
+router.post('/inventory/verificar-disponibilidad', validateToken, inventoryController.verificarDisponibilidad);
+router.patch('/inventory/:producto_inventario_id/stock', validateToken, inventoryController.actualizarStock);
+
+// ========== 📅 CRON JOBS - TESTING MANUAL ==========
+router.post('/cron/resumen-diario', validateToken, cronController.ejecutarResumenDiario);
+router.post('/cron/verificar-stock', validateToken, cronController.verificarStockBajoManual);
+router.get('/cron/estado', validateToken, cronController.getEstadoCronJobs);
 
 export default router;

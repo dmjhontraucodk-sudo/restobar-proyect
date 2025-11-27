@@ -1,89 +1,219 @@
-// backend_core/src/controller/pedidos-web-flow.controller.ts - ✅ CORREGIDO
-import { Request, Response } from 'express';
-import { z } from 'zod';
-import { pedidosWebFlowService } from '../services/pedidos-web-flow.service';
-import { webpedidos_tipo } from '@prisma/client';
+// src/controller/pedidos-web-flow.controller.ts
+// ✅ CORREGIDO con manejo correcto de Decimal
 
-// --- Interfaz de Autenticación (para obtener el tenant) ---
-interface AuthRequest extends Request {
+import { Request, Response } from 'express';
+import { pedidosWebFlowService } from '../services/pedidos-web-flow.service';
+import { tenantConfigService } from '../services/tenant-config.service';
+import { notificationService } from '../services/notification.service';
+import { Decimal } from '@prisma/client/runtime/library';
+
+interface TenantRequest extends Request {
   tenant?: {
     id: number;
     subdominio: string;
+    configuracion: any;
   };
 }
 
-// Esquema Zod para validar los ítems del pedido
-const pedidoItemSchema = z.object({
-  id: z.number().int().positive(),
-  cantidad: z.number().int().positive(),
-  precio: z.number().positive(),
-});
-
-// Esquema Zod para validar la creación completa del pedido
-const createWebOrderSchema = z.object({
-  cliente_nombre: z.string().min(1, "El nombre es requerido."),
-  cliente_email: z.string().email("Email inválido.").optional().or(z.literal('')),
-  cliente_telefono: z.string().min(6, "El teléfono es requerido."),
-  tipo_pedido: z.nativeEnum(webpedidos_tipo),
-  direccion_entrega: z.string().optional().nullable(),
-  instrucciones_entrega: z.string().optional().nullable(),
-  notas_especiales: z.string().optional().nullable(),
-  subtotal: z.number().min(0),
-  total: z.number().min(0),
-  costo_envio: z.number().min(0).default(0),
-  items: z.array(pedidoItemSchema).min(1, "El pedido debe tener al menos un producto."),
-}).refine(data => {
-  // Regla de validación: si es EntregaDomicilio, la dirección es requerida.
-  return data.tipo_pedido === webpedidos_tipo.EntregaDomicilio 
-    ? !!data.direccion_entrega 
-    : true;
-}, {
-  message: "La dirección de entrega es requerida para pedidos a domicilio.",
-  path: ["direccion_entrega"],
-});
-
+// ========== HELPER: Convertir Decimal a number ==========
+function toNumber(value: number | Decimal): number {
+  if (typeof value === 'number') return value;
+  return value.toNumber();
+}
 
 export const pedidosWebFlowController = {
-    /**
-    * POST /api/web/orders - Crea un nuevo pedido web.
-    */
-    async createWebOrder(req: AuthRequest, res: Response) {
+  /**
+   * Crear pedido web desde la página pública
+   * CON VALIDACIONES DE CONFIGURACIÓN
+   */
+  async createWebOrder(req: TenantRequest, res: Response) {
+    try {
+      const tenant = req.tenant;
+      
+      if (!tenant) {
+        return res.status(404).json({ 
+          success: false,
+          error: 'Tenant no encontrado' 
+        });
+      }
+
+      const tenantId = tenant.id;
+      const { 
+        cliente_nombre, 
+        cliente_email, 
+        cliente_telefono, 
+        tipo_pedido,
+        direccion_entrega,
+        instrucciones_entrega,
+        notas_especiales,
+        items,
+        subtotal
+      } = req.body;
+
+      console.log(`\n🌐 [WEB-PEDIDO] Nuevo pedido web para tenant: ${tenant.subdominio}`);
+
+      // ========== VALIDACIONES BÁSICAS ==========
+      if (!cliente_nombre || !cliente_telefono || !items || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ 
+          success: false,
+          error: 'Datos incompletos: nombre, teléfono y productos son requeridos' 
+        });
+      }
+
+      if (tipo_pedido === 'EntregaDomicilio' && !direccion_entrega) {
+        return res.status(400).json({ 
+          success: false,
+          error: 'Dirección de entrega requerida para delivery' 
+        });
+      }
+
+      // ========== 🔒 VALIDACIÓN 1: PEDIDOS ONLINE ACTIVOS ==========
+      const activo = await tenantConfigService.verificarPedidosOnlineActivos(tenantId);
+      
+      if (!activo) {
+        console.log(`❌ [WEB-PEDIDO] Pedidos online desactivados`);
+        return res.status(403).json({
+          success: false,
+          error: 'PEDIDOS_WEB_DESACTIVADOS',
+          message: 'Los pedidos online están temporalmente desactivados. Por favor, intenta más tarde.'
+        });
+      }
+
+      // ========== 🕐 VALIDACIÓN 2: HORARIO DE ATENCIÓN ==========
+      const horarioCheck = await tenantConfigService.verificarHorarioPedidosWeb(tenantId);
+      
+      if (!horarioCheck.dentroDeHorario) {
+        console.log(`❌ [WEB-PEDIDO] Fuera de horario: ${horarioCheck.horaActual}`);
+        return res.status(403).json({
+          success: false,
+          error: 'FUERA_DE_HORARIO',
+          message: `Horario de atención: ${horarioCheck.horario.inicio} - ${horarioCheck.horario.fin}`,
+          horario: horarioCheck.horario,
+          hora_actual: horarioCheck.horaActual
+        });
+      }
+
+      // ========== 💰 VALIDACIÓN 3: MONTO MÍNIMO ==========
+      const config = await tenantConfigService.getPedidosWebConfig(tenantId);
+      const montoMinimo = toNumber(config.monto_minimo_pedido); // ⭐ Convertir Decimal
+      
+      // Asegurarse de que subtotal es un número
+      const subtotalNumero = Number(subtotal) || 0;
+      
+      if (subtotalNumero < montoMinimo) {
+        console.log(`❌ [WEB-PEDIDO] Monto insuficiente: S/${subtotalNumero} < S/${montoMinimo}`);
+        return res.status(400).json({
+          success: false,
+          error: 'MONTO_MINIMO_NO_ALCANZADO',
+          message: `El monto mínimo de pedido es S/ ${montoMinimo.toFixed(2)}`,
+          monto_minimo: montoMinimo,
+          monto_actual: subtotalNumero,
+          faltante: montoMinimo - subtotalNumero
+        });
+      }
+
+      // ========== 🚚 CÁLCULO DE COSTO DE DELIVERY ==========
+      const costoEnvio = tipo_pedido === 'EntregaDomicilio' 
+        ? toNumber(config.costo_delivery) // ⭐ Convertir Decimal
+        : 0;
+      
+      const total = subtotalNumero + costoEnvio;
+
+      console.log(`✅ [WEB-PEDIDO] Validaciones pasadas. Creando pedido...`);
+      console.log(`   - Subtotal: S/ ${subtotalNumero.toFixed(2)}`);
+      console.log(`   - Envío: S/ ${costoEnvio.toFixed(2)}`);
+      console.log(`   - Total: S/ ${total.toFixed(2)}`);
+
+      // ========== ⏱️ CALCULAR TIEMPO ESTIMADO ==========
+      const tiempoEstimado = await tenantConfigService.calcularTiempoEstimado(tenantId, true);
+
+      // ========== 📝 CREAR PEDIDO ==========
+      const newOrder = await pedidosWebFlowService.crearWebPedido(tenantId, {
+        cliente_nombre,
+        cliente_email,
+        cliente_telefono,
+        tipo_pedido,
+        direccion_entrega,
+        instrucciones_entrega,
+        notas_especiales,
+        items,
+        subtotal: subtotalNumero,
+        costo_envio: costoEnvio,
+        total
+      });
+
+      console.log(`✅ [WEB-PEDIDO] Pedido creado: #${newOrder.numero_pedido}`);
+
+      // ========== 📧 NOTIFICAR POR EMAIL (si está configurado) ==========
+      const configNotif = await tenantConfigService.getNotificacionesConfig(tenantId);
+      
+      if (configNotif.email_nuevos_pedidos) {
         try {
-            const tenantId = req.tenant?.id;
-            
-            if (!tenantId) {
-                return res.status(404).json({ error: 'Tenant no encontrado.' });
-            }
-
-            const validation = createWebOrderSchema.safeParse(req.body);
-            
-            if (!validation.success) {
-                return res.status(400).json({ 
-                    error: 'Datos de pedido inválidos.', 
-                    details: validation.error.issues 
-                });
-            }
-
-            const nuevoPedido = await pedidosWebFlowService.crearWebPedido(
-                tenantId, 
-                validation.data
-            );
-
-            // ✅ CORRECCIÓN: Mejor manejo de Decimal types
-            return res.status(201).json({
-                order: {
-                  id: nuevoPedido.id,
-                  numero_pedido: nuevoPedido.numero_pedido,
-                  total: Number(nuevoPedido.total), // ✅ Conversión más segura
-                  estado: nuevoPedido.estado,
-                }
-            });
-
-        } catch (error: any) {
-            console.error('Error en createWebOrder:', error);
-            return res.status(500).json({ 
-                error: error.message || 'Error interno del servidor al crear el pedido.' 
-            });
+          await notificationService.notificarNuevoPedidoWeb(tenantId, {
+            numero_pedido: newOrder.numero_pedido,
+            cliente_nombre: newOrder.cliente_nombre,
+            total: toNumber(newOrder.total), // ⭐ Convertir Decimal
+            tipo_pedido: newOrder.tipo_pedido
+          });
+          console.log(`📧 [WEB-PEDIDO] Email de notificación enviado a: ${configNotif.email_nuevos_pedidos}`);
+        } catch (emailError) {
+          console.error('⚠️ Error al enviar email (no crítico):', emailError);
         }
+      }
+
+      res.status(201).json({
+        success: true,
+        message: 'Pedido creado exitosamente',
+        order: newOrder,
+        tiempo_estimado: {
+          minutos: tiempoEstimado.minutos,
+          hora_estimada: tiempoEstimado.horaEstimada
+        }
+      });
+
+    } catch (error: any) {
+      console.error('❌ [WEB-PEDIDO] Error:', error);
+      res.status(500).json({ 
+        success: false,
+        error: error.message || 'Error interno del servidor al crear el pedido' 
+      });
     }
+  },
+
+  /**
+   * Obtener configuración pública para el catálogo web
+   */
+  async getPublicConfig(req: TenantRequest, res: Response) {
+    try {
+      const tenant = req.tenant;
+      
+      if (!tenant) {
+        return res.status(404).json({ error: 'Tenant no encontrado' });
+      }
+
+      const config = await tenantConfigService.getPedidosWebConfig(tenant.id);
+      const horarioCheck = await tenantConfigService.verificarHorarioPedidosWeb(tenant.id);
+
+      res.json({
+        success: true,
+        config: {
+          pedidos_activos: config.pedidos_online_activos,
+          horario: horarioCheck.horario,
+          dentro_de_horario: horarioCheck.dentroDeHorario,
+          monto_minimo: toNumber(config.monto_minimo_pedido), // ⭐ Convertir Decimal
+          costo_delivery: toNumber(config.costo_delivery),    // ⭐ Convertir Decimal
+          tiempo_preparacion: config.tiempo_prep_web,
+          mensaje_bienvenida: config.mensaje_bienvenida_web,
+          reservas_activas: config.reservas_activas,
+          dias_limite_reserva: config.dias_limite_reserva
+        }
+      });
+    } catch (error) {
+      console.error('Error en getPublicConfig:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Error al obtener configuración' 
+      });
+    }
+  }
 };

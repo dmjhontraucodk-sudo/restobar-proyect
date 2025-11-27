@@ -1,4 +1,4 @@
-// frontend/src/pages/WebOrdersManagement.tsx
+// frontend/src/pages/WebOrdersManagement.tsx - CON IMPRESIÓN PARA RECOJO EN TIENDA
 
 import React, { useCallback, useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
@@ -127,7 +127,8 @@ const CompactOrderCard: React.FC<{
     onUpdateStatus: (orderId: number, newStatus: webpedidos_estado) => void;
     onSelect: (order: ApiWebPedido) => void;
     isSelected?: boolean;
-}> = ({ order, onUpdateStatus, onSelect, isSelected }) => {
+    onPrintTicket: (order: ApiWebPedido) => void; // ✅ NUEVO
+}> = ({ order, onUpdateStatus, onSelect, isSelected, onPrintTicket }) => {
     const isDelivery = order.tipo_pedido === WEBPEDIDOS_TIPO.EntregaDomicilio;
     const isWaitingPayment = isDelivery && order.estado === WEBPEDIDOS_ESTADO.EnCamino;
 
@@ -215,14 +216,19 @@ const CompactOrderCard: React.FC<{
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
-                            onUpdateStatus(
-                                order.id, 
-                                isDelivery ? WEBPEDIDOS_ESTADO.EnCamino : WEBPEDIDOS_ESTADO.Entregado
-                            );
+                            // ✅ NUEVO: Imprimir antes de finalizar si NO es delivery
+                            if (!isDelivery) {
+                                onPrintTicket(order);
+                                setTimeout(() => {
+                                    onUpdateStatus(order.id, WEBPEDIDOS_ESTADO.Entregado);
+                                }, 1000);
+                            } else {
+                                onUpdateStatus(order.id, WEBPEDIDOS_ESTADO.EnCamino);
+                            }
                         }}
                         className="w-full py-1 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 transition-colors"
                     >
-                        {isDelivery ? 'Despachar' : 'Entregar'}
+                        {isDelivery ? 'Despachar' : '🖨️ Imprimir y Entregar'}
                     </button>
                 )}
                 
@@ -239,15 +245,10 @@ const CompactOrderCard: React.FC<{
                 )}
 
                 {order.estado === WEBPEDIDOS_ESTADO.EnPreparacion && (
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onUpdateStatus(order.id, WEBPEDIDOS_ESTADO.ListoParaRecoger);
-                        }}
-                        className="w-full py-1 bg-orange-600 text-white text-xs font-medium rounded hover:bg-orange-700 transition-colors"
-                    >
-                        Marcar Listo
-                    </button>
+                    <div className="bg-amber-50 border border-amber-300 rounded p-2 text-center">
+                        <p className="text-xs text-amber-800 font-medium">⏳ En Cocina</p>
+                        <p className="text-xs text-amber-600">Solo cocina puede marcar listo</p>
+                    </div>
                 )}
             </div>
         </div>
@@ -255,7 +256,7 @@ const CompactOrderCard: React.FC<{
 };
 
 // ====================================================================
-// COMPONENTE: Tarjeta de Detalle Completo del Pedido (COMPACTADO)
+// COMPONENTE: Tarjeta de Detalle Completo del Pedido
 // ====================================================================
 
 const WebOrderDetailCard: React.FC<WebOrderDetailCardProps> = ({ order, onUpdateStatus }) => {
@@ -287,84 +288,13 @@ const WebOrderDetailCard: React.FC<WebOrderDetailCardProps> = ({ order, onUpdate
         onUpdateStatus(order.id, newStatus);
     };
 
-    const handlePrintDeliveryTicket = () => {
-        const printWindow = window.open('', '', 'height=600,width=400');
-        if (!printWindow) return;
-
-        const styles = `
-            <style>
-                body { font-family: 'Courier New', monospace; font-size: 12px; padding: 10px; margin: 0; }
-                .header { text-align: center; margin-bottom: 10px; border-bottom: 1px dashed #000; padding-bottom: 5px; }
-                .title { font-size: 16px; font-weight: bold; }
-                .subtitle { font-size: 12px; }
-                .section { margin-bottom: 10px; }
-                .label { font-weight: bold; }
-                .address { font-size: 14px; font-weight: bold; border: 2px solid #000; padding: 5px; margin: 5px 0; text-align: center; }
-                .items-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
-                .items-table th { text-align: left; border-bottom: 1px solid #000; }
-                .items-table td { padding: 2px 0; }
-                .total { font-size: 16px; font-weight: bold; text-align: right; margin-top: 10px; border-top: 1px dashed #000; padding-top: 5px; }
-                .footer { text-align: center; margin-top: 20px; font-size: 10px; }
-                .payment-status { text-align: center; font-weight: bold; font-size: 14px; margin-top: 10px; background: #000; color: #fff; padding: 2px; }
-            </style>
-        `;
-
-        const itemsHtml = order.webpedidos_detalles.map(item => `
-            <tr>
-                <td>${item.cantidad}x ${item.productos.nombre}</td>
-                <td style="text-align:right">S/ ${Number(item.subtotal).toFixed(2)}</td>
-            </tr>
-        `).join('');
-
-        const content = `
-            <html>
-            <head><title>Ticket Delivery</title>${styles}</head>
-            <body>
-                <div class="header">
-                    <div class="title">TICKET DE ENTREGA</div>
-                    <div class="subtitle">Pedido Web #${order.numero_pedido}</div>
-                    <div>${new Date().toLocaleString('es-PE')}</div>
-                </div>
-
-                <div class="section">
-                    <div><span class="label">Cliente:</span> ${order.cliente_nombre}</div>
-                    <div><span class="label">Teléfono:</span> ${order.cliente_telefono}</div>
-                </div>
-
-                ${isDelivery && order.direccion_entrega ? `
-                    <div class="section">
-                        <div class="label">DIRECCIÓN DE ENTREGA:</div>
-                        <div class="address">${order.direccion_entrega}</div>
-                        ${order.instrucciones_entrega ? `<div>Nota: ${order.instrucciones_entrega}</div>` : ''}
-                    </div>
-                ` : ''}
-
-                <table class="items-table">
-                    <thead><tr><th>Cant. Producto</th><th style="text-align:right">Total</th></tr></thead>
-                    <tbody>${itemsHtml}</tbody>
-                </table>
-
-                <div class="total">
-                    TOTAL A COBRAR: S/ ${Number(order.total).toFixed(2)}
-                </div>
-
-                <div class="payment-status">
-                    PAGO PENDIENTE CONTRA ENTREGA
-                </div>
-
-                <div class="footer">
-                    *** GUÍA DE DESPACHO ***<br/>
-                    Entregar y confirmar cobro.
-                </div>
-            </body>
-            </html>
-        `;
-
-        printWindow.document.write(content);
-        printWindow.document.close();
-        setTimeout(() => {
-            printWindow.print();
-        }, 500);
+    // ⭐ FUNCIÓN PARA IMPRIMIR TICKET
+    const handlePrintTicket = () => {
+        window.open(
+            `/api/web/orders/${order.numero_pedido}/ticket`,
+            '_blank'
+        );
+        toast.success('Generando ticket PDF...');
     };
 
     return (
@@ -445,15 +375,6 @@ const WebOrderDetailCard: React.FC<WebOrderDetailCardProps> = ({ order, onUpdate
                 <div className="mb-4">
                     <div className="flex justify-between items-center mb-2">
                         <p className="text-xs font-semibold text-gray-500">Productos ({order.webpedidos_detalles.length})</p>
-                        {isDelivery && (
-                            <button 
-                                onClick={handlePrintDeliveryTicket}
-                                className="text-blue-600 hover:text-blue-800 text-xs font-medium flex items-center gap-1 transition-colors"
-                            >
-                                <PrinterIcon className="w-3 h-3" />
-                                Imprimir
-                            </button>
-                        )}
                     </div>
                     <div className="space-y-1 max-h-24 overflow-y-auto text-sm border border-dashed border-gray-200 p-2 rounded bg-gray-50">
                         {order.webpedidos_detalles.map(detalle => (
@@ -488,18 +409,25 @@ const WebOrderDetailCard: React.FC<WebOrderDetailCardProps> = ({ order, onUpdate
                                     <button
                                         onClick={() => {
                                             handleAction(WEBPEDIDOS_ESTADO.EnCamino);
-                                            handlePrintDeliveryTicket();
+                                            handlePrintTicket();
                                         }}
                                         className="w-full py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors font-medium"
                                     >
                                         Despachar Directo
                                     </button>
                                 ) : (
+                                    // ✅ NUEVO: Botón con impresión para RECOJO EN TIENDA
                                     <button
-                                        onClick={() => handleAction(WEBPEDIDOS_ESTADO.Entregado)}
-                                        className="w-full py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors font-medium"
+                                        onClick={() => {
+                                            handlePrintTicket();
+                                            setTimeout(() => {
+                                                handleAction(WEBPEDIDOS_ESTADO.Entregado);
+                                            }, 1000);
+                                        }}
+                                        className="w-full py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors font-medium flex items-center justify-center gap-2"
                                     >
-                                        Finalizar y Cobrar
+                                        <PrinterIcon className="w-4 h-4" />
+                                        Imprimir Ticket y Cobrar
                                     </button>
                                 )
                             ) : (
@@ -514,26 +442,49 @@ const WebOrderDetailCard: React.FC<WebOrderDetailCardProps> = ({ order, onUpdate
                     )}
 
                     {order.estado === WEBPEDIDOS_ESTADO.EnPreparacion && (
-                        <button
-                            onClick={() => handleAction(WEBPEDIDOS_ESTADO.ListoParaRecoger)}
-                            className="w-full py-2 bg-orange-600 text-white text-sm rounded hover:bg-orange-700 transition-colors font-medium"
-                        >
-                            Marcar como Listo
-                        </button>
+                        <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <div className="bg-amber-100 p-2 rounded-full">
+                                    <ClockIcon className="w-5 h-5 text-amber-600 animate-pulse" />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="font-bold text-amber-900 text-sm">En Cocina</p>
+                                    <p className="text-xs text-amber-700">Esperando confirmación de cocina</p>
+                                </div>
+                            </div>
+                            <div className="bg-white border border-amber-200 rounded p-3 text-center">
+                                <p className="text-xs text-gray-600 mb-1">
+                                    🔒 Este pedido está bloqueado
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                    Solo cocina puede marcarlo como listo
+                                </p>
+                            </div>
+                        </div>
                     )}
                     
+                    {/* DELIVERY: Listo para recoger */}
                     {isDelivery && order.estado === WEBPEDIDOS_ESTADO.ListoParaRecoger && (
-                        <button
-                            onClick={() => {
-                                handleAction(WEBPEDIDOS_ESTADO.EnCamino);
-                                handlePrintDeliveryTicket();
-                            }}
-                            className="w-full py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors font-medium"
-                        >
-                            Despachar e Imprimir
-                        </button>
+                        <>
+                            <button
+                                onClick={() => {
+                                    handlePrintTicket();
+                                    setTimeout(() => {
+                                        handleAction(WEBPEDIDOS_ESTADO.EnCamino);
+                                    }, 1000);
+                                }}
+                                className="w-full py-3 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors font-bold flex items-center justify-center gap-2"
+                            >
+                                <PrinterIcon className="w-4 h-4" />
+                                🚚 Imprimir Ticket y Despachar
+                            </button>
+                            <p className="text-xs text-center text-gray-500">
+                                Se generará el ticket PDF automáticamente
+                            </p>
+                        </>
                     )}
 
+                    {/* DELIVERY: En camino */}
                     {isDelivery && order.estado === WEBPEDIDOS_ESTADO.EnCamino && (
                         <button
                             onClick={() => handleAction(WEBPEDIDOS_ESTADO.Entregado)}
@@ -543,13 +494,25 @@ const WebOrderDetailCard: React.FC<WebOrderDetailCardProps> = ({ order, onUpdate
                         </button>
                     )}
                     
+                    {/* ✅ RECOJO EN TIENDA: Listo para recoger */}
                     {!isDelivery && order.estado === WEBPEDIDOS_ESTADO.ListoParaRecoger && (
-                        <button
-                            onClick={() => handleAction(WEBPEDIDOS_ESTADO.Entregado)}
-                            className="w-full py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors font-medium"
-                        >
-                            Finalizar y Cobrar
-                        </button>
+                        <>
+                            <button
+                                onClick={() => {
+                                    handlePrintTicket();
+                                    setTimeout(() => {
+                                        handleAction(WEBPEDIDOS_ESTADO.Entregado);
+                                    }, 1000);
+                                }}
+                                className="w-full py-3 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors font-bold flex items-center justify-center gap-2"
+                            >
+                                <PrinterIcon className="w-4 h-4" />
+                                🏪 Imprimir Ticket y Cobrar
+                            </button>
+                            <p className="text-xs text-center text-gray-500">
+                                Se generará el ticket PDF automáticamente
+                            </p>
+                        </>
                     )}
 
                     {order.estado !== WEBPEDIDOS_ESTADO.Entregado && order.estado !== WEBPEDIDOS_ESTADO.Cancelado && (
@@ -583,6 +546,15 @@ const WebOrdersManagementPage: React.FC = () => {
     });
     
     const [selectedOrder, setSelectedOrder] = useState<ApiWebPedido | null>(null);
+
+    // ⭐ FUNCIÓN PARA IMPRIMIR TICKET
+    const handlePrintTicket = useCallback((order: ApiWebPedido) => {
+        window.open(
+            `/api/web/orders/${order.numero_pedido}/ticket`,
+            '_blank'
+        );
+        toast.success('Generando ticket PDF...');
+    }, []);
 
     // Filtrar pedidos: EXCLUIR entregados y cancelados, luego aplicar otros filtros
     const filteredAndSortedOrders = useMemo(() => {
@@ -683,7 +655,7 @@ const WebOrdersManagementPage: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-gray-50/50">
-            {/* Cabecera Fija - SIN sticky para evitar superposición */}
+            {/* Cabecera Fija */}
             <div className="bg-white border-b border-gray-200/60">
                 <div className="px-4 py-3">
                     <div className="flex items-center justify-between">
@@ -755,13 +727,13 @@ const WebOrdersManagementPage: React.FC = () => {
                     </div>
                 )}
 
-                {/* Vista Principal - Solo vista compacta */}
+                {/* Vista Principal */}
                 {!isLoading && !error && filteredAndSortedOrders.length > 0 && (
                     <div className="flex flex-col lg:flex-row gap-4">
                         {/* Panel de Lista */}
                         <div className={`${selectedOrder ? 'lg:w-2/5 xl:w-1/3' : 'w-full'}`}>
                             <div className="space-y-4">
-                                {/* En Camino (Máxima prioridad) */}
+                                {/* En Camino */}
                                 {groupedOrders[WEBPEDIDOS_ESTADO.EnCamino].length > 0 && (
                                     <div>
                                         <h3 className="text-sm font-bold text-gray-900 mb-2 flex items-center gap-1">
@@ -776,6 +748,7 @@ const WebOrdersManagementPage: React.FC = () => {
                                                     onUpdateStatus={handleUpdateStatus}
                                                     onSelect={setSelectedOrder}
                                                     isSelected={selectedOrder?.id === order.id}
+                                                    onPrintTicket={handlePrintTicket}
                                                 />
                                             ))}
                                         </div>
@@ -796,6 +769,7 @@ const WebOrdersManagementPage: React.FC = () => {
                                                     onUpdateStatus={handleUpdateStatus}
                                                     onSelect={setSelectedOrder}
                                                     isSelected={selectedOrder?.id === order.id}
+                                                    onPrintTicket={handlePrintTicket}
                                                 />
                                             ))}
                                         </div>
@@ -816,6 +790,7 @@ const WebOrdersManagementPage: React.FC = () => {
                                                     onUpdateStatus={handleUpdateStatus}
                                                     onSelect={setSelectedOrder}
                                                     isSelected={selectedOrder?.id === order.id}
+                                                    onPrintTicket={handlePrintTicket}
                                                 />
                                             ))}
                                         </div>
@@ -836,6 +811,7 @@ const WebOrdersManagementPage: React.FC = () => {
                                                     onUpdateStatus={handleUpdateStatus}
                                                     onSelect={setSelectedOrder}
                                                     isSelected={selectedOrder?.id === order.id}
+                                                    onPrintTicket={handlePrintTicket}
                                                 />
                                             ))}
                                         </div>
@@ -844,7 +820,7 @@ const WebOrdersManagementPage: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Panel de Detalle - Ahora con sticky pero con top ajustado */}
+                        {/* Panel de Detalle */}
                         {selectedOrder && (
                             <div className="hidden lg:block flex-1 sticky top-4 self-start">
                                 <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">

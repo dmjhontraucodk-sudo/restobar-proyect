@@ -274,6 +274,99 @@ CREATE TABLE `webpedidos_detalles` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `tenant_config` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `tenant_id` INTEGER NOT NULL,
+    `nombre_negocio` VARCHAR(255) NULL,
+    `logo_url` VARCHAR(2048) NULL,
+    `eslogan` VARCHAR(500) NULL,
+    `tipo_negocio` VARCHAR(100) NULL DEFAULT 'Restaurante',
+    `ruc` VARCHAR(20) NULL,
+    `direccion` TEXT NULL,
+    `telefono_principal` VARCHAR(50) NULL,
+    `telefono_secundario` VARCHAR(50) NULL,
+    `email_negocio` VARCHAR(255) NULL,
+    `whatsapp_business` VARCHAR(50) NULL,
+    `facebook_url` VARCHAR(500) NULL,
+    `instagram_url` VARCHAR(500) NULL,
+    `horario_apertura` VARCHAR(10) NULL DEFAULT '08:00',
+    `horario_cierre` VARCHAR(10) NULL DEFAULT '22:00',
+    `acepta_efectivo` BOOLEAN NOT NULL DEFAULT true,
+    `acepta_tarjeta` BOOLEAN NOT NULL DEFAULT false,
+    `acepta_yape` BOOLEAN NOT NULL DEFAULT false,
+    `acepta_plin` BOOLEAN NOT NULL DEFAULT false,
+    `acepta_transferencia` BOOLEAN NOT NULL DEFAULT false,
+    `yape_numero` VARCHAR(50) NULL,
+    `yape_qr_url` VARCHAR(2048) NULL,
+    `plin_numero` VARCHAR(50) NULL,
+    `plin_qr_url` VARCHAR(2048) NULL,
+    `banco_nombre` VARCHAR(100) NULL,
+    `banco_cuenta` VARCHAR(50) NULL,
+    `banco_cci` VARCHAR(50) NULL,
+    `banco_titular` VARCHAR(255) NULL,
+    `ticket_formato` VARCHAR(10) NOT NULL DEFAULT '80mm',
+    `ticket_mostrar_logo` BOOLEAN NOT NULL DEFAULT true,
+    `ticket_pie_mensaje` TEXT NULL,
+    `ticket_copias` INTEGER NOT NULL DEFAULT 1,
+    `ticket_incluir_qr` BOOLEAN NOT NULL DEFAULT false,
+    `ticket_mostrar_metodo` BOOLEAN NOT NULL DEFAULT true,
+    `tiempo_preparacion` INTEGER NOT NULL DEFAULT 30,
+    `activar_propina` BOOLEAN NOT NULL DEFAULT false,
+    `propina_porcentaje` DECIMAL(5, 2) NULL DEFAULT 10,
+    `propina_suma_total` BOOLEAN NOT NULL DEFAULT true,
+    `activar_servicio` BOOLEAN NOT NULL DEFAULT false,
+    `servicio_porcentaje` DECIMAL(5, 2) NULL DEFAULT 10,
+    `permitir_dividir` BOOLEAN NOT NULL DEFAULT true,
+    `alertar_agotados` BOOLEAN NOT NULL DEFAULT true,
+    `auto_liberar_mesa` BOOLEAN NOT NULL DEFAULT true,
+    `pedidos_online_activos` BOOLEAN NOT NULL DEFAULT false,
+    `costo_delivery` DECIMAL(10, 2) NOT NULL DEFAULT 0,
+    `monto_minimo_pedido` DECIMAL(10, 2) NOT NULL DEFAULT 0,
+    `tiempo_prep_web` INTEGER NOT NULL DEFAULT 30,
+    `pedidos_web_inicio` VARCHAR(10) NULL DEFAULT '08:00',
+    `pedidos_web_fin` VARCHAR(10) NULL DEFAULT '22:00',
+    `mensaje_bienvenida_web` TEXT NULL,
+    `reservas_activas` BOOLEAN NOT NULL DEFAULT false,
+    `dias_limite_reserva` INTEGER NOT NULL DEFAULT 7,
+    `notif_pedido_confirmado` BOOLEAN NOT NULL DEFAULT true,
+    `notif_pedido_cancelado` BOOLEAN NOT NULL DEFAULT true,
+    `notif_pedido_listo` BOOLEAN NOT NULL DEFAULT true,
+    `email_asunto_confirmado` VARCHAR(255) NULL,
+    `email_asunto_cancelado` VARCHAR(255) NULL,
+    `email_asunto_listo` VARCHAR(255) NULL,
+    `alertas_stock_bajo` BOOLEAN NOT NULL DEFAULT true,
+    `nivel_alerta_stock` DECIMAL(10, 3) NOT NULL DEFAULT 10,
+    `metodo_costeo` VARCHAR(50) NOT NULL DEFAULT 'Promedio',
+    `frecuencia_cierre_inv` VARCHAR(50) NOT NULL DEFAULT 'Mensual',
+    `fondo_caja_inicial` DECIMAL(10, 2) NOT NULL DEFAULT 100,
+    `alerta_diferencia_monto` DECIMAL(10, 2) NOT NULL DEFAULT 50,
+    `alerta_diferencia_pct` DECIMAL(5, 2) NOT NULL DEFAULT 5,
+    `requiere_obs_cierre` BOOLEAN NOT NULL DEFAULT true,
+    `permitir_multiples_cajas` BOOLEAN NOT NULL DEFAULT false,
+    `requiere_login_todos` BOOLEAN NOT NULL DEFAULT false,
+    `timeout_sesion` INTEGER NOT NULL DEFAULT 480,
+    `cambiar_pass_obligatorio` BOOLEAN NOT NULL DEFAULT true,
+    `permitir_multi_sesion` BOOLEAN NOT NULL DEFAULT false,
+    `email_nuevos_pedidos` VARCHAR(255) NULL,
+    `whatsapp_pedidos_listos` VARCHAR(50) NULL,
+    `notif_stock_critico` BOOLEAN NOT NULL DEFAULT true,
+    `email_stock_critico` VARCHAR(255) NULL,
+    `resumen_diario_activo` BOOLEAN NOT NULL DEFAULT false,
+    `resumen_diario_hora` VARCHAR(10) NULL DEFAULT '20:00',
+    `color_primario` VARCHAR(20) NULL DEFAULT '#3B82F6',
+    `color_secundario` VARCHAR(20) NULL DEFAULT '#10B981',
+    `banner_url` VARCHAR(2048) NULL,
+    `mostrar_recomendados` BOOLEAN NOT NULL DEFAULT true,
+    `mostrar_badge_nuevo` BOOLEAN NOT NULL DEFAULT true,
+    `created_at` TIMESTAMP(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
+    `updated_at` TIMESTAMP(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
+
+    UNIQUE INDEX `tenant_config_tenant_id_key`(`tenant_id`),
+    INDEX `tenant_config_tenant_id_idx`(`tenant_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `tenant_config_pedidos` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `tenant_id` INTEGER NOT NULL,
@@ -324,7 +417,7 @@ CREATE TABLE `empleados` (
     `salario` DECIMAL(10, 2) NULL,
     `fecha_ingreso` DATE NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updated_at` DATETIME(3) NOT NULL,
+    `updated_at` TIMESTAMP(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
 
     INDEX `rol_id`(`rol_id`),
     INDEX `empleados_tenant_id_requiere_login_idx`(`tenant_id`, `requiere_login`),
@@ -501,7 +594,7 @@ CREATE TABLE `cierres_inventario` (
     `observaciones` TEXT NULL,
     `realizado_por_id` INTEGER NOT NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updated_at` DATETIME(3) NOT NULL,
+    `updated_at` TIMESTAMP(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
 
     INDEX `cierres_inventario_tenant_id_idx`(`tenant_id`),
     INDEX `cierres_inventario_fecha_inicio_idx`(`fecha_inicio`),
@@ -683,6 +776,9 @@ ALTER TABLE `webpedidos_detalles` ADD CONSTRAINT `webpedidos_detalles_webpedido_
 
 -- AddForeignKey
 ALTER TABLE `webpedidos_detalles` ADD CONSTRAINT `webpedidos_detalles_producto_id_fkey` FOREIGN KEY (`producto_id`) REFERENCES `productos`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+
+-- AddForeignKey
+ALTER TABLE `tenant_config` ADD CONSTRAINT `tenant_config_tenant_id_fkey` FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `tenant_config_pedidos` ADD CONSTRAINT `tenant_config_pedidos_tenant_id_fkey` FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

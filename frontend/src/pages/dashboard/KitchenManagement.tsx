@@ -1,4 +1,4 @@
-// frontend/src/pages/dashboard/KitchenManagement.tsx - DISEÑO MEJORADO
+// frontend/src/pages/dashboard/KitchenManagement.tsx - SOLO PEDIDOS EN COCINA
 
 import React, { useState } from 'react';
 import { useKitchenManagement, type KitchenOrder } from '../../hooks/useKitchenManagement';
@@ -197,32 +197,22 @@ const KitchenOrderTicket: React.FC<{
                         </div>
                     )}
 
-                    {/* Acciones */}
+                    {/* Acciones - SOLO para pedidos en preparación */}
                     <div className="flex space-x-2 pt-2">
-                        {order.estado === WEBPEDIDOS_ESTADO.Pendiente && (
-                            <button
-                                onClick={() => handleAction(WEBPEDIDOS_ESTADO.EnPreparacion)}
-                                className="flex-1 bg-blue-600 text-white py-2 px-3 rounded text-sm font-semibold hover:bg-blue-700 transition-colors"
-                            >
-                                <ChefHatIcon className="w-3 h-3 inline mr-1" />
-                                Empezar
-                            </button>
-                        )}
-                        
                         {order.estado === WEBPEDIDOS_ESTADO.EnPreparacion && (
                             <button
                                 onClick={() => handleAction(WEBPEDIDOS_ESTADO.ListoParaRecoger)}
                                 className="flex-1 bg-emerald-600 text-white py-2 px-3 rounded text-sm font-semibold hover:bg-emerald-700 transition-colors"
                             >
                                 <CheckCircleIcon className="w-3 h-3 inline mr-1" />
-                                Listo
+                                Marcar como Listo
                             </button>
                         )}
 
-                        {(order.estado === WEBPEDIDOS_ESTADO.ListoParaRecoger || order.estado === WEBPEDIDOS_ESTADO.EnCamino) && (
-                            <div className="flex-1 bg-gray-100 text-gray-600 py-2 px-3 rounded text-sm font-semibold text-center">
-                                <CheckCircleIcon className="w-3 h-3 inline mr-1 text-green-500" />
-                                Esperando
+                        {order.estado === WEBPEDIDOS_ESTADO.ListoParaRecoger && (
+                            <div className="flex-1 bg-green-100 text-green-700 py-2 px-3 rounded text-sm font-semibold text-center border border-green-300">
+                                <CheckCircleIcon className="w-3 h-3 inline mr-1" />
+                                ✅ Listo para servir
                             </div>
                         )}
                     </div>
@@ -245,29 +235,33 @@ const KitchenManagementPage: React.FC = () => {
     } = useKitchenManagement();
 
     const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
-    const [filterStatus, setFilterStatus] = useState<webpedidos_estado | 'ALL'>('ALL');
     const [searchTerm, setSearchTerm] = useState('');
 
+    // ⭐ FILTRO PRINCIPAL: SOLO mostrar pedidos en estado "EnPreparacion"
     const activeOrders = orders.filter(o => 
         o.estado !== WEBPEDIDOS_ESTADO.Entregado && 
-        o.estado !== WEBPEDIDOS_ESTADO.Cancelado
+        o.estado !== WEBPEDIDOS_ESTADO.Cancelado &&
+        o.estado === WEBPEDIDOS_ESTADO.EnPreparacion // ⭐ SOLO pedidos enviados a cocina
     );
 
-    // Filtrar órdenes
+    // Filtrar por búsqueda
     const filteredOrders = activeOrders.filter(order => {
-        const matchesStatus = filterStatus === 'ALL' || order.estado === filterStatus;
         const matchesSearch = searchTerm === '' || 
             order.numero_orden.toLowerCase().includes(searchTerm.toLowerCase()) ||
             order.cliente_mesa_nombre.toLowerCase().includes(searchTerm.toLowerCase());
-        return matchesStatus && matchesSearch;
+        return matchesSearch;
     });
 
-    const pendingOrders = filteredOrders.filter(o => o.estado === WEBPEDIDOS_ESTADO.Pendiente);
-    const preparingOrders = filteredOrders.filter(o => o.estado === WEBPEDIDOS_ESTADO.EnPreparacion);
-    const readyOrders = filteredOrders.filter(o => 
-        o.estado === WEBPEDIDOS_ESTADO.ListoParaRecoger || 
-        o.estado === WEBPEDIDOS_ESTADO.EnCamino
-    );
+    // Separar por tiempo (para priorizar)
+    const urgentOrders = filteredOrders.filter(o => {
+        const minutesElapsed = Math.floor((new Date().getTime() - new Date(o.created_at).getTime()) / (1000 * 60));
+        return minutesElapsed > 45;
+    });
+
+    const normalOrders = filteredOrders.filter(o => {
+        const minutesElapsed = Math.floor((new Date().getTime() - new Date(o.created_at).getTime()) / (1000 * 60));
+        return minutesElapsed <= 45;
+    });
 
     React.useEffect(() => {
         if (error) {
@@ -290,7 +284,7 @@ const KitchenManagementPage: React.FC = () => {
                         </div>
                         <div>
                             <h1 className="text-2xl font-bold text-gray-900">Cocina</h1>
-                            <p className="text-gray-600 text-sm">Gestión de pedidos activos</p>
+                            <p className="text-gray-600 text-sm">Solo pedidos en preparación</p>
                         </div>
                     </div>
                     
@@ -306,18 +300,6 @@ const KitchenManagementPage: React.FC = () => {
                                 className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full sm:w-48"
                             />
                         </div>
-
-                        {/* Filtro */}
-                        <select
-                            value={filterStatus}
-                            onChange={(e) => setFilterStatus(e.target.value as webpedidos_estado | 'ALL')}
-                            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        >
-                            <option value="ALL">Todos los estados</option>
-                            <option value={WEBPEDIDOS_ESTADO.Pendiente}>Pendientes</option>
-                            <option value={WEBPEDIDOS_ESTADO.EnPreparacion}>En Preparación</option>
-                            <option value={WEBPEDIDOS_ESTADO.ListoParaRecoger}>Listos</option>
-                        </select>
 
                         {/* Controles */}
                         <div className="flex space-x-2">
@@ -346,22 +328,18 @@ const KitchenManagementPage: React.FC = () => {
                 </div>
 
                 {/* Stats Overview Compacto */}
-                <div className="grid grid-cols-4 gap-3 mt-4">
-                    <div className="bg-white rounded-lg p-3 shadow-sm border-l-4 border-amber-500">
-                        <div className="text-xl font-bold text-gray-900">{pendingOrders.length}</div>
-                        <div className="text-xs text-gray-600">Pendientes</div>
+                <div className="grid grid-cols-3 gap-3 mt-4">
+                    <div className="bg-white rounded-lg p-3 shadow-sm border-l-4 border-red-500">
+                        <div className="text-xl font-bold text-gray-900">{urgentOrders.length}</div>
+                        <div className="text-xs text-gray-600">🔥 Urgentes (+45m)</div>
                     </div>
                     <div className="bg-white rounded-lg p-3 shadow-sm border-l-4 border-blue-500">
-                        <div className="text-xl font-bold text-gray-900">{preparingOrders.length}</div>
-                        <div className="text-xs text-gray-600">En Prep.</div>
+                        <div className="text-xl font-bold text-gray-900">{normalOrders.length}</div>
+                        <div className="text-xs text-gray-600">En Preparación</div>
                     </div>
                     <div className="bg-white rounded-lg p-3 shadow-sm border-l-4 border-emerald-500">
-                        <div className="text-xl font-bold text-gray-900">{readyOrders.length}</div>
-                        <div className="text-xs text-gray-600">Listos</div>
-                    </div>
-                    <div className="bg-white rounded-lg p-3 shadow-sm border-l-4 border-purple-500">
                         <div className="text-xl font-bold text-gray-900">{filteredOrders.length}</div>
-                        <div className="text-xs text-gray-600">Total</div>
+                        <div className="text-xs text-gray-600">Total en Cocina</div>
                     </div>
                 </div>
             </div>
@@ -373,16 +351,48 @@ const KitchenManagementPage: React.FC = () => {
                     <p className="text-sm text-gray-600">Cargando pedidos...</p>
                 </div>
             ) : (
-                <div className="space-y-2">
-                    {filteredOrders.map(order => (
-                        <KitchenOrderTicket 
-                            key={order.id} 
-                            order={order} 
-                            updateStatus={updateOrderStatus}
-                            isExpanded={expandedOrder === order.id}
-                            onToggle={() => toggleOrderExpansion(order.id)}
-                        />
-                    ))}
+                <div className="space-y-4">
+                    {/* Pedidos Urgentes primero */}
+                    {urgentOrders.length > 0 && (
+                        <div>
+                            <h2 className="text-sm font-bold text-red-600 mb-2 flex items-center">
+                                🔥 URGENTES (+45 minutos)
+                            </h2>
+                            <div className="space-y-2">
+                                {urgentOrders.map(order => (
+                                    <KitchenOrderTicket 
+                                        key={order.id} 
+                                        order={order} 
+                                        updateStatus={updateOrderStatus}
+                                        isExpanded={expandedOrder === order.id}
+                                        onToggle={() => toggleOrderExpansion(order.id)}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Pedidos Normales */}
+                    {normalOrders.length > 0 && (
+                        <div>
+                            {urgentOrders.length > 0 && (
+                                <h2 className="text-sm font-bold text-blue-600 mb-2 mt-4">
+                                    En Preparación
+                                </h2>
+                            )}
+                            <div className="space-y-2">
+                                {normalOrders.map(order => (
+                                    <KitchenOrderTicket 
+                                        key={order.id} 
+                                        order={order} 
+                                        updateStatus={updateOrderStatus}
+                                        isExpanded={expandedOrder === order.id}
+                                        onToggle={() => toggleOrderExpansion(order.id)}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -391,10 +401,13 @@ const KitchenManagementPage: React.FC = () => {
                 <div className="bg-white rounded-lg shadow-sm border-2 border-dashed border-gray-300 p-8 text-center">
                     <ChefHatIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                        ¡Excelente trabajo!
+                        ¡Sin pedidos en cocina!
                     </h3>
                     <p className="text-gray-600 text-sm">
-                        No hay pedidos activos en la cocina.
+                        No hay pedidos enviados a cocina en este momento.
+                    </p>
+                    <p className="text-gray-500 text-xs mt-2">
+                        Los pedidos aparecerán aquí cuando se envíen desde "Pedidos Web"
                     </p>
                 </div>
             )}

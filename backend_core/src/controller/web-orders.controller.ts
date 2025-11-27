@@ -1,11 +1,14 @@
 // src/controller/web-orders.controller.ts
-// ✅ VERSIÓN FINAL: Valida caja SOLO al marcar como "Entregado"
+// ✅ VERSIÓN FINAL CON VALIDACIONES Y MANEJO CORRECTO DE DECIMAL
 
 import { Request, Response } from 'express';
 import { webOrdersService, webpedidos_estado } from '../services/web-orders.service';
 import { emailService } from '../services/email.service';
 import { cierrePosService } from '../services/cierre-pos.service';
+import { tenantConfigService } from '../services/tenant-config.service';
+import { notificationService } from '../services/notification.service';
 import { pagos_metodo_pago } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
 
 interface AuthRequest extends Request {
   user?: {
@@ -21,6 +24,12 @@ interface AuthRequest extends Request {
   };
 }
 
+// ========== HELPER: Convertir Decimal a number ==========
+function toNumber(value: number | Decimal): number {
+  if (typeof value === 'number') return value;
+  return value.toNumber();
+}
+
 export const webOrdersController = {
   // Obtener todos los pedidos web del tenant (ADMIN)
   async getWebOrders(req: AuthRequest, res: Response) {
@@ -32,7 +41,6 @@ export const webOrdersController = {
         return res.status(403).json({ error: 'Acceso no autorizado' });
       }
 
-      // Validar y convertir el estado si viene como query param
       const filters: { estado?: webpedidos_estado } = {};
       if (estado && typeof estado === 'string' && webOrdersService.isValidOrderStatus(estado)) {
         filters.estado = estado as webpedidos_estado;
@@ -83,7 +91,7 @@ export const webOrdersController = {
     }
   },
 
-  // Crear pedido desde la web pública (PÚBLICO)
+  // Crear pedido desde la web pública (PÚBLICO) - ✅ CON VALIDACIONES
   async createWebOrder(req: Request, res: Response) {
     try {
       const tenant = (req as any).tenant;
@@ -92,6 +100,7 @@ export const webOrdersController = {
         return res.status(404).json({ error: 'Tenant no encontrado' });
       }
 
+      const tenantId = tenant.id;
       const { 
         cliente_nombre, 
         cliente_email, 
@@ -105,7 +114,9 @@ export const webOrdersController = {
         items 
       } = req.body;
 
-      // Validaciones básicas
+      console.log(`\n🌐 [WEB-PEDIDO] Nuevo pedido web para tenant: ${tenant.subdominio}`);
+
+      // ========== VALIDACIONES BÁSICAS ==========
       if (!cliente_nombre || !cliente_telefono || !items || !Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ 
           error: 'Datos incompletos: nombre, teléfono y al menos un producto son requeridos' 
@@ -118,7 +129,73 @@ export const webOrdersController = {
         });
       }
 
-      // Crear pedido
+      // ========== 🔒 VALIDACIÓN 1: PEDIDOS ONLINE ACTIVOS ==========
+      const activo = await tenantConfigService.verificarPedidosOnlineActivos(tenantId);
+      
+      if (!activo) {
+        console.log(`❌ [WEB-PEDIDO] Pedidos online desactivados`);
+        return res.status(403).json({
+          success: false,
+          error: 'PEDIDOS_WEB_DESACTIVADOS',
+          message: 'Los pedidos online están temporalmente desactivados. Por favor, intenta más tarde.'
+        });
+      }
+
+      // ========== 🕐 VALIDACIÓN 2: HORARIO DE ATENCIÓN ==========
+      const horarioCheck = await tenantConfigService.verificarHorarioPedidosWeb(tenantId);
+      
+      if (!horarioCheck.dentroDeHorario) {
+        console.log(`❌ [WEB-PEDIDO] Fuera de horario: ${horarioCheck.horaActual}`);
+        return res.status(403).json({
+          success: false,
+          error: 'FUERA_DE_HORARIO',
+          message: `Horario de atención: ${horarioCheck.horario.inicio} - ${horarioCheck.horario.fin}`,
+          horario: horarioCheck.horario,
+          hora_actual: horarioCheck.horaActual
+        });
+      }
+
+      // ========== 💰 CALCULAR SUBTOTAL Y VALIDAR MONTO MÍNIMO ==========
+      const config = await tenantConfigService.getPedidosWebConfig(tenantId);
+      
+      // Calcular subtotal de los items
+      let subtotal = 0;
+      for (const item of items) {
+        const precio = Number(item.precio) || 0;
+        const cantidad = Number(item.cantidad) || 0;
+        subtotal += precio * cantidad;
+      }
+
+      const montoMinimo = toNumber(config.monto_minimo_pedido);
+      
+      if (subtotal < montoMinimo) {
+        console.log(`❌ [WEB-PEDIDO] Monto insuficiente: S/${subtotal} < S/${montoMinimo}`);
+        return res.status(400).json({
+          success: false,
+          error: 'MONTO_MINIMO_NO_ALCANZADO',
+          message: `El monto mínimo de pedido es S/ ${montoMinimo.toFixed(2)}`,
+          monto_minimo: montoMinimo,
+          monto_actual: subtotal,
+          faltante: montoMinimo - subtotal
+        });
+      }
+
+      // ========== 🚚 CÁLCULO DE COSTO DE DELIVERY ==========
+      const costoEnvio = tipo_pedido === 'EntregaDomicilio' 
+        ? toNumber(config.costo_delivery)
+        : 0;
+      
+      const total = subtotal + costoEnvio;
+
+      console.log(`✅ [WEB-PEDIDO] Validaciones pasadas. Creando pedido...`);
+      console.log(`   - Subtotal: S/ ${subtotal.toFixed(2)}`);
+      console.log(`   - Envío: S/ ${costoEnvio.toFixed(2)}`);
+      console.log(`   - Total: S/ ${total.toFixed(2)}`);
+
+      // ========== ⏱️ CALCULAR TIEMPO ESTIMADO ==========
+      const tiempoEstimado = await tenantConfigService.calcularTiempoEstimado(tenantId, true);
+
+      // ========== 📝 CREAR PEDIDO ==========
       const newOrder = await webOrdersService.createWebOrder(tenant.id, {
         cliente_nombre,
         cliente_email,
@@ -132,23 +209,46 @@ export const webOrdersController = {
         items
       });
 
-      // Obtener configuración para notificaciones
+      console.log(`✅ [WEB-PEDIDO] Pedido creado: #${newOrder.numero_pedido}`);
+
+      // ========== 📧 NOTIFICAR POR EMAIL - NUEVO PEDIDO ==========
+      const configNotif = await tenantConfigService.getNotificacionesConfig(tenantId);
+      
+      if (configNotif.email_nuevos_pedidos) {
+        try {
+          await notificationService.notificarNuevoPedidoWeb(tenantId, {
+            numero_pedido: newOrder.numero_pedido,
+            cliente_nombre: newOrder.cliente_nombre,
+            total: toNumber(newOrder.total),
+            tipo_pedido: newOrder.tipo_pedido
+          });
+          console.log(`📧 [WEB-PEDIDO] Email enviado a: ${configNotif.email_nuevos_pedidos}`);
+        } catch (emailError) {
+          console.error('⚠️ Error al enviar email de nuevo pedido (no crítico):', emailError);
+        }
+      }
+
+      // Obtener configuración para email de confirmación al cliente
       const tenantConfig = await webOrdersService.getOrderConfig(tenant.id);
       
       // Enviar email de confirmación si está habilitado
       if (tenantConfig.notif_pedido_confirmado && cliente_email) {
         try {
           await emailService.sendOrderConfirmation(newOrder, tenantConfig);
+          console.log(`📧 [WEB-PEDIDO] Email de confirmación enviado al cliente`);
         } catch (emailError) {
           console.error('Error al enviar email de confirmación:', emailError);
-          // No fallar el pedido si el email falla
         }
       }
 
       res.status(201).json({
         success: true,
         message: 'Pedido creado exitosamente',
-        order: newOrder
+        order: newOrder,
+        tiempo_estimado: {
+          minutos: tiempoEstimado.minutos,
+          hora_estimada: tiempoEstimado.horaEstimada
+        }
       });
     } catch (error: any) {
       console.error('Error en createWebOrder:', error);
@@ -181,7 +281,6 @@ export const webOrdersController = {
         return res.status(400).json({ error: 'Nuevo estado requerido' });
       }
 
-      // Validar que el estado sea válido
       if (!webOrdersService.isValidOrderStatus(nuevo_estado)) {
         return res.status(400).json({ 
           error: 'Estado inválido',
@@ -193,7 +292,6 @@ export const webOrdersController = {
       if (nuevo_estado === webpedidos_estado.Entregado) {
         console.log(`🔍 [WEB-ORDER] Estado "Entregado" detectado. Verificando caja abierta...`);
         
-        // Verificar si hay caja abierta
         const cajaAbierta = await cierrePosService.verificarCajaAbierta(tenantId, empleadoId);
         
         if (!cajaAbierta) {
@@ -201,7 +299,7 @@ export const webOrdersController = {
           return res.status(400).json({ 
             success: false,
             error: 'No se puede marcar como Entregado',
-            message: 'Debe haber una caja abierta para finalizar pedidos web. Por favor, abre una caja primero desde el módulo de Caja y Turnos.',
+            message: 'Debe haber una caja abierta para finalizar pedidos web.',
             codigo: 'CAJA_NO_ABIERTA',
             accion_requerida: 'Abrir Caja'
           });
@@ -212,19 +310,15 @@ export const webOrdersController = {
         // ========== 💰 REGISTRAR VENTA EN CAJA ==========
         console.log(`💰 [WEB-ORDER] Registrando venta en caja para pedido #${orderId}...`);
         try {
-          // Obtener el pedido actualizado para tener el monto
           const pedidoParaCaja = await webOrdersService.getWebOrderById(tenantId, orderId);
           
           if (!pedidoParaCaja) {
             return res.status(404).json({ error: 'Pedido no encontrado' });
           }
 
-          // Método de pago por defecto: Efectivo
-          // TODO: Si quieres permitir elegir el método, agrégalo al request body
           const metodoPago: pagos_metodo_pago = pagos_metodo_pago.Efectivo;
-          const montoTotal = Number(pedidoParaCaja.total);
+          const montoTotal = toNumber(pedidoParaCaja.total);
 
-          // Registrar en caja usando el service centralizado
           await cierrePosService.registrarVentaEnCaja({
             tenantId,
             empleadoId,
@@ -234,7 +328,7 @@ export const webOrdersController = {
             tipoDocumento: 'WebPedido'
           });
 
-          console.log(`✅ [WEB-ORDER] Venta registrada en caja exitosamente: S/ ${montoTotal.toFixed(2)}`);
+          console.log(`✅ [WEB-ORDER] Venta registrada en caja: S/ ${montoTotal.toFixed(2)}`);
         } catch (cajaError: any) {
           console.error('❌ [WEB-ORDER] Error al registrar venta en caja:', cajaError);
           return res.status(500).json({ 
@@ -258,8 +352,7 @@ export const webOrdersController = {
           });
         }
       } else {
-        // ℹ️ Para otros estados (Confirmado, En_preparacion, etc.) NO requieren caja
-        console.log(`ℹ️ [WEB-ORDER] Estado "${nuevo_estado}" no requiere validación de caja. Continuando...`);
+        console.log(`ℹ️ [WEB-ORDER] Estado "${nuevo_estado}" no requiere validación de caja.`);
       }
 
       // ========== 📝 ACTUALIZAR ESTADO DEL PEDIDO ==========
@@ -269,7 +362,7 @@ export const webOrdersController = {
         nuevo_estado as webpedidos_estado
       );
 
-      console.log(`✅ [WEB-ORDER] Estado actualizado correctamente a: ${nuevo_estado}`);
+      console.log(`✅ [WEB-ORDER] Estado actualizado a: ${nuevo_estado}`);
 
       // ========== 📧 NOTIFICACIONES POR EMAIL ==========
       const tenantConfig = await webOrdersService.getOrderConfig(tenantId);
@@ -297,7 +390,6 @@ export const webOrdersController = {
           }
         } catch (emailError) {
           console.error('⚠️ [WEB-ORDER] Error al enviar email (no crítico):', emailError);
-          // No bloquear por errores de email
         }
       }
 
@@ -417,6 +509,41 @@ export const webOrdersController = {
       res.status(500).json({ 
         success: false,
         error: 'Error interno del servidor al obtener estadísticas' 
+      });
+    }
+  },
+
+  // 🆕 Obtener configuración pública para el catálogo web (PÚBLICO)
+  async getPublicConfig(req: Request, res: Response) {
+    try {
+      const tenant = (req as any).tenant;
+      
+      if (!tenant) {
+        return res.status(404).json({ error: 'Tenant no encontrado' });
+      }
+
+      const config = await tenantConfigService.getPedidosWebConfig(tenant.id);
+      const horarioCheck = await tenantConfigService.verificarHorarioPedidosWeb(tenant.id);
+
+      res.json({
+        success: true,
+        config: {
+          pedidos_activos: config.pedidos_online_activos,
+          horario: horarioCheck.horario,
+          dentro_de_horario: horarioCheck.dentroDeHorario,
+          monto_minimo: toNumber(config.monto_minimo_pedido),
+          costo_delivery: toNumber(config.costo_delivery),
+          tiempo_preparacion: config.tiempo_prep_web,
+          mensaje_bienvenida: config.mensaje_bienvenida_web,
+          reservas_activas: config.reservas_activas,
+          dias_limite_reserva: config.dias_limite_reserva
+        }
+      });
+    } catch (error) {
+      console.error('Error en getPublicConfig:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Error al obtener configuración' 
       });
     }
   }

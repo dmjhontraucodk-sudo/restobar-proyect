@@ -9,6 +9,7 @@ import { verifyTenantAccess } from './middleware/verifyTenantAccess';
 import authRoutes from './routes/auth.routes';
 import dashboardRoutes from './routes/dashboard.routes';
 import webRoutes from './routes/web.routes';
+import { cronService } from './services/cron.service';
 
 // Interfaces para TypeScript
 interface JwtPayload {
@@ -169,5 +170,10 @@ app.use((error: any, req: Request, res: Response, next: NextFunction) => {
     message: process.env.NODE_ENV === 'development' ? error.message : 'Contacte al administrador'
   });
 });
+
+if (process.env.NODE_ENV !== 'test') {
+  cronService.iniciarCronJobs();
+  console.log('✅ [APP] Cron jobs iniciados');
+}
 
 export default app;

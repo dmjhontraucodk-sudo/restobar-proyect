@@ -1,15 +1,48 @@
-// src/pages/public/Checkout.tsx
-import { useState } from 'react';
+// src/pages/public/Checkout.tsx - SIN BOTÓN DE TICKET PARA CLIENTE
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Truck, Store, Clock, MapPin, CheckCircle2 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useWebApi } from '../../hooks/useWebApi';
+import { useGlobalConfig } from '../../hooks/useGlobalConfig';
 import type { PedidoData } from '../../types';
 
 export default function Checkout() {
   const navigate = useNavigate();
   const { items, getTotalPrice, clearCart } = useCart();
   const { createOrder, isLoading, error } = useWebApi();
+  const { pedidosWeb, metodosPago } = useGlobalConfig();
+
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('');
+
+  useEffect(() => {
+    const savedMethod = localStorage.getItem('selectedPaymentMethod');
+    if (savedMethod) {
+      setSelectedPaymentMethod(savedMethod);
+    }
+  }, []);
+
+  const getPaymentMethodName = (method: string) => {
+    const methods: Record<string, string> = {
+      efectivo: 'Efectivo',
+      tarjeta: 'Tarjeta',
+      yape: 'Yape',
+      plin: 'Plin',
+      transferencia: 'Transferencia Bancaria',
+    };
+    return methods[method] || 'Efectivo';
+  };
+
+  const getPaymentMethodEmoji = (method: string) => {
+    const emojis: Record<string, string> = {
+      efectivo: '💵',
+      tarjeta: '💳',
+      yape: '📱',
+      plin: '📱',
+      transferencia: '🏦',
+    };
+    return emojis[method] || '💵';
+  };
 
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -28,12 +61,11 @@ export default function Checkout() {
     numero_pedido: string;
   }
   
-  // ...
-  
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [createdOrder, setCreatedOrder] = useState<Order | null>(null);
+  
   const subtotal = getTotalPrice();
-  const deliveryFee = 0; // Envío gratis
+  const deliveryFee = Number(pedidosWeb.costoDelivery) || 0;
   const total = subtotal + deliveryFee;
 
   const handleInputChange = (field: string, value: string) => {
@@ -43,8 +75,6 @@ export default function Checkout() {
   const canProceedStep1 = formData.cliente_nombre && formData.cliente_telefono;
   const canProceedStep2 = formData.tipo_pedido === 'RecogerEnTienda' || 
     (formData.tipo_pedido === 'EntregaDomicilio' && formData.direccion_entrega);
-
-  // src/pages/public/Checkout.tsx (Modificación en handleSubmitOrder)
 
   const handleSubmitOrder = async () => {
     if (isLoading) return;
@@ -60,7 +90,6 @@ export default function Checkout() {
         hora_programada: formData.hora_programada === 'custom' && formData.customTime ? formData.customTime : undefined,
         notas_especiales: formData.notas_especiales || undefined,
         
-        // 🚀 AÑADIR LOS CAMPOS DE TOTALES REQUERIDOS POR EL BACK-END
         subtotal: subtotal,
         total: total,
         costo_envio: deliveryFee, 
@@ -78,11 +107,14 @@ export default function Checkout() {
       setOrderSuccess(true);
       clearCart();
       
+      localStorage.removeItem('selectedPaymentMethod');
+      
     } catch (err) {
       console.error('Error creating order:', err);
     }
   };
 
+  // ⭐ PÁGINA DE ÉXITO (SOLO MÉTODO DE PAGO, SIN QR)
   if (orderSuccess && createdOrder) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center px-4 py-16">
@@ -109,7 +141,7 @@ export default function Checkout() {
               <div className="bg-gray-50 rounded-xl p-6 text-center border border-gray-200">
                 <Clock className="mx-auto text-blue-600 mb-3" size={32} />
                 <h3 className="text-gray-900 font-semibold mb-2">Tiempo Estimado</h3>
-                <p className="text-gray-600">35-45 minutos</p>
+                <p className="text-gray-600">{pedidosWeb.tiempoPrep || 30}-{(pedidosWeb.tiempoPrep || 30) + 15} minutos</p>
               </div>
 
               <div className="bg-gray-50 rounded-xl p-6 text-center border border-gray-200">
@@ -121,10 +153,16 @@ export default function Checkout() {
               </div>
             </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-              <p className="text-blue-700 text-sm">
-                💵 <strong>Método de pago:</strong> Efectivo al recibir/recoger
+            {/* ⭐ SOLO MOSTRAR MÉTODO DE PAGO SELECCIONADO */}
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+              <p className="text-blue-700 text-sm font-medium">
+                {getPaymentMethodEmoji(selectedPaymentMethod)} <strong>Método de pago:</strong> {getPaymentMethodName(selectedPaymentMethod)} al {formData.tipo_pedido === 'RecogerEnTienda' ? 'recoger' : 'recibir'}
               </p>
+              {selectedPaymentMethod === 'efectivo' && (
+                <p className="text-blue-700 text-xs mt-2">
+                  💡 Por favor, ten el monto exacto o cambio disponible
+                </p>
+              )}
             </div>
           </div>
 
@@ -164,7 +202,6 @@ export default function Checkout() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-8 px-4">
       <div className="max-w-4xl mx-auto">
-        {/* Navegación */}
         <button
           onClick={() => navigate('/cart')}
           className="flex items-center gap-2 text-gray-600 hover:text-blue-600 mb-8 transition-colors"
@@ -173,7 +210,6 @@ export default function Checkout() {
           Volver al carrito
         </button>
 
-        {/* Progreso */}
         <div className="flex items-center justify-between mb-12">
           {[1, 2, 3].map((s) => (
             <div key={s} className="flex items-center flex-1">
@@ -272,6 +308,11 @@ export default function Checkout() {
                 <Truck className="text-blue-500 mb-3" size={32} />
                 <h3 className="text-gray-900 font-semibold text-lg mb-1">Delivery a Domicilio</h3>
                 <p className="text-gray-600 text-sm">Recibe tu pedido en casa</p>
+                {deliveryFee > 0 && (
+                  <p className="text-blue-600 text-sm mt-2 font-semibold">
+                    + S/ {deliveryFee.toFixed(2)} envío
+                  </p>
+                )}
               </button>
 
               <button
@@ -285,6 +326,7 @@ export default function Checkout() {
                 <Store className="text-blue-500 mb-3" size={32} />
                 <h3 className="text-gray-900 font-semibold text-lg mb-1">Recoger en Local</h3>
                 <p className="text-gray-600 text-sm">Retira tu pedido</p>
+                <p className="text-green-600 text-sm mt-2 font-semibold">Sin costo de envío</p>
               </button>
             </div>
 
@@ -325,7 +367,7 @@ export default function Checkout() {
                     <h4 className="text-gray-900 font-semibold mb-1">Nuestro Local</h4>
                     <p className="text-gray-600 text-sm">Av. Principal 123, Lima</p>
                     <p className="text-blue-600 text-sm mt-2">
-                      Horario de recogida estimado: 20-30 min
+                      Horario de recogida estimado: {pedidosWeb.tiempoPrep || 30} min
                     </p>
                   </div>
                 </div>
@@ -354,7 +396,6 @@ export default function Checkout() {
           <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-lg">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">¡Casi listo! Revisa tu pedido</h2>
 
-            {/* Resumen del Pedido */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-6">
               <div className="space-y-4">
                 <h3 className="text-gray-900 font-semibold text-lg">Resumen del Pedido</h3>
@@ -373,7 +414,11 @@ export default function Checkout() {
                   </div>
                   <div className="flex justify-between text-gray-700">
                     <span>Costo de envío</span>
-                    <span className="text-green-600 font-semibold">¡Gratis!</span>
+                    {deliveryFee > 0 ? (
+                      <span>S/ {deliveryFee.toFixed(2)}</span>
+                    ) : (
+                      <span className="text-green-600 font-semibold">¡Gratis!</span>
+                    )}
                   </div>
                   <div className="flex justify-between text-gray-900 text-xl font-bold">
                     <span>Total</span>
@@ -382,7 +427,6 @@ export default function Checkout() {
                 </div>
               </div>
 
-              {/* Información del Cliente */}
               <div className="bg-gray-50 rounded-xl p-5 space-y-3">
                 <h3 className="text-gray-900 font-semibold mb-3">Información de Contacto</h3>
                 <div className="flex justify-between">
@@ -410,7 +454,6 @@ export default function Checkout() {
               </div>
             </div>
 
-            {/* Notas Especiales */}
             <div className="mb-6">
               <label className="block text-gray-700 mb-2 font-medium">
                 Notas especiales (alergias, instrucciones, etc.)
@@ -424,14 +467,12 @@ export default function Checkout() {
               ></textarea>
             </div>
 
-            {/* Información de Pago */}
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
               <p className="text-blue-700 text-sm font-medium">
-                💵 Método de pago: Efectivo al recibir/recoger
+                {getPaymentMethodEmoji(selectedPaymentMethod)} <strong>Método de pago:</strong> {getPaymentMethodName(selectedPaymentMethod)} al {formData.tipo_pedido === 'RecogerEnTienda' ? 'recoger' : 'recibir'}
               </p>
             </div>
 
-            {/* Botones Finales */}
             <div className="flex gap-3">
               <button
                 onClick={() => setStep(2)}

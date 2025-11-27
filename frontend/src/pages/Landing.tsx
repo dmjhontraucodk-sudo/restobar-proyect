@@ -1,4 +1,4 @@
-// src/pages/Landing.tsx
+// src/pages/Landing.tsx - VERSIÓN CORREGIDA
 import { useCart } from '../context/CartContext';
 import { Hero } from './public/components/Hero';
 import { Features } from './public/components/Features';
@@ -28,15 +28,16 @@ export const Landing = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      {/* Pasar isDemo={true} para mostrar el botón de registro */}
-      <Header tenantName="RestoBar Demo" isDemo={true} />
+      {/* ⭐ CORREGIDO: Ya NO pasa tenantName - Se obtiene de useGlobalConfig */}
+      <Header isDemo={true} />
       
       <div className="min-h-screen">
         <Hero onScrollToMenu={scrollToMenu} />
         <Features />
       </div>
 
-      <Footer tenantName="RestoBar Demo" isDemo={true} />
+      {/* ⭐ CORREGIDO: Ya NO pasa tenantName - Se obtiene de useGlobalConfig */}
+      <Footer isDemo={true} />
     </div>
   );
 };

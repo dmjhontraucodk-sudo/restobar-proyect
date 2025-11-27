@@ -1,10 +1,11 @@
-// src/components/dashboard/Sidebar/Sidebar.tsx - VERSIÓN COMPLETA ACTUALIZADA
+// src/components/dashboard/Sidebar/Sidebar.tsx - CON CONFIGURACIÓN INTEGRADA
 
 import React from "react";
 import { NavigationContent } from "./NavigationContent";
 import { SidebarLink } from "./SidebarLink";
 import * as Icons from "./icons";
 import { type User } from "../../../context/AuthContext";
+import { useGlobalConfig } from "../../../hooks/useGlobalConfig"; // ⭐ NUEVO
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -27,6 +28,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onLinkClick,
   user,
 }) => {
+  const { nombreNegocio, logoUrl } = useGlobalConfig(); // ⭐ NUEVO
+
   return (
     <div
       className={`sidebar-container hidden md:flex flex-col bg-white border-r border-gray-200 shadow-xl transition-all duration-500 ease-in-out z-30 fixed inset-y-0 left-0 ${sidebarWidthClass}`}
@@ -57,14 +60,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="shrink-0">
             <div className="flex items-center h-16 px-4 border-b border-gray-200">
               <div className="flex items-center space-x-2">
-                <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg shadow-lg">
-                  <span className="text-sm font-bold text-white">
-                    {user?.name?.charAt(0) || "R"}
-                  </span>
-                </div>
+                {/* ⭐ CAMBIO: Mostrar logo si existe, sino inicial */}
+                {logoUrl ? (
+                  <img 
+                    src={logoUrl} 
+                    alt={nombreNegocio}
+                    className="w-8 h-8 rounded-lg object-cover shadow-lg"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg shadow-lg">
+                    <span className="text-sm font-bold text-white">
+                      {nombreNegocio.charAt(0)}
+                    </span>
+                  </div>
+                )}
                 <div>
+                  {/* ⭐ CAMBIO: Usar nombre de configuración */}
                   <h1 className="text-lg font-bold text-gray-900">
-                    {user?.tenantName || "RestoBar"}
+                    {nombreNegocio}
                   </h1>
                   <p className="text-xs text-gray-500">Sistema</p>
                 </div>
@@ -108,19 +121,19 @@ const FlyoutNavigationContent: React.FC<{
             isCollapsed={false}
             onClick={onLinkClick}
           />
-          <SidebarLink 
-            to="/dashboard/web-orders" 
-            icon={<Icons.GlobeIcon />} 
-            label="Pedidos Web" 
-            isCollapsed={false} 
+          <SidebarLink
+            to="/dashboard/web-orders"
+            icon={<Icons.GlobeIcon />}
+            label="Pedidos Web"
+            isCollapsed={false}
             onClick={onLinkClick}
           />
-          <SidebarLink 
-            to="/dashboard/tables" 
-            icon={<Icons.TableIcon />} 
-            label="Mesas" 
-            isCollapsed={false} 
-            onClick={onLinkClick} 
+          <SidebarLink
+            to="/dashboard/tables"
+            icon={<Icons.TableIcon />}
+            label="Mesas"
+            isCollapsed={false}
+            onClick={onLinkClick}
           />
           <SidebarLink
             to="/dashboard/reservas"
@@ -168,7 +181,6 @@ const FlyoutNavigationContent: React.FC<{
           Inventario
         </h3>
         <div className="space-y-1">
-          {/* ⭐ CAMBIADO: Ahora apunta a /dashboard/inventario */}
           <SidebarLink
             to="/dashboard/inventario"
             icon={<Icons.PackageIcon />}
@@ -176,11 +188,11 @@ const FlyoutNavigationContent: React.FC<{
             isCollapsed={false}
             onClick={onLinkClick}
           />
-          <SidebarLink 
-            to="/dashboard/kardex" 
-            icon={<Icons.ClipboardListIcon />} 
-            label="Kardex Valorizado" 
-            isCollapsed={false} 
+          <SidebarLink
+            to="/dashboard/kardex"
+            icon={<Icons.ClipboardListIcon />}
+            label="Kardex Valorizado"
+            isCollapsed={false}
             onClick={onLinkClick}
           />
           <SidebarLink
@@ -198,15 +210,6 @@ const FlyoutNavigationContent: React.FC<{
             onClick={onLinkClick}
           />
 
-          {/* ❌ ELIMINADO: Configuración de Inventario (ya están como tabs) */}
-          {/* Configuración de Inventario (submenu) - ELIMINADO
-          <div className="ml-2 mt-2 pt-2 border-t border-gray-100">
-            <SidebarLink to="/dashboard/categorias-inventario" ... />
-            <SidebarLink to="/dashboard/tipos-gasto" ... />
-            <SidebarLink to="/dashboard/unidades-medida" ... />
-          </div>
-          */}
-          
           {/* Solo dejamos Tipos de Gasto porque no está en los tabs */}
           <div className="ml-2 mt-2 pt-2 border-t border-gray-100">
             <SidebarLink
@@ -233,12 +236,12 @@ const FlyoutNavigationContent: React.FC<{
             isCollapsed={false}
             onClick={onLinkClick}
           />
-          <SidebarLink 
-            to="/dashboard/nomina" 
-            icon={<Icons.UsersIcon />} 
-            label="Pago de Nómina" 
-            isCollapsed={false} 
-            onClick={onLinkClick} 
+          <SidebarLink
+            to="/dashboard/nomina"
+            icon={<Icons.UsersIcon />}
+            label="Pago de Nómina"
+            isCollapsed={false}
+            onClick={onLinkClick}
           />
           <SidebarLink
             to="/dashboard/gastos"
@@ -278,8 +281,8 @@ const FlyoutNavigationContent: React.FC<{
             onClick={onLinkClick}
           />
           <SidebarLink
-            to="/dashboard/settings"
-            icon={<Icons.SettingsIcon />}
+            to="/dashboard/configuration"
+            icon={<Icons.CogIcon />}
             label="Configuración"
             isCollapsed={false}
             onClick={onLinkClick}

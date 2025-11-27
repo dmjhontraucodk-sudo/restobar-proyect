@@ -1,4 +1,4 @@
-// prisma/schema.prisma - VERSIÓN 100% DINÁMICA - COMPLETO
+// prisma/schema.prisma - VERSIÓN LIMPIA OPTIMIZADA
 
 generator client {
   provider = "prisma-client-js"
@@ -110,7 +110,7 @@ model compras {
   total            Decimal  @db.Decimal(10, 2)
   numero_documento String?  @db.VarChar(100)
   observaciones    String?  @db.Text
-  estado_compra    String   @default("Pendiente") @db.VarChar(50) // "Pendiente", "Recibido"
+  estado_compra    String   @default("Pendiente") @db.VarChar(50)
   created_at       DateTime @default(now()) @db.Timestamp(0)
 
   tenants          tenants            @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
@@ -152,14 +152,14 @@ model gastos {
   monto            Decimal  @db.Decimal(10, 2)
   numero_documento String?  @db.VarChar(100)
   descripcion      String?  @db.Text
-  metodo_pago      String?  @db.VarChar(50) // "Efectivo", "Transferencia", "Tarjeta"
-  aprobado_por_id  Int? // Empleado que aprobó
+  metodo_pago      String?  @db.VarChar(50)
+  aprobado_por_id  Int?
   created_at       DateTime @default(now()) @db.Timestamp(0)
 
-  tenants     tenants      @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
-  tipos_gasto tipos_gasto  @relation(fields: [tipo_gasto_id], references: [id])
-  proveedores proveedores? @relation(fields: [proveedor_id], references: [id])
-  empleados   empleados?   @relation(fields: [aprobado_por_id], references: [id])
+  tenants              tenants                @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  tipos_gasto          tipos_gasto            @relation(fields: [tipo_gasto_id], references: [id])
+  proveedores          proveedores?           @relation(fields: [proveedor_id], references: [id])
+  empleados            empleados?             @relation(fields: [aprobado_por_id], references: [id])
   descuentos_aplicados descuentos_empleados[]
 
   @@index([tenant_id])
@@ -226,7 +226,7 @@ model proveedores {
   @@index([tenant_id])
 }
 
-// ========== RESTO DE MODELOS (SIN CAMBIOS) ==========
+// ========== RESTO DE MODELOS ==========
 
 model categoriasmenu {
   id             Int           @id @default(autoincrement())
@@ -329,21 +329,104 @@ model webpedidos_detalles {
   @@index([producto_id], map: "producto_id")
 }
 
+// ========== ✨ TABLA DE CONFIGURACIÓN DEL TENANT (LIMPIA) ✨ ==========
+
+model tenant_config {
+  id        Int @id @default(autoincrement())
+  tenant_id Int @unique
+
+  // ========== 🏢 INFORMACIÓN DEL NEGOCIO ==========
+  nombre_negocio      String? @db.VarChar(255)
+  logo_url            String? @db.VarChar(2048)
+  eslogan             String? @db.VarChar(500)
+  tipo_negocio        String? @default("Restaurante") @db.VarChar(100)
+  ruc                 String? @db.VarChar(20)
+  direccion           String? @db.Text
+  telefono_principal  String? @db.VarChar(50)
+  telefono_secundario String? @db.VarChar(50)
+  email_negocio       String? @db.VarChar(255)
+  whatsapp_business   String? @db.VarChar(50)
+  facebook_url        String? @db.VarChar(500)
+  instagram_url       String? @db.VarChar(500)
+  horario_apertura    String? @default("08:00") @db.VarChar(10)
+  horario_cierre      String? @default("22:00") @db.VarChar(10)
+
+  // ========== 💵 MÉTODOS DE PAGO ==========
+  acepta_efectivo      Boolean @default(true)
+  acepta_tarjeta       Boolean @default(false)
+  acepta_yape          Boolean @default(false)
+  acepta_plin          Boolean @default(false)
+  acepta_transferencia Boolean @default(false)
+
+  yape_numero   String? @db.VarChar(50)
+  yape_qr_url   String? @db.VarChar(2048)
+  plin_numero   String? @db.VarChar(50)
+  plin_qr_url   String? @db.VarChar(2048)
+  banco_nombre  String? @db.VarChar(100)
+  banco_cuenta  String? @db.VarChar(50)
+  banco_cci     String? @db.VarChar(50)
+  banco_titular String? @db.VarChar(255)
+
+  // ========== 🧾 TICKETS Y COMPROBANTES ==========
+  ticket_formato        String  @default("80mm") @db.VarChar(10)
+  ticket_mostrar_logo   Boolean @default(true)
+  ticket_pie_mensaje    String? @db.Text
+  ticket_copias         Int     @default(1)
+  ticket_incluir_qr     Boolean @default(false)
+  ticket_mostrar_metodo Boolean @default(true)
+
+  // ========== 🍽️ OPERACIONES ==========
+  tiempo_preparacion Int     @default(30)
+  alertar_agotados   Boolean @default(false)
+
+  // ========== 🌐 PEDIDOS WEB Y DELIVERY ==========
+  pedidos_online_activos Boolean @default(false)
+  costo_delivery         Decimal @default(0) @db.Decimal(10, 2)
+  monto_minimo_pedido    Decimal @default(0) @db.Decimal(10, 2)
+  tiempo_prep_web        Int     @default(30)
+  pedidos_web_inicio     String? @default("08:00") @db.VarChar(10)
+  pedidos_web_fin        String? @default("22:00") @db.VarChar(10)
+  mensaje_bienvenida_web String? @db.Text
+  reservas_activas       Boolean @default(false)
+  dias_limite_reserva    Int     @default(7)
+
+  // ========== 📦 INVENTARIO ==========
+  alertas_stock_bajo Boolean @default(false)
+  nivel_alerta_stock Decimal @default(10) @db.Decimal(10, 3)
+
+  // ========== 💰 CAJA ==========
+  fondo_caja_inicial      Decimal @default(100) @db.Decimal(10, 2)
+  alerta_diferencia_monto Decimal @default(50) @db.Decimal(10, 2)
+  alerta_diferencia_pct   Decimal @default(5) @db.Decimal(5, 2)
+  requiere_obs_cierre     Boolean @default(false)
+
+  // ========== 🔔 NOTIFICACIONES ==========
+  email_nuevos_pedidos    String? @db.VarChar(255)
+  whatsapp_pedidos_listos String? @db.VarChar(50)
+  notif_stock_critico     Boolean @default(false)
+  email_stock_critico     String? @db.VarChar(255)
+  resumen_diario_activo   Boolean @default(false)
+  resumen_diario_hora     String? @default("20:00") @db.VarChar(10)
+
+  // ========== TIMESTAMPS ==========
+  created_at DateTime @default(now()) @db.Timestamp(0)
+  updated_at DateTime @default(now()) @db.Timestamp(0)
+
+  tenants tenants @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+
+  @@index([tenant_id])
+}
+
 model tenant_config_pedidos {
-  id                          Int     @id @default(autoincrement())
-  tenant_id                   Int     @unique
-  dias_limite_reserva         Int     @default(2)
-  notif_pedido_confirmado     Boolean @default(true)
-  notif_pedido_cancelado      Boolean @default(true)
-  notif_pedido_listo          Boolean @default(true)
-  email_asunto_confirmado     String? @db.VarChar(255)
-  email_asunto_cancelado      String? @db.VarChar(255)
-  email_asunto_listo          String? @db.VarChar(255)
-  costo_envio_estandar        Decimal @default(0) @db.Decimal(10, 2)
-  monto_minimo_pedido         Decimal @default(0) @db.Decimal(10, 2)
-  tiempo_preparacion_promedio Int     @default(30)
-  horario_apertura            String  @default("08:00") @db.VarChar(50)
-  horario_cierre              String  @default("22:00") @db.VarChar(50)
+  id                      Int     @id @default(autoincrement())
+  tenant_id               Int     @unique
+  dias_limite_reserva     Int     @default(2)
+  notif_pedido_confirmado Boolean @default(true)
+  notif_pedido_cancelado  Boolean @default(true)
+  notif_pedido_listo      Boolean @default(true)
+  email_asunto_confirmado String? @db.VarChar(255)
+  email_asunto_cancelado  String? @db.VarChar(255)
+  email_asunto_listo      String? @db.VarChar(255)
 
   tenants tenants @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
 }
@@ -368,41 +451,37 @@ model empleados {
   tenant_id           Int
   rol_id              Int
   email               String  @db.VarChar(255)
-  password_hash       String? @db.VarChar(255) // NULL si no requiere login
+  password_hash       String? @db.VarChar(255)
   nombre              String? @db.VarChar(255)
   documento_identidad String? @db.VarChar(50)
-  telefono            String? @db.VarChar(50) // ✅ NUEVO CAMPO
+  telefono            String? @db.VarChar(50)
 
-  // Control de acceso
-  requiere_login    Boolean @default(false) // ✅ NUEVO CAMPO
-  es_propietario    Boolean @default(false) // ✅ NUEVO CAMPO
+  requiere_login    Boolean @default(false)
+  es_propietario    Boolean @default(false)
   is_active         Boolean @default(true)
-  debe_cambiar_pass Boolean @default(true) // ✅ NUEVO CAMPO
+  debe_cambiar_pass Boolean @default(true)
 
-  // Para futuro (nómina)
-  salario       Decimal?  @db.Decimal(10, 2) // ✅ NUEVO CAMPO
-  fecha_ingreso DateTime? @db.Date // ✅ NUEVO CAMPO
+  salario       Decimal?  @db.Decimal(10, 2)
+  fecha_ingreso DateTime? @db.Date
 
-  // Timestamps
   created_at DateTime @default(now())
-  updated_at DateTime @updatedAt // ✅ NUEVO CAMPO
+  updated_at DateTime @default(now()) @db.Timestamp(0)
 
-  // --- RELACIONES (Una sola vez cada una) ---
-  tenants            tenants              @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "empleados_ibfk_1")
-  roles              roles                @relation(fields: [rol_id], references: [id], onUpdate: Restrict, map: "empleados_ibfk_2")
+  tenants            tenants                @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "empleados_ibfk_1")
+  roles              roles                  @relation(fields: [rol_id], references: [id], onUpdate: Restrict, map: "empleados_ibfk_2")
   ordenes            ordenes[]
   pagos              pagos[]
   cierres_inventario cierres_inventario[]
-  gastos             gastos[] // ✅ Este estaba solo en el bloque de abajo, lo conservamos
+  gastos             gastos[]
   cajas_responsable  cajas[]
   movimientos_caja   cajas_movimientos[]
-  kardex                kardex[]
-  descuentos      descuentos_empleados[]
+  kardex             kardex[]
+  descuentos         descuentos_empleados[]
 
   @@unique([tenant_id, email])
   @@index([rol_id], map: "rol_id")
-  @@index([tenant_id, requiere_login]) // ✅ NUEVO ÍNDICE
-  @@index([tenant_id, es_propietario]) // ✅ NUEVO ÍNDICE
+  @@index([tenant_id, requiere_login])
+  @@index([tenant_id, es_propietario])
 }
 
 model descuentos_empleados {
@@ -412,18 +491,12 @@ model descuentos_empleados {
   monto       Decimal  @db.Decimal(10, 2)
   motivo      String   @db.VarChar(255)
   fecha       DateTime @default(now()) @db.Timestamp(0)
-  
-  // Estado: "Pendiente" (se debe) o "Aplicado" (ya se descontó)
-  estado      String   @default("Pendiente") @db.VarChar(50) 
-  
-  // ✅ NUEVO: Vínculo con el pago (Gasto) donde se cobró esto
-  gasto_id    Int?     
+  estado      String   @default("Pendiente") @db.VarChar(50)
+  gasto_id    Int?
   created_at  DateTime @default(now()) @db.Timestamp(0)
 
-  // Relaciones
   tenants   tenants   @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
   empleados empleados @relation(fields: [empleado_id], references: [id], onDelete: Cascade)
-  // ✅ Relación con la tabla de Gastos
   gastos    gastos?   @relation(fields: [gasto_id], references: [id])
 
   @@index([tenant_id])
@@ -520,10 +593,10 @@ model roles {
   id          Int         @id @default(autoincrement())
   nombre      String      @unique(map: "nombre") @db.VarChar(50)
   descripcion String?     @db.Text
-  activo      Boolean     @default(true) // ✅ NUEVO CAMPO
+  activo      Boolean     @default(true)
   empleados   empleados[]
 
-  @@index([activo], map: "activo_idx") // ✅ NUEVO ÍNDICE
+  @@index([activo], map: "activo_idx")
 }
 
 model eventos {
@@ -578,7 +651,7 @@ model tenants {
   categoriasmenu        categoriasmenu[]
   clientes              clientes[]
   empleados             empleados[]
-  descuentos_empleados descuentos_empleados[]
+  descuentos_empleados  descuentos_empleados[]
   eventos               eventos[]
   galeriafotos          galeriafotos[]
   mesas                 mesas[]
@@ -591,7 +664,7 @@ model tenants {
   webpedidos            webpedidos[]
   webpedidos_detalles   webpedidos_detalles[]
   tenant_config_pedidos tenant_config_pedidos?
-
+  tenant_config         tenant_config?
   categorias_inventario categorias_inventario[]
   tipos_gasto           tipos_gasto[]
   unidades_medida       unidades_medida[]
@@ -612,13 +685,13 @@ model cierres_inventario {
   tenant_id         Int
   fecha_inicio      DateTime
   fecha_fin         DateTime
-  tipo_cierre       String // "Diario", "Semanal", "Mensual"
-  estado            String   @default("Borrador") // "Borrador", "Finalizado"
+  tipo_cierre       String
+  estado            String   @default("Borrador")
   total_diferencias Decimal  @default(0) @db.Decimal(10, 2)
   observaciones     String?  @db.Text
   realizado_por_id  Int
   created_at        DateTime @default(now())
-  updated_at        DateTime @updatedAt
+  updated_at        DateTime @default(now()) @db.Timestamp(0)
 
   tenants   tenants                       @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
   empleados empleados                     @relation(fields: [realizado_por_id], references: [id])
@@ -637,8 +710,8 @@ model cierres_inventario_detalles {
   stock_sistema          Decimal  @db.Decimal(10, 3)
   stock_fisico           Decimal  @db.Decimal(10, 3)
   diferencia             Decimal  @db.Decimal(10, 3)
-  tipo_diferencia        String? // "Venta", "Merma", "Robo", "Error", "Donación"
-  valor_diferencia       Decimal  @default(0) @db.Decimal(10, 2) // diferencia × costo_unitario
+  tipo_diferencia        String?
+  valor_diferencia       Decimal  @default(0) @db.Decimal(10, 2)
   notas                  String?  @db.Text
   created_at             DateTime @default(now())
 
@@ -654,7 +727,7 @@ model kardex {
   id                     Int      @id @default(autoincrement())
   tenant_id              Int
   fecha                  DateTime @default(now()) @db.Timestamp(0)
-  tipo_movimiento        String   @db.VarChar(20) // "ENTRADA", "SALIDA"
+  tipo_movimiento        String   @db.VarChar(20)
   motivo                 String   @db.VarChar(100)
   producto_inventario_id Int
   cantidad               Decimal  @db.Decimal(10, 3)
@@ -683,14 +756,13 @@ model cajas {
   fecha_cierre           DateTime?    @db.Timestamp(0)
   usuario_responsable_id Int
   monto_inicial          Decimal      @db.Decimal(10, 2)
-  monto_esperado         Decimal?     @default(0.00) @db.Decimal(10, 2) // Calculado por sistema (Ventas - Gastos)
-  monto_real             Decimal?     @db.Decimal(10, 2) // Lo que cuenta el cajero físicamente
-  diferencia             Decimal?     @db.Decimal(10, 2) // Real - Esperado
+  monto_esperado         Decimal?     @default(0.00) @db.Decimal(10, 2)
+  monto_real             Decimal?     @db.Decimal(10, 2)
+  diferencia             Decimal?     @db.Decimal(10, 2)
   estado                 cajas_estado @default(Abierta)
   observaciones          String?      @db.Text
   created_at             DateTime     @default(now()) @db.Timestamp(0)
 
-  // Relaciones
   tenants     tenants             @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
   empleados   empleados           @relation(fields: [usuario_responsable_id], references: [id], onUpdate: Restrict)
   movimientos cajas_movimientos[]
@@ -704,17 +776,16 @@ model cajas_movimientos {
   id             Int               @id @default(autoincrement())
   caja_id        Int
   tenant_id      Int
-  tipo           cajas_tipo_mov // INGRESO o EGRESO
-  concepto       String            @db.VarChar(255) // Ej: "Venta #104", "Pago Proveedor", "Retiro Dueño"
+  tipo           cajas_tipo_mov
+  concepto       String            @db.VarChar(255)
   monto          Decimal           @db.Decimal(10, 2)
-  metodo_pago    pagos_metodo_pago // Usamos el enum que ya tienes (Efectivo, Tarjeta...)
-  documento_tipo String?           @db.VarChar(50) // "Orden", "Gasto", "Aporte", "Retiro"
+  metodo_pago    pagos_metodo_pago
+  documento_tipo String?           @db.VarChar(50)
   documento_id   Int?
   usuario_id     Int
   fecha_hora     DateTime          @default(now()) @db.Timestamp(0)
   notas          String?           @db.Text
 
-  // Relaciones
   cajas     cajas     @relation(fields: [caja_id], references: [id], onDelete: Cascade)
   tenants   tenants   @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
   empleados empleados @relation(fields: [usuario_id], references: [id], onUpdate: Restrict)

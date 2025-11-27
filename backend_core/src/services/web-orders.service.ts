@@ -1,4 +1,6 @@
-// src/services/web-orders.service.ts - VERSIÓN CORREGIDA CON producto_inventario_id
+// backend/src/services/web-orders.service.ts
+// ✅ VERSIÓN FINAL: Usa tenant_config en lugar de tenant_config_pedidos
+
 import { prisma } from '../lib/prisma';
 
 // Definir enums manualmente hasta que Prisma los genere
@@ -15,6 +17,13 @@ export enum webpedidos_estado {
 export enum webpedidos_tipo {
   RecogerEnTienda = 'RecogerEnTienda',
   EntregaDomicilio = 'EntregaDomicilio'
+}
+
+// Helper para convertir Decimal a number
+function toNumber(value: any): number {
+  if (typeof value === 'number') return value;
+  if (value && typeof value.toNumber === 'function') return value.toNumber();
+  return Number(value) || 0;
 }
 
 export const webOrdersService = {
@@ -45,7 +54,7 @@ export const webOrdersService = {
                 precio: true,
                 foto_url: true,
                 descripcion: true,
-                producto_inventario_id: true // ✅ AGREGADO
+                producto_inventario_id: true
               }
             }
           }
@@ -69,7 +78,7 @@ export const webOrdersService = {
       include: {
         webpedidos_detalles: {
           include: {
-            productos: true // ✅ YA ESTABA BIEN - TRAE EL producto_inventario_id
+            productos: true
           }
         }
       }
@@ -99,7 +108,7 @@ export const webOrdersService = {
             continue;
         }
 
-        console.log(`✅ [Inventario] Procesando item vinculados: "${productoMenu.nombre}" -> InvID: ${productoMenu.producto_inventario_id}`);
+        console.log(`✅ [Inventario] Procesando item vinculado: "${productoMenu.nombre}" -> InvID: ${productoMenu.producto_inventario_id}`);
         
         const inventarioId = productoMenu.producto_inventario_id;
         const cantidad = detalle.cantidad;
@@ -115,8 +124,8 @@ export const webOrdersService = {
         }
 
         // B. Calcular nuevo stock
-        const stockActual = Number(productoInv.stock_actual);
-        const costoUnitario = Number(productoInv.costo_unitario);
+        const stockActual = toNumber(productoInv.stock_actual);
+        const costoUnitario = toNumber(productoInv.costo_unitario);
         const nuevoStock = stockActual - cantidad;
 
         console.log(`📉 [Inventario] Descontando: Stock Actual ${stockActual} - Cantidad ${cantidad} = Nuevo ${nuevoStock}`);
@@ -124,7 +133,11 @@ export const webOrdersService = {
         // C. Actualizar
         await tx.productos_inventario.update({
           where: { id: inventarioId },
-          data: { stock_actual: nuevoStock }
+          data: { 
+            stock_actual: nuevoStock,
+            stock_anterior: stockActual,
+            ultimo_conteo: new Date()
+          }
         });
 
         // D. Kardex
@@ -132,7 +145,7 @@ export const webOrdersService = {
           data: {
             tenant_id: tenantId,
             fecha: new Date(),
-            tipo_movimiento: 'SALIDA',
+            tipo_movimiento: 'Salida',
             motivo: `Venta Web #${order.numero_pedido}`,
             producto_inventario_id: inventarioId,
             cantidad: cantidad,
@@ -173,7 +186,7 @@ export const webOrdersService = {
                 descripcion: true,
                 precio: true,
                 foto_url: true,
-                producto_inventario_id: true // ✅ AGREGADO
+                producto_inventario_id: true
               }
             }
           }
@@ -253,12 +266,20 @@ export const webOrdersService = {
       return sum + (Number(item.precio) * Number(item.cantidad));
     }, 0);
 
-    // Calcular costo de envío
-    const config = await this.getOrderConfig(tenantId);
+    // ✅ CAMBIO: Obtener config desde tenant_config
+    const tenantConfig = await prisma.tenant_config.findUnique({
+      where: { tenant_id: tenantId }
+    });
+
+    if (!tenantConfig) {
+      throw new Error('Configuración del tenant no encontrada');
+    }
+
+    // ✅ CAMBIO: Calcular costo de envío desde tenant_config
     let costoEnvio = 0;
     
     if (tipo_pedido === 'EntregaDomicilio') {
-      costoEnvio = Number(config.costo_envio_estandar);
+      costoEnvio = toNumber(tenantConfig.costo_delivery);
       // Envío gratis si supera cierto monto
       if (subtotal >= 50) {
         costoEnvio = 0;
@@ -267,9 +288,10 @@ export const webOrdersService = {
 
     const total = subtotal + costoEnvio;
 
-    // Verificar monto mínimo
-    if (Number(config.monto_minimo_pedido) > 0 && subtotal < Number(config.monto_minimo_pedido)) {
-      throw new Error(`El pedido mínimo es de $${config.monto_minimo_pedido}`);
+    // ✅ CAMBIO: Verificar monto mínimo desde tenant_config
+    const montoMinimo = toNumber(tenantConfig.monto_minimo_pedido);
+    if (montoMinimo > 0 && subtotal < montoMinimo) {
+      throw new Error(`El pedido mínimo es de S/ ${montoMinimo.toFixed(2)}`);
     }
 
     // Generar número de pedido único
@@ -314,7 +336,7 @@ export const webOrdersService = {
                 nombre: true,
                 precio: true,
                 foto_url: true,
-                producto_inventario_id: true // ✅ AGREGADO
+                producto_inventario_id: true
               }
             }
           }
@@ -368,7 +390,7 @@ export const webOrdersService = {
                 nombre: true,
                 precio: true,
                 foto_url: true,
-                producto_inventario_id: true // ✅ AGREGADO
+                producto_inventario_id: true
               }
             }
           }
@@ -436,7 +458,8 @@ export const webOrdersService = {
   // ==================== CONFIGURACIÓN ====================
   
   /**
-   * Obtener la configuración de pedidos del tenant
+   * ✅ MANTIENE COMPATIBILIDAD: Obtener configuración de pedidos
+   * Retorna tenant_config_pedidos para emails y notificaciones
    */
   async getOrderConfig(tenantId: number) {
     let config = await prisma.tenant_config_pedidos.findUnique({
@@ -454,12 +477,7 @@ export const webOrdersService = {
           notif_pedido_listo: true,
           email_asunto_confirmado: 'Confirmación de tu pedido',
           email_asunto_cancelado: 'Actualización sobre tu pedido',
-          email_asunto_listo: '¡Tu pedido está listo!',
-          costo_envio_estandar: 0,
-          monto_minimo_pedido: 0,
-          tiempo_preparacion_promedio: 30,
-          horario_apertura: '08:00',
-          horario_cierre: '22:00'
+          email_asunto_listo: '¡Tu pedido está listo!'
         }
       });
     }
@@ -493,16 +511,22 @@ export const webOrdersService = {
   // ==================== UTILIDADES ====================
   
   /**
-   * Calcular el costo de envío para un pedido
+   * ✅ ACTUALIZADO: Calcular el costo de envío desde tenant_config
    */
   async calculateShippingCost(
     tenantId: number, 
     subtotal: number, 
     address?: string
   ) {
-    const config = await this.getOrderConfig(tenantId);
+    const config = await prisma.tenant_config.findUnique({
+      where: { tenant_id: tenantId }
+    });
     
-    let costoEnvio = Number(config.costo_envio_estandar);
+    if (!config) {
+      return 0;
+    }
+    
+    let costoEnvio = toNumber(config.costo_delivery);
     
     // Envío gratis si supera cierto monto (configurable)
     if (subtotal >= 50) {
@@ -513,7 +537,7 @@ export const webOrdersService = {
   },
 
   /**
-   * Validar un pedido antes de crearlo
+   * ✅ ACTUALIZADO: Validar un pedido antes de crearlo usando tenant_config
    */
   async validateOrder(
     tenantId: number, 
@@ -524,8 +548,14 @@ export const webOrdersService = {
       throw new Error('El pedido debe contener al menos un producto');
     }
 
-    // Obtener configuración
-    const config = await this.getOrderConfig(tenantId);
+    // Obtener configuración desde tenant_config
+    const config = await prisma.tenant_config.findUnique({
+      where: { tenant_id: tenantId }
+    });
+
+    if (!config) {
+      throw new Error('Configuración del tenant no encontrada');
+    }
     
     // Verificar disponibilidad de productos
     const productIds = items.map(item => item.id);
@@ -546,13 +576,14 @@ export const webOrdersService = {
     // Calcular subtotal con precios reales de la BD
     const subtotal = items.reduce((sum, item) => {
       const producto = productos.find((p: any) => p.id === item.id);
-      const precio = producto ? Number(producto.precio) : 0;
+      const precio = producto ? toNumber(producto.precio) : 0;
       return sum + (precio * item.cantidad);
     }, 0);
     
-    // Verificar monto mínimo
-    if (Number(config.monto_minimo_pedido) > 0 && subtotal < Number(config.monto_minimo_pedido)) {
-      throw new Error(`El pedido mínimo es de $${config.monto_minimo_pedido}`);
+    // ✅ CAMBIO: Verificar monto mínimo desde tenant_config
+    const montoMinimo = toNumber(config.monto_minimo_pedido);
+    if (montoMinimo > 0 && subtotal < montoMinimo) {
+      throw new Error(`El pedido mínimo es de S/ ${montoMinimo.toFixed(2)}`);
     }
     
     return {
@@ -650,7 +681,7 @@ export const webOrdersService = {
       pedidosHoy,
       pedidosPendientes,
       pedidosEnPreparacion,
-      ventasHoy: Number(ventasHoy._sum.total || 0)
+      ventasHoy: toNumber(ventasHoy._sum.total || 0)
     };
   },
 
@@ -672,7 +703,7 @@ export const webOrdersService = {
     return stats.map((stat: any) => ({
       estado: stat.estado,
       cantidad: stat._count.id,
-      totalVentas: Number(stat._sum.total || 0)
+      totalVentas: toNumber(stat._sum.total || 0)
     }));
   },
 
@@ -690,7 +721,7 @@ export const webOrdersService = {
                 id: true,
                 nombre: true,
                 precio: true,
-                producto_inventario_id: true // ✅ AGREGADO
+                producto_inventario_id: true
               }
             }
           }

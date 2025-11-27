@@ -1,9 +1,10 @@
-// src/components/dashboard/Sidebar/NavigationContent.tsx - ACTUALIZADO
+// src/components/dashboard/Sidebar/NavigationContent.tsx - CON CONFIGURACIÓN
 
 import React from "react";
 import { useAuth } from "../../../context/AuthContext";
 import { SidebarLink } from "./SidebarLink";
 import * as Icons from "./icons";
+import { useGlobalConfig } from "../../../hooks/useGlobalConfig"; // ⭐ NUEVO
 
 interface NavigationContentProps {
   isCollapsed: boolean;
@@ -15,6 +16,7 @@ export const NavigationContent: React.FC<NavigationContentProps> = ({
   onLinkClick,
 }) => {
   const { user } = useAuth();
+  const { nombreNegocio, logoUrl } = useGlobalConfig(); // ⭐ NUEVO
 
   return (
     <>
@@ -25,21 +27,39 @@ export const NavigationContent: React.FC<NavigationContentProps> = ({
         }`}
       >
         {isCollapsed ? (
-          <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg shadow-lg">
-            <span className="text-sm font-bold text-white">
-              {user?.name?.charAt(0) || "R"}
-            </span>
-          </div>
-        ) : (
-          <div className="flex items-center space-x-2">
+          // ⭐ SIDEBAR COLAPSADO: Solo logo/inicial
+          logoUrl ? (
+            <img 
+              src={logoUrl} 
+              alt={nombreNegocio}
+              className="w-8 h-8 rounded-lg object-cover shadow-lg"
+            />
+          ) : (
             <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg shadow-lg">
               <span className="text-sm font-bold text-white">
-                {user?.name?.charAt(0) || "R"}
+                {nombreNegocio.charAt(0)}
               </span>
             </div>
+          )
+        ) : (
+          // ⭐ SIDEBAR EXPANDIDO: Logo + Nombre
+          <div className="flex items-center space-x-2">
+            {logoUrl ? (
+              <img 
+                src={logoUrl} 
+                alt={nombreNegocio}
+                className="w-8 h-8 rounded-lg object-cover shadow-lg"
+              />
+            ) : (
+              <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg shadow-lg">
+                <span className="text-sm font-bold text-white">
+                  {nombreNegocio.charAt(0)}
+                </span>
+              </div>
+            )}
             <div>
               <h1 className="text-lg font-bold text-gray-900">
-                {user?.tenantName || "RestoBar"}
+                {nombreNegocio}
               </h1>
               <p className="text-xs text-gray-500">Sistema</p>
             </div>
@@ -76,8 +96,8 @@ export const NavigationContent: React.FC<NavigationContentProps> = ({
               onClick={onLinkClick}
             />
             <SidebarLink
-              to="/dashboard/web-orders" 
-              icon={<Icons.GlobeIcon />} 
+              to="/dashboard/web-orders"
+              icon={<Icons.GlobeIcon />}
               label="Pedidos Web"
               isCollapsed={isCollapsed}
               onClick={onLinkClick}
@@ -131,7 +151,7 @@ export const NavigationContent: React.FC<NavigationContentProps> = ({
           </div>
         </div>
 
-        {/* ✨ GRUPO 3: INVENTARIO (ACTUALIZADO) ✨ */}
+        {/* ✨ GRUPO 3: INVENTARIO ✨ */}
         <div className={`${isCollapsed ? "pt-0" : "pt-2"}`}>
           {!isCollapsed && (
             <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 px-3">
@@ -139,7 +159,6 @@ export const NavigationContent: React.FC<NavigationContentProps> = ({
             </h3>
           )}
           <div className="space-y-1">
-            {/* ⭐ CAMBIADO: Ahora apunta a /dashboard/inventario */}
             <SidebarLink
               to="/dashboard/inventario"
               icon={<Icons.PackageIcon />}
@@ -149,7 +168,7 @@ export const NavigationContent: React.FC<NavigationContentProps> = ({
             />
             <SidebarLink
               to="/dashboard/kardex"
-              icon={<Icons.ClipboardListIcon />} 
+              icon={<Icons.ClipboardListIcon />}
               label="Kardex Valorizado"
               isCollapsed={isCollapsed}
               onClick={onLinkClick}
@@ -169,8 +188,6 @@ export const NavigationContent: React.FC<NavigationContentProps> = ({
               onClick={onLinkClick}
             />
 
-            {/* ❌ ELIMINADO: Categorías y Unidades (ahora están en tabs) */}
-            {/* Solo dejamos Tipos de Gasto */}
             {!isCollapsed && (
               <div className="ml-2 mt-2 pt-2 border-t border-gray-100">
                 <SidebarLink
@@ -247,8 +264,8 @@ export const NavigationContent: React.FC<NavigationContentProps> = ({
               onClick={onLinkClick}
             />
             <SidebarLink
-              to="/dashboard/settings"
-              icon={<Icons.SettingsIcon />}
+              to="/dashboard/configuration"
+              icon={<Icons.CogIcon />}
               label="Configuración"
               isCollapsed={isCollapsed}
               onClick={onLinkClick}
