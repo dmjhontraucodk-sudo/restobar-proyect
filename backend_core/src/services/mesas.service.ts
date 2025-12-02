@@ -8,7 +8,7 @@ import {
 
 type MesaCreateInput = Omit<MesaType, 'id' | 'tenant_id' | 'estado' | 'ordenes' | 'reservas'> & { estado?: EstadoMesa };
 // MesaUpdateInput solo contiene campos que se pueden actualizar (nombre_o_numero, capacidad, estado)
-type MesaUpdateInput = Omit<MesaType, 'id' | 'tenant_id' | 'ordenes' | 'reservas'>;
+type MesaUpdateInput = Partial<Omit<MesaType, 'id' | 'tenant_id' | 'ordenes' | 'reservas'>>;
 
 export const mesasService = {
     

@@ -112,7 +112,7 @@ const createProductSchema = z.object({
   disponible: z.boolean().default(true),
   visible_en_web: z.boolean().default(true),
   producto_inventario_id: z.number().int().positive().optional().nullable(),
-});
+}).strict();
 
 export const createProduct = async (req: AuthRequest, res: Response) => {
   try {
@@ -196,7 +196,7 @@ const updateProductSchema = z.object({
   foto_url: z.string().url().optional().nullable(),
   disponible: z.boolean().optional(),
   visible_en_web: z.boolean().optional(),
-});
+}).strict();
 
 export const updateProduct = async (req: AuthRequest, res: Response) => {
   try {
@@ -245,7 +245,7 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
 const createCategorySchema = z.object({
   nombre: z.string().min(1, "El nombre es requerido"),
   tipo: z.nativeEnum(TipoCategoria)
-});
+}).strict();
 
 export const createCategory = async (req: AuthRequest, res: Response) => {
   try {
@@ -365,7 +365,7 @@ const updateProductDetailsSchema = z.object({
   disponible: z.boolean().optional(),
   visible_en_web: z.boolean().optional(),
   producto_inventario_id: z.number().int().positive().optional().nullable(),
-});
+}).strict();
 
 export const updateProductDetails = async (req: AuthRequest, res: Response) => {
   try {
@@ -561,12 +561,12 @@ const ordenItemSchema = z.object({
   cantidad: z.number().int().positive(),
   precio_unitario: z.number().positive(),
   notas: z.string().optional().nullable(),
-});
+}).strict();
 
 const createOrdenSchema = z.object({
   mesa_id: z.number().int().positive(),
   items: z.array(ordenItemSchema).min(1, "La orden debe tener al menos un item."),
-});
+}).strict();
 
 export const createOrden = async (req: AuthRequest, res: Response) => {
   try {
@@ -637,7 +637,7 @@ export const createOrden = async (req: AuthRequest, res: Response) => {
 const updateEstadoSchema = z.object({
   estado: z.nativeEnum(ordenes_estado),
   metodo_pago: z.nativeEnum(pagos_metodo_pago).optional(),
-});
+}).strict();
 
 export const updateOrdenEstado = async (req: AuthRequest, res: Response) => {
   try {
@@ -781,7 +781,7 @@ export const updateOrdenEstado = async (req: AuthRequest, res: Response) => {
   // Esquema para añadir ítems (igual al itemSchema original)
   const updateOrderItemsSchema = z.object({
       items: z.array(ordenItemSchema).min(1, "Debe añadir al menos un item."),
-  });
+  }).strict();
 
   // ✅ NUEVA FUNCIÓN CONTROLADORA
   export const addItemsToOrden = async (req: AuthRequest, res: Response) => {
@@ -870,7 +870,7 @@ const createCategoriaInventarioSchema = z.object({
   color: z.string().regex(/^#[0-9A-F]{6}$/i, "Color inválido").optional(),
   icono: z.string().optional(),
   orden: z.number().int().optional(),
-});
+}).strict();
 
 export const getCategoriasInventario = async (req: AuthRequest, res: Response) => {
   try {
@@ -939,7 +939,7 @@ const updateCategoriaInventarioSchema = z.object({
   icono: z.string().optional(),
   orden: z.number().int().optional(),
   activa: z.boolean().optional(),
-});
+}).strict();
 
 export const updateCategoriaInventario = async (req: AuthRequest, res: Response) => {
   try {
@@ -993,7 +993,7 @@ const createTipoGastoSchema = z.object({
   color: z.string().regex(/^#[0-9A-F]{6}$/i, "Color inválido").optional(),
   icono: z.string().optional(),
   orden: z.number().int().optional(),
-});
+}).strict();
 
 export const getTiposGasto = async (req: AuthRequest, res: Response) => {
   try {
@@ -1062,7 +1062,7 @@ const createUnidadMedidaSchema = z.object({
   nombre: z.string().min(1, "El nombre es requerido"),
   abreviatura: z.string().min(1, "La abreviatura es requerida"),
   tipo: z.string().optional(),
-});
+}).strict();
 
 export const getUnidadesMedida = async (req: AuthRequest, res: Response) => {
   try {
@@ -1130,7 +1130,7 @@ const createProductoInventarioSchema = z.object({
   costo_unitario: z.number().min(0).optional().default(0),
   stock_minimo: z.number().min(0).optional().default(0),
   stock_maximo: z.number().min(0).optional(),
-});
+}).strict();
 
 export const getProductosInventario = async (req: AuthRequest, res: Response) => {
   try {
@@ -1211,7 +1211,7 @@ const updateProductoInventarioSchema = z.object({
   stock_minimo: z.number().min(0).optional(),
   stock_maximo: z.number().min(0).optional(),
   activo: z.boolean().optional(),
-});
+}).strict();
 
 export const updateProductoInventario = async (req: AuthRequest, res: Response) => {
   try {
@@ -1266,7 +1266,7 @@ const compraDetalleSchema = z.object({
   producto_inventario_id: z.number().int().positive(),
   cantidad: z.number().positive(),
   costo_unitario: z.number().positive(),
-});
+}).strict();
 
 const createGastoSchema = z.object({
   tipo_gasto_id: z.number().int().positive(),
@@ -1276,7 +1276,7 @@ const createGastoSchema = z.object({
   numero_documento: z.string().optional(),
   proveedor_id: z.number().int().positive().optional(),
   items: z.array(compraDetalleSchema).optional(),
-});
+}).strict();
 
 // 🆕 AÑADIR ESTAS FUNCIONES FALTANTES
 export const getGastos = async (req: AuthRequest, res: Response) => {
@@ -1290,7 +1290,7 @@ export const getGastos = async (req: AuthRequest, res: Response) => {
       tipo_gasto_id: z.string().optional(),
       fechaInicio: z.string().datetime().optional(),
       fechaFin: z.string().datetime().optional(),
-    });
+    }).strict();
 
     const validation = querySchema.safeParse(req.query);
     if (!validation.success) {

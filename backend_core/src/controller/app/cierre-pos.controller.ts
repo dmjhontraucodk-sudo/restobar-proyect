@@ -30,7 +30,7 @@ const closeOrderPosSchema = z.object({
 }, {
     message: "El estado final debe ser Pagada o Cerrada.",
     path: ["estado"],
-});
+}).strict();
 
 // Función de mapeo para métodos de pago
 const mapMetodoPago = (metodo: string): pagos_metodo_pago => {
