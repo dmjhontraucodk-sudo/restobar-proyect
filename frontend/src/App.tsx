@@ -1,4 +1,4 @@
-// src/App.tsx - VERSIÓN FINAL ORDENADA
+// src/App.tsx - VERSIÓN FINAL CON TODAS LAS RUTAS
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
@@ -8,6 +8,7 @@ import { Toaster } from "react-hot-toast";
 import { Landing } from "./pages/Landing";
 import RegisterPage from "./pages/Register";
 import CartDemo from "./pages/public/components/CartDemo";
+import ReservationFormDemo from "./pages/public/components/ReservationFormDemo";
 
 // --- Páginas y Layouts del Tenant ---
 import LoginPage from "./pages/Login";
@@ -20,7 +21,7 @@ import KitchenManagementPage from './pages/dashboard/KitchenManagement';
 import WebOrdersManagementPage from "./pages/WebOrdersManagement";
 
 // ✨ PÁGINAS DE INVENTARIO
-import InventarioPage from "./pages/dashboard/inventario/InventarioPage"; // ⭐ NUEVO WRAPPER
+import InventarioPage from "./pages/dashboard/inventario/InventarioPage";
 import TiposGasto from "./pages/dashboard/inventario/TiposGasto";
 import KardexPage from "./pages/dashboard/inventario/KardexPage";
 import Compras from "./pages/dashboard/inventario/Compras";
@@ -36,8 +37,12 @@ import CajaPage from "./pages/dashboard/Finanzas/CajaPage";
 import HistorialCajasPage from "./pages/dashboard/Finanzas/HistorialCajasPage";
 import FinancialPage from "./pages/dashboard/Finanzas/FinancialPage";
 import NominaPage from "./pages/dashboard/Finanzas/NominaPage";
-// 📈 PÁGINA DE REPORTES (NUEVA RUTA)
-import ReportsPage from './pages/ReportsPage'; 
+
+// 📈 PÁGINA DE REPORTES
+import ReportsPage from './pages/ReportsPage';
+
+// 👤 PÁGINAS DE USUARIO Y CONFIGURACIÓN
+import { ProfilePage } from './pages/dashboard/ProfilePage';
 
 // --- Páginas Públicas del Tenant (Restobar) ---
 import RestobarLanding from "./pages/public/RestobarLanding";
@@ -73,7 +78,7 @@ const GlobalRoutes = () => (
       <Route path="/" element={<Landing />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/cart" element={<CartDemo />} />
-      <Route path="/reservar" element={<ReservationForm />} />
+      <Route path="/reservar" element={<ReservationFormDemo />} />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   </CartProvider>
@@ -120,7 +125,7 @@ const TenantPrivateRoutes = () => (
           <Route path="configuration" element={<ConfigurationPage />} />
 
           {/* 📦 INVENTARIO */}
-          <Route path="inventario" element={<InventarioPage />} /> {/* ⭐ NUEVA RUTA UNIFICADA CON TABS */}
+          <Route path="inventario" element={<InventarioPage />} />
           <Route path="kardex" element={<KardexPage />} />
           <Route path="compras" element={<Compras />} />
           
@@ -142,8 +147,12 @@ const TenantPrivateRoutes = () => (
           {/* Ruta legacy (por compatibilidad) */}
           <Route path="inventory" element={<InventoryManagementPage />} />
 
-          {/* 📈 RUTA DE REPORTES */}
+          {/* 📈 REPORTES */}
           <Route path="reports" element={<ReportsPage />} />
+
+          {/* 👤 PERFIL Y CONFIGURACIÓN */}
+          <Route path="profile" element={<ProfilePage />} />
+          <Route path="configuration" element={<ConfigurationPage />} />
         </Route>
       </Route>
     </Route>

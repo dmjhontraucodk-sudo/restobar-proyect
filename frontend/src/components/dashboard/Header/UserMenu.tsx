@@ -1,9 +1,8 @@
 // src/components/dashboard/Header/UserMenu.tsx
-import React, { forwardRef } from 'react';
+import { forwardRef } from 'react';
 import { Link } from 'react-router-dom';
 import { UserCircleIcon, SettingsIcon, LogOutIcon } from '../Sidebar/icons';
 import { type User } from '../../../context/AuthContext';
-
 
 interface UserMenuProps {
   user: User;
@@ -22,7 +21,7 @@ export const UserMenu = forwardRef<HTMLDivElement, UserMenuProps>(
         >
           <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center shadow-lg">
             <span className="text-white font-bold text-sm">
-              {user?.name?.charAt(0) || 'U'}
+              {user?.name?.charAt(0).toUpperCase() || 'U'}
             </span>
           </div>
           <div className="hidden md:block text-left">
@@ -37,6 +36,7 @@ export const UserMenu = forwardRef<HTMLDivElement, UserMenuProps>(
               <p className="text-sm font-medium text-gray-900">{user?.name || 'Usuario'}</p>
               <p className="text-sm text-gray-500">{user?.email || 'Email no disponible'}</p>
             </div>
+
             <Link
               to="/dashboard/profile"
               onClick={onToggle}
@@ -45,26 +45,29 @@ export const UserMenu = forwardRef<HTMLDivElement, UserMenuProps>(
               <UserCircleIcon className="w-4 h-4 mr-3" />
               Mi Perfil
             </Link>
+
+            {/* ✅ CAMBIAR A /dashboard/configuration */}
             <Link
-              to="/dashboard/settings"
+              to="/dashboard/configuration"
               onClick={onToggle}
               className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
             >
               <SettingsIcon className="w-4 h-4 mr-3" />
               Configuración
             </Link>
-            <div className="border-t border-gray-200 mt-2">
-              <button
-                onClick={() => {
-                  onToggle();
-                  onLogout();
-                }}
-                className="w-full flex items-center px-4 py-3 text-sm text-red-600 hover:bg-gray-50 transition-colors"
-              >
-                <LogOutIcon className="w-4 h-4 mr-3" />
-                Cerrar Sesión
-              </button>
-            </div>
+
+            <div className="border-t border-gray-200 mt-2"></div>
+
+            <button
+              onClick={() => {
+                onToggle();
+                onLogout();
+              }}
+              className="w-full flex items-center px-4 py-3 text-sm text-red-600 hover:bg-gray-50 transition-colors"
+            >
+              <LogOutIcon className="w-4 h-4 mr-3" />
+              Cerrar Sesión
+            </button>
           </div>
         )}
       </div>

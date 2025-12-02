@@ -1,229 +1,135 @@
-// src/hooks/useDemoCatalog.ts
+// src/hooks/useDemoCatalog.ts - VERSIÓN AISLADA
 import { useState, useMemo } from 'react';
 
-// Definir tipos locales si no existen en ../types
-export interface Producto {
-  id: number;
-  nombre: string;
-  descripcion: string;
-  precio: number;
-  foto_url?: string;
-  disponible: boolean;
-  visible_en_web: boolean;
-  es_vegetariano: boolean;
-  es_vegano: boolean;
-  sin_gluten: boolean;
-  es_picante: boolean;
-  es_recomendado: boolean;
-  es_nuevo: boolean;
-  categoria_id: number;
-}
+// Datos DEMO COMPLETAMENTE AUTÓNOMOS
+const DEMO_PRODUCTS = [
+  {
+    id: 1,
+    nombre: "Ceviche Clásico",
+    descripcion: "Pescado fresco marinado en limón con cebolla y ají limo",
+    precio: 28.90,
+    foto_url: "https://images.pexels.com/photos/884600/pexels-photo-884600.jpeg",
+    disponible: true,
+    visible_en_web: true,
+    es_vegetariano: false,
+    es_vegano: false,
+    sin_gluten: true,
+    es_picante: true,
+    es_recomendado: true,
+    es_nuevo: false,
+    categoria_id: 1
+  },
+  {
+    id: 2,
+    nombre: "Causa Limeña",
+    descripcion: "Papa amarilla con ají, limón y rellena de pollo o atún",
+    precio: 22.50,
+    foto_url: "https://images.pexels.com/photos/10927379/pexels-photo-10927379.jpeg",
+    disponible: true,
+    visible_en_web: true,
+    es_vegetariano: false,
+    es_vegano: false,
+    sin_gluten: true,
+    es_picante: false,
+    es_recomendado: true,
+    es_nuevo: true,
+    categoria_id: 1
+  },
+  {
+    id: 3,
+    nombre: "Lomo Saltado",
+    descripcion: "Trozos de lomo salteados con cebolla, tomate y papas fritas",
+    precio: 38.90,
+    foto_url: "https://images.pexels.com/photos/12568756/pexels-photo-12568756.jpeg",
+    disponible: true,
+    visible_en_web: true,
+    es_vegetariano: false,
+    es_vegano: false,
+    sin_gluten: true,
+    es_picante: false,
+    es_recomendado: true,
+    es_nuevo: false,
+    categoria_id: 2
+  },
+  {
+    id: 4,
+    nombre: "Risotto de Hongos",
+    descripcion: "Arroz arbóreo cremoso con hongos silvestres y parmesano",
+    precio: 32.50,
+    foto_url: "https://images.pexels.com/photos/12737656/pexels-photo-12737656.jpeg",
+    disponible: true,
+    visible_en_web: true,
+    es_vegetariano: true,
+    es_vegano: false,
+    sin_gluten: false,
+    es_picante: false,
+    es_recomendado: false,
+    es_nuevo: true,
+    categoria_id: 2
+  },
+  {
+    id: 5,
+    nombre: "Chicha Morada",
+    descripcion: "Bebida tradicional peruana de maíz morado",
+    precio: 8.90,
+    foto_url: "https://images.pexels.com/photos/6607539/pexels-photo-6607539.jpeg",
+    disponible: true,
+    visible_en_web: true,
+    es_vegetariano: true,
+    es_vegano: true,
+    sin_gluten: true,
+    es_picante: false,
+    es_recomendado: true,
+    es_nuevo: false,
+    categoria_id: 3
+  },
+  {
+    id: 6,
+    nombre: "Pisco Sour",
+    descripcion: "Coctel emblemático del Perú con pisco, limón y clara de huevo",
+    precio: 18.50,
+    foto_url: "https://images.pexels.com/photos/12824243/pexels-photo-12824243.jpeg",
+    disponible: true,
+    visible_en_web: true,
+    es_vegetariano: true,
+    es_vegano: false,
+    sin_gluten: true,
+    es_picante: false,
+    es_recomendado: true,
+    es_nuevo: false,
+    categoria_id: 3
+  }
+];
 
-export interface CategoriaMenu {
-  id: number;
-  nombre: string;
-  descripcion: string;
-  productos: Producto[];
-}
-
-// Datos de ejemplo para el demo
-const demoCategories: CategoriaMenu[] = [
+const DEMO_CATEGORIES = [
   {
     id: 1,
     nombre: "Entradas",
     descripcion: "Para empezar con buen sabor",
-    productos: [
-      {
-        id: 1,
-        nombre: "Ceviche Clásico",
-        descripcion: "Pescado fresco marinado en limón con cebolla y ají limo",
-        precio: 28.90,
-        foto_url: "https://images.pexels.com/photos/884600/pexels-photo-884600.jpeg",
-        disponible: true,
-        visible_en_web: true,
-        es_vegetariano: false,
-        es_vegano: false,
-        sin_gluten: true,
-        es_picante: true,
-        es_recomendado: true,
-        es_nuevo: false,
-        categoria_id: 1
-      },
-      {
-        id: 2,
-        nombre: "Causa Limeña",
-        descripcion: "Papa amarilla con ají, limón y rellena de pollo o atún",
-        precio: 22.50,
-        foto_url: "https://images.pexels.com/photos/10927379/pexels-photo-10927379.jpeg",
-        disponible: true,
-        visible_en_web: true,
-        es_vegetariano: false,
-        es_vegano: false,
-        sin_gluten: true,
-        es_picante: false,
-        es_recomendado: true,
-        es_nuevo: true,
-        categoria_id: 1
-      },
-      {
-        id: 7,
-        nombre: "Tequeños Veganos",
-        descripcion: "Palitos de masa rellenos de vegetales y especias",
-        precio: 18.90,
-        foto_url: "https://images.pexels.com/photos/12393209/pexels-photo-12393209.jpeg",
-        disponible: true,
-        visible_en_web: true,
-        es_vegetariano: true,
-        es_vegano: true,
-        sin_gluten: false,
-        es_picante: false,
-        es_recomendado: false,
-        es_nuevo: true,
-        categoria_id: 1
-      }
-    ]
+    productos: DEMO_PRODUCTS.filter(p => p.categoria_id === 1)
   },
   {
     id: 2,
     nombre: "Platos Principales",
     descripcion: "Nuestras especialidades",
-    productos: [
-      {
-        id: 3,
-        nombre: "Lomo Saltado",
-        descripcion: "Trozos de lomo salteados con cebolla, tomate y papas fritas",
-        precio: 38.90,
-        foto_url: "https://images.pexels.com/photos/12568756/pexels-photo-12568756.jpeg",
-        disponible: true,
-        visible_en_web: true,
-        es_vegetariano: false,
-        es_vegano: false,
-        sin_gluten: true,
-        es_picante: false,
-        es_recomendado: true,
-        es_nuevo: false,
-        categoria_id: 2
-      },
-      {
-        id: 4,
-        nombre: "Risotto de Hongos",
-        descripcion: "Arroz arbóreo cremoso con hongos silvestres y parmesano",
-        precio: 32.50,
-        foto_url: "https://images.pexels.com/photos/12737656/pexels-photo-12737656.jpeg",
-        disponible: true,
-        visible_en_web: true,
-        es_vegetariano: true,
-        es_vegano: false,
-        sin_gluten: false,
-        es_picante: false,
-        es_recomendado: false,
-        es_nuevo: true,
-        categoria_id: 2
-      },
-      {
-        id: 8,
-        nombre: "Tallarines Saltados",
-        descripcion: "Fideos salteados con verduras y salsa de soja",
-        precio: 26.90,
-        foto_url: "https://images.pexels.com/photos/12737656/pexels-photo-12737656.jpeg",
-        disponible: true,
-        visible_en_web: true,
-        es_vegetariano: true,
-        es_vegano: true,
-        sin_gluten: false,
-        es_picante: false,
-        es_recomendado: true,
-        es_nuevo: false,
-        categoria_id: 2
-      }
-    ]
+    productos: DEMO_PRODUCTS.filter(p => p.categoria_id === 2)
   },
   {
     id: 3,
     nombre: "Bebidas",
     descripcion: "Para acompañar tu comida",
-    productos: [
-      {
-        id: 5,
-        nombre: "Chicha Morada",
-        descripcion: "Bebida tradicional peruana de maíz morado",
-        precio: 8.90,
-        foto_url: "https://images.pexels.com/photos/6607539/pexels-photo-6607539.jpeg",
-        disponible: true,
-        visible_en_web: true,
-        es_vegetariano: true,
-        es_vegano: true,
-        sin_gluten: true,
-        es_picante: false,
-        es_recomendado: true,
-        es_nuevo: false,
-        categoria_id: 3
-      },
-      {
-        id: 6,
-        nombre: "Pisco Sour",
-        descripcion: "Coctel emblemático del Perú con pisco, limón y clara de huevo",
-        precio: 18.50,
-        foto_url: "https://images.pexels.com/photos/12824243/pexels-photo-12824243.jpeg",
-        disponible: true,
-        visible_en_web: true,
-        es_vegetariano: true,
-        es_vegano: false,
-        sin_gluten: true,
-        es_picante: false,
-        es_recomendado: true,
-        es_nuevo: false,
-        categoria_id: 3
-      },
-      {
-        id: 9,
-        nombre: "Limonada de Hierbabuena",
-        descripcion: "Refrescante limonada con hierbabuena natural",
-        precio: 7.50,
-        foto_url: "https://images.pexels.com/photos/6607539/pexels-photo-6607539.jpeg",
-        disponible: true,
-        visible_en_web: true,
-        es_vegetariano: true,
-        es_vegano: true,
-        sin_gluten: true,
-        es_picante: false,
-        es_recomendado: false,
-        es_nuevo: true,
-        categoria_id: 3
-      }
-    ]
+    productos: DEMO_PRODUCTS.filter(p => p.categoria_id === 3)
   }
 ];
 
-interface Filters {
-  vegetarian: boolean;
-  vegan: boolean;
-  glutenFree: boolean;
-  spicy: boolean;
-}
+export function useDemoCatalog() {
+  console.log('🔍 useDemoCatalog ejecutándose...');
+  console.log('📦 Productos demo disponibles:', DEMO_PRODUCTS.length);
+  console.log('📂 Categorías demo:', DEMO_CATEGORIES.length);
 
-interface UseDemoCatalogReturn {
-  categories: CategoriaMenu[];
-  tenantInfo: { nombre_empresa: string };
-  searchTerm: string;
-  selectedCategory: number | null;
-  filters: Filters;
-  sortBy: 'popular' | 'price-asc' | 'name';
-  showFilters: boolean;
-  filteredProducts: Producto[];
-  loading: boolean;
-  setSearchTerm: (term: string) => void;
-  setSelectedCategory: (categoryId: number | null) => void;
-  setFilters: (filters: Filters) => void;
-  setSortBy: (sort: 'popular' | 'price-asc' | 'name') => void;
-  setShowFilters: (show: boolean) => void;
-  handleSearch: (e: React.FormEvent) => void;
-}
-
-export function useDemoCatalog(): UseDemoCatalogReturn {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
-  const [filters, setFilters] = useState<Filters>({
+  const [filters, setFilters] = useState({
     vegetarian: false,
     vegan: false,
     glutenFree: false,
@@ -232,76 +138,25 @@ export function useDemoCatalog(): UseDemoCatalogReturn {
   const [sortBy, setSortBy] = useState<'popular' | 'price-asc' | 'name'>('popular');
   const [showFilters, setShowFilters] = useState(false);
 
-  const categories = demoCategories;
-  const tenantInfo = { nombre_empresa: "RestoBar Demo" };
-
-  // Combinar todos los productos
-  const allProducts = useMemo(() => {
-    return categories.flatMap(category => category.productos);
-  }, [categories]);
-
-  // Filtrar productos
+  // SIMPLE: Devuelve todos los productos sin filtros complejos
   const filteredProducts = useMemo(() => {
-    let filtered = allProducts;
-
-    // Filtrar por categoría
-    if (selectedCategory) {
-      filtered = filtered.filter(product => product.categoria_id === selectedCategory);
-    }
-
-    // Filtrar por búsqueda
-    if (searchTerm) {
-      filtered = filtered.filter(product =>
-        product.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.descripcion?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Aplicar filtros
-    if (filters.vegetarian) {
-      filtered = filtered.filter(product => product.es_vegetariano);
-    }
-    if (filters.vegan) {
-      filtered = filtered.filter(product => product.es_vegano);
-    }
-    if (filters.glutenFree) {
-      filtered = filtered.filter(product => product.sin_gluten);
-    }
-    if (filters.spicy) {
-      filtered = filtered.filter(product => product.es_picante);
-    }
-
-    // Ordenar
-    switch (sortBy) {
-      case 'price-asc':
-        filtered = [...filtered].sort((a, b) => a.precio - b.precio);
-        break;
-      case 'name':
-        filtered = [...filtered].sort((a, b) => a.nombre.localeCompare(b.nombre));
-        break;
-      case 'popular':
-      default:
-        filtered = [...filtered].sort((a, b) => {
-          if (a.es_recomendado && !b.es_recomendado) return -1;
-          if (!a.es_recomendado && b.es_recomendado) return 1;
-          if (a.es_nuevo && !b.es_nuevo) return -1;
-          if (!a.es_nuevo && b.es_nuevo) return 1;
-          return 0;
-        });
-        break;
-    }
-
-    return filtered;
-  }, [allProducts, selectedCategory, searchTerm, filters, sortBy]);
+    console.log('🎯 Filtrando productos...');
+    
+    // Para debug: ignora todos los filtros y devuelve todo
+    const allProducts = DEMO_PRODUCTS;
+    console.log('✅ Productos a mostrar:', allProducts.length);
+    
+    return allProducts;
+  }, []); // Empty dependency array = siempre mismo resultado
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // La búsqueda se maneja automáticamente por el estado searchTerm
+    console.log('🔎 Búsqueda realizada:', searchTerm);
   };
 
   return {
-    categories,
-    tenantInfo,
+    categories: DEMO_CATEGORIES,
+    tenantInfo: { nombre_empresa: "RestoBar Demo" },
     searchTerm,
     selectedCategory,
     filters,
@@ -317,3 +172,6 @@ export function useDemoCatalog(): UseDemoCatalogReturn {
     handleSearch,
   };
 }
+
+// Exportar para debug si es necesario
+export { DEMO_PRODUCTS, DEMO_CATEGORIES };

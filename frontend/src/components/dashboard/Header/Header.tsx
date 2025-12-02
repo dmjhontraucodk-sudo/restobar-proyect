@@ -1,6 +1,5 @@
 // src/components/dashboard/Header/Header.tsx
 import React, { useRef, useState } from 'react';
-import { Notifications } from './Notifications';
 import { UserMenu } from './UserMenu';
 import { 
   MenuHamburgerIcon, 
@@ -73,14 +72,6 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Lado Derecho */}
         <div className="flex items-center space-x-3">
-          
-          {/* Notificaciones */}
-          <Notifications
-            notifications={notifications}
-            isOpen={isNotificationsOpen}
-            onToggle={() => setIsNotificationsOpen(!isNotificationsOpen)}
-            ref={notificationsRef}
-          />
 
           {/* Menú de Usuario */}
           <UserMenu
