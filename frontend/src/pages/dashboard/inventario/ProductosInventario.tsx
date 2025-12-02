@@ -1,4 +1,4 @@
-// src/pages/dashboard/ProductosInventario.tsx - VERSIÓN COMPACTA
+// src/pages/dashboard/inventario/ProductosInventario.tsx - VERSIÓN COMPACTA
 
 import React, { useState, useEffect } from 'react';
 import { useDashboardApi } from '../../../hooks/useDashboardApi';
@@ -10,6 +10,8 @@ import {
   type CreateProductoInventarioData,
   type UpdateProductoInventarioData
 } from '../../../types';
+import { productoInventarioSchema } from '../../../schemas/inventario.schema';
+import type { ZodIssue } from 'zod';
 
 const ProductosInventario: React.FC = () => {
   const { 
@@ -27,6 +29,7 @@ const ProductosInventario: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingProducto, setEditingProducto] = useState<ProductoInventario | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string | undefined>>({});
 
   // Filtros
   const [categoriaFilter, setCategoriaFilter] = useState<number | 'all'>('all');
@@ -96,35 +99,44 @@ const ProductosInventario: React.FC = () => {
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingProducto(null);
+    setFormErrors({});
   };
+  
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    const isNumberField = ['categoria_inventario_id', 'unidad_medida_id', 'stock_actual', 'costo_unitario', 'stock_minimo', 'stock_maximo'].includes(name);
+    setFormData(prev => ({ ...prev, [name]: isNumberField ? Number(value) : value }));
+    if (formErrors[name]) {
+        setFormErrors(prev => ({...prev, [name]: undefined}));
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.nombre.trim()) {
-      toast.error('El nombre es requerido');
-      return;
-    }
+    const validationResult = productoInventarioSchema.safeParse(formData);
 
+    if (!validationResult.success) {
+        const issues = validationResult.error.issues;
+        const newErrors: Record<string, string> = {};
+        issues.forEach((issue: ZodIssue) => {
+            const path = issue.path[0];
+            if (typeof path === 'string') {
+                newErrors[path] = issue.message;
+            }
+        });
+        setFormErrors(newErrors);
+        return;
+    }
+    setFormErrors({});
     setIsSubmitting(true);
 
     try {
-      const data = {
-        nombre: formData.nombre,
-        categoria_inventario_id: formData.categoria_inventario_id || undefined,
-        unidad_medida_id: formData.unidad_medida_id || undefined,
-        codigo_barras: formData.codigo_barras || undefined,
-        stock_actual: formData.stock_actual,
-        costo_unitario: formData.costo_unitario,
-        stock_minimo: formData.stock_minimo,
-        stock_maximo: formData.stock_maximo || undefined,
-      };
-
       if (editingProducto) {
-        await updateProductoInventario(editingProducto.id, data as UpdateProductoInventarioData);
+        await updateProductoInventario(editingProducto.id, validationResult.data as UpdateProductoInventarioData);
         toast.success('Producto actualizado exitosamente');
       } else {
-        await createProductoInventario(data as CreateProductoInventarioData);
+        await createProductoInventario(validationResult.data as CreateProductoInventarioData);
         toast.success('Producto creado exitosamente');
       }
 
@@ -374,12 +386,13 @@ const ProductosInventario: React.FC = () => {
                   </label>
                   <input
                     type="text"
+                    name="nombre"
                     value={formData.nombre}
-                    onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    onChange={handleChange}
+                    className={`w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent ${formErrors.nombre ? 'border-red-500' : 'border-gray-300'}`}
                     placeholder="Ej: Tomate, Cerveza Pilsen..."
-                    required
                   />
+                  {formErrors.nombre && <p className="text-red-500 text-xs mt-1">{formErrors.nombre}</p>}
                 </div>
 
                 {/* Categoría */}
@@ -388,9 +401,10 @@ const ProductosInventario: React.FC = () => {
                     Categoría
                   </label>
                   <select
+                    name="categoria_inventario_id"
                     value={formData.categoria_inventario_id}
-                    onChange={(e) => setFormData({ ...formData, categoria_inventario_id: parseInt(e.target.value) })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    onChange={handleChange}
+                    className={`w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent ${formErrors.categoria_inventario_id ? 'border-red-500' : 'border-gray-300'}`}
                   >
                     <option value={0}>Sin categoría</option>
                     {categorias.map((cat) => (
@@ -399,6 +413,7 @@ const ProductosInventario: React.FC = () => {
                       </option>
                     ))}
                   </select>
+                  {formErrors.categoria_inventario_id && <p className="text-red-500 text-xs mt-1">{formErrors.categoria_inventario_id}</p>}
                 </div>
 
                 {/* Unidad de Medida */}
@@ -407,9 +422,10 @@ const ProductosInventario: React.FC = () => {
                     Unidad de Medida
                   </label>
                   <select
+                    name="unidad_medida_id"
                     value={formData.unidad_medida_id}
-                    onChange={(e) => setFormData({ ...formData, unidad_medida_id: parseInt(e.target.value) })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    onChange={handleChange}
+                    className={`w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent ${formErrors.unidad_medida_id ? 'border-red-500' : 'border-gray-300'}`}
                   >
                     <option value={0}>Seleccionar...</option>
                     {unidades.map((unidad) => (
@@ -418,6 +434,7 @@ const ProductosInventario: React.FC = () => {
                       </option>
                     ))}
                   </select>
+                  {formErrors.unidad_medida_id && <p className="text-red-500 text-xs mt-1">{formErrors.unidad_medida_id}</p>}
                 </div>
 
                 {/* Código de Barras */}
@@ -427,8 +444,9 @@ const ProductosInventario: React.FC = () => {
                   </label>
                   <input
                     type="text"
+                    name="codigo_barras"
                     value={formData.codigo_barras}
-                    onChange={(e) => setFormData({ ...formData, codigo_barras: e.target.value })}
+                    onChange={handleChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Opcional..."
                   />
@@ -441,12 +459,14 @@ const ProductosInventario: React.FC = () => {
                   </label>
                   <input
                     type="number"
+                    name="costo_unitario"
                     step="0.01"
                     value={formData.costo_unitario}
-                    onChange={(e) => setFormData({ ...formData, costo_unitario: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    onChange={handleChange}
+                    className={`w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent ${formErrors.costo_unitario ? 'border-red-500' : 'border-gray-300'}`}
                     min="0"
                   />
+                  {formErrors.costo_unitario && <p className="text-red-500 text-xs mt-1">{formErrors.costo_unitario}</p>}
                 </div>
 
                 {/* Stock Actual */}
@@ -456,12 +476,14 @@ const ProductosInventario: React.FC = () => {
                   </label>
                   <input
                     type="number"
+                    name="stock_actual"
                     step="0.001"
                     value={formData.stock_actual}
-                    onChange={(e) => setFormData({ ...formData, stock_actual: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    onChange={handleChange}
+                    className={`w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent ${formErrors.stock_actual ? 'border-red-500' : 'border-gray-300'}`}
                     min="0"
                   />
+                  {formErrors.stock_actual && <p className="text-red-500 text-xs mt-1">{formErrors.stock_actual}</p>}
                 </div>
 
                 {/* Stock Mínimo */}
@@ -471,12 +493,14 @@ const ProductosInventario: React.FC = () => {
                   </label>
                   <input
                     type="number"
+                    name="stock_minimo"
                     step="0.001"
                     value={formData.stock_minimo}
-                    onChange={(e) => setFormData({ ...formData, stock_minimo: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    onChange={handleChange}
+                    className={`w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent ${formErrors.stock_minimo ? 'border-red-500' : 'border-gray-300'}`}
                     min="0"
                   />
+                  {formErrors.stock_minimo && <p className="text-red-500 text-xs mt-1">{formErrors.stock_minimo}</p>}
                 </div>
 
                 {/* Stock Máximo */}
@@ -486,9 +510,10 @@ const ProductosInventario: React.FC = () => {
                   </label>
                   <input
                     type="number"
+                    name="stock_maximo"
                     step="0.001"
                     value={formData.stock_maximo}
-                    onChange={(e) => setFormData({ ...formData, stock_maximo: parseFloat(e.target.value) || 0 })}
+                    onChange={handleChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     min="0"
                   />

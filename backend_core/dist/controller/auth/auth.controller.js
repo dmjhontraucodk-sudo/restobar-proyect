@@ -27,7 +27,27 @@ const login = async (req, res) => {
         if (!empleado) {
             return res.status(404).json({ error: 'Usuario no encontrado' });
         }
-        const isPasswordCorrect = await bcryptjs_1.default.compare(password, empleado.password_hash);
+        // ✅ VALIDACIÓN NUEVA: Verificar que el empleado requiere login
+        if (!empleado.requiere_login) {
+            return res.status(403).json({
+                error: 'Este usuario no tiene acceso al sistema.'
+            });
+        }
+        // ✅ VALIDACIÓN NUEVA: Verificar que tiene password_hash
+        if (!empleado.password_hash) {
+            return res.status(500).json({
+                error: 'Error de configuración del usuario. Contacte al administrador.'
+            });
+        }
+        // ✅ VALIDACIÓN NUEVA: Verificar que el empleado está activo
+        if (!empleado.is_active) {
+            return res.status(403).json({
+                error: 'Tu cuenta ha sido desactivada. Contacta al administrador.'
+            });
+        }
+        // ✅ Ahora sí es seguro comparar
+        const isPasswordCorrect = await bcryptjs_1.default.compare(password, empleado.password_hash // Ya no puede ser null
+        );
         if (!isPasswordCorrect) {
             return res.status(401).json({ error: 'Credenciales inválidas' });
         }
@@ -44,12 +64,14 @@ const login = async (req, res) => {
             token: token,
             user: {
                 id: empleado.id.toString(),
-                name: empleado.nombre || empleado.email.split('@')[0], // Nombre o parte del email
+                name: empleado.nombre || empleado.email.split('@')[0],
                 email: empleado.email,
-                role: empleado.roles.nombre, // Nombre del rol (ej: "Administrador")
+                role: empleado.roles.nombre,
                 restaurantId: empleado.tenant_id.toString(),
-                tenantName: empleado.tenants.nombre_empresa, // Nombre del restaurante
+                tenantName: empleado.tenants.nombre_empresa,
                 tenantSubdomain: empleado.tenants.subdominio,
+                // ✅ NUEVO: Indicar si debe cambiar contraseña
+                debe_cambiar_pass: empleado.debe_cambiar_pass || false,
             }
         });
     }
@@ -78,18 +100,29 @@ const registerTenant = async (req, res) => {
             },
         });
         console.log('Paso 2: Tenant creado en BD:', nuevoTenant.id);
-        // 2. Crear el Empleado (Administrador) asociado
+        // 2. Buscar el rol de Propietario
+        const rolPropietario = await prisma_1.prisma.roles.findFirst({
+            where: { nombre: 'Propietario' }
+        });
+        if (!rolPropietario) {
+            // Si no existe el rol, usar rol_id 1 por defecto (compatibilidad)
+            console.warn('⚠️ No se encontró el rol "Propietario", usando rol_id: 1');
+        }
+        // 3. Crear el Empleado (Propietario) asociado
         await prisma_1.prisma.empleados.create({
             data: {
                 tenant_id: nuevoTenant.id,
                 email: email_admin,
                 password_hash: password_hash,
-                rol_id: 1,
+                rol_id: rolPropietario?.id || 1, // ✅ Usar el ID del rol Propietario
                 is_active: true,
+                requiere_login: true, // ✅ NUEVO: El propietario siempre requiere login
+                es_propietario: true, // ✅ NUEVO: Marcarlo como propietario
+                debe_cambiar_pass: false, // ✅ Ya definió su contraseña
             },
         });
-        console.log('Paso 3: Empleado admin creado.');
-        // 3. Enviar email de validación
+        console.log('Paso 3: Empleado propietario creado.');
+        // 4. Enviar email de validación
         email_service_1.emailService.sendRegistrationEmail(email_admin, nombre_empresa)
             .catch(err => console.error('Fallo en envío de email (no bloqueante):', err));
         console.log('Paso 4: Email de bienvenida encolado (Resend).');

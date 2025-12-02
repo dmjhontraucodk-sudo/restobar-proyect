@@ -16,7 +16,6 @@ import {
   DollarSign,
   CheckCircle,
   AlertCircle,
-  XCircle,
   UserPlus,
 } from "lucide-react";
 import { useCart } from "../../../context/CartContext";
@@ -149,9 +148,6 @@ export default function CartDemo() {
   const deliveryCost = Number(demoConfig.pedidosWeb.costoDelivery) || 0;
   const finalTotal = Number(totalPrice) + deliveryCost;
   const meetsMinimum = totalPrice >= demoConfig.pedidosWeb.montoMinimo;
-
-  // ✅ Estado de disponibilidad DEMO (siempre disponible en demo)
-  const pedidoDisponible = demoConfig.pedidosWeb.activos && demoConfig.pedidosWeb.dentroDeHorario;
 
   if (items.length === 0) {
     return (

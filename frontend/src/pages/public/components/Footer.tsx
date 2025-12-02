@@ -1,5 +1,4 @@
 // src/pages/public/components/Footer.tsx - CON CONFIGURACIÓN GLOBAL
-import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Phone, MapPin, Clock, Instagram, Facebook, Mail } from 'lucide-react';
 import { useCart } from '../../../context/CartContext';

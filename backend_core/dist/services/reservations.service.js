@@ -12,12 +12,7 @@ var reservas_estado;
     reservas_estado["Completada"] = "Completada";
 })(reservas_estado || (exports.reservas_estado = reservas_estado = {}));
 exports.reservationsService = {
-    /**
-    * 1. Crea una nueva solicitud de reserva desde el formulario público.
-    * ✅ ACTUALIZADO: Ahora acepta mesa_id como tercer parámetro opcional
-    */
-    async createReservation(tenantId, data, mesaId // ✅ NUEVO: Tercer parámetro para mesa_id
-    ) {
+    async createReservation(tenantId, data, mesaId) {
         const { cliente_nombre, cliente_email, cliente_telefono, fecha_hora, cantidad_personas, notas } = data;
         // Crear la reserva en estado Pendiente
         return await prisma_1.prisma.reservas.create({

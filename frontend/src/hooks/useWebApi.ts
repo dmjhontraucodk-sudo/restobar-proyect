@@ -1,5 +1,5 @@
 // src/hooks/useWebApi.ts
-import { useState, useEffect, useCallback} from 'react';
+import { useState } from 'react';
 import type { CatalogResponse, PedidoData, OrderResponse, Producto, CreateReservationData } from '../types';
 
 const API_BASE = '/api/web';

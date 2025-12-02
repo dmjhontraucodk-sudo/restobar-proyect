@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import Modal from '../ui/Modal';
 import { PlusIcon, XIcon, ImageIcon, UploadIcon } from '../icons';
 import { type Category } from '../../types';
+import { addPlatoSchema } from '../../schemas/menu.schema';
+import type { ZodIssue } from 'zod';
 
 // ✅ DEFINIMOS EL TIPO DE DATO PARA EL INSUMO AQUÍ (Para evitar errores si no está en types)
 export interface InsumoOption {
@@ -66,31 +68,56 @@ const AddPlatoModal: React.FC<AddPlatoModalProps> = ({
   isSubmitting,
   onSubmit
 }) => {
-  // Estado local para manejar errores de imagen
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string | undefined>>({});
   
-  // Reset estados de imagen cuando cambia la preview
   useEffect(() => {
     setImageError(false);
     setImageLoaded(false);
   }, [itemImagePreview]);
 
-  // Cleanup cuando el modal se cierra
   useEffect(() => {
     if (!isOpen) {
       setImageError(false);
       setImageLoaded(false);
+      setFormErrors({});
     }
   }, [isOpen]);
 
-  // --- Lógica de precio (sin cambios) ---
+  const handleLocalSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const validationResult = addPlatoSchema.safeParse({
+        itemName,
+        itemPrice,
+        itemDescription,
+        selectedInsumoId,
+    });
+
+    if (!validationResult.success) {
+        const issues = validationResult.error.issues;
+        const newErrors: Record<string, string> = {};
+        issues.forEach((issue: ZodIssue) => {
+            const path = issue.path[0];
+            if (typeof path === 'string') {
+                newErrors[path] = issue.message;
+            }
+        });
+        setFormErrors(newErrors);
+        return;
+    }
+
+    setFormErrors({});
+    onSubmit(e);
+  };
+  
   const formatPriceForInput = (price: number): string => {
     if (price === 0) return '';
     return price % 1 === 0 ? price.toString() : price.toFixed(2);
   };
   
   const handlePriceChange = (value: string) => {
+    if (formErrors.itemPrice) setFormErrors(prev => ({ ...prev, itemPrice: undefined }));
     if (value === '') {
       onItemPriceChange(0);
       return;
@@ -111,10 +138,8 @@ const AddPlatoModal: React.FC<AddPlatoModalProps> = ({
       onItemPriceChange(formattedPrice);
     }
   };
-  // --- Fin Lógica de precio ---
-
-  // --- Lógica de imagen (sin cambios) ---
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+  
+  const handleImageError = () => {
     console.warn('Error cargando imagen preview:', itemImagePreview);
     setImageError(true);
     setImageLoaded(false);
@@ -136,7 +161,6 @@ const AddPlatoModal: React.FC<AddPlatoModalProps> = ({
     setImageLoaded(false);
     onRemoveImage();
   };
-  // --- Fin Lógica de imagen ---
 
   if (!isOpen || !editingCategory) return null;
 
@@ -156,7 +180,7 @@ const AddPlatoModal: React.FC<AddPlatoModalProps> = ({
 
   return (
     <Modal title={modalTitle} onClose={onClose}>
-      <form onSubmit={onSubmit} className="space-y-6">
+      <form onSubmit={handleLocalSubmit} className="space-y-6">
         
         {/* Nombre y Precio */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -168,12 +192,16 @@ const AddPlatoModal: React.FC<AddPlatoModalProps> = ({
               type="text" 
               id="itemName" 
               value={itemName} 
-              onChange={(e) => onItemNameChange(e.target.value)} 
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" 
+              onChange={(e) => {
+                onItemNameChange(e.target.value)
+                if (formErrors.itemName) setFormErrors(prev => ({ ...prev, itemName: undefined }));
+              }}
+              className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${formErrors.itemName ? 'border-red-500' : 'border-gray-300'}`} 
               placeholder="Ej. Lomo Saltado" 
               disabled={isUploading || isSubmitting}
               required 
             />
+            {formErrors.itemName && <p className="text-red-500 text-xs mt-1">{formErrors.itemName}</p>}
           </div>
 
           <div>
@@ -190,12 +218,13 @@ const AddPlatoModal: React.FC<AddPlatoModalProps> = ({
                 value={formatPriceForInput(itemPrice)} 
                 onChange={(e) => handlePriceChange(e.target.value)}
                 onBlur={handlePriceBlur}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" 
+                className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${formErrors.itemPrice ? 'border-red-500' : 'border-gray-300'}`} 
                 placeholder="0.00"
                 disabled={isUploading || isSubmitting}
                 required 
               />
             </div>
+            {formErrors.itemPrice && <p className="text-red-500 text-xs mt-1">{formErrors.itemPrice}</p>}
           </div>
         </div>
         
@@ -207,13 +236,17 @@ const AddPlatoModal: React.FC<AddPlatoModalProps> = ({
           <textarea 
             id="itemDescription" 
             value={itemDescription} 
-            onChange={(e) => onItemDescriptionChange(e.target.value)} 
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none" 
+            onChange={(e) => {
+                onItemDescriptionChange(e.target.value)
+                if (formErrors.itemDescription) setFormErrors(prev => ({ ...prev, itemDescription: undefined }));
+            }} 
+            className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none ${formErrors.itemDescription ? 'border-red-500' : 'border-gray-300'}`} 
             rows={3} 
             placeholder="Describe los ingredientes y características del plato..." 
             disabled={isUploading || isSubmitting}
             required 
           />
+          {formErrors.itemDescription && <p className="text-red-500 text-xs mt-1">{formErrors.itemDescription}</p>}
         </div>
 
         {/* ✅ SECCIÓN DE VINCULACIÓN CON INVENTARIO (NUEVO) */}

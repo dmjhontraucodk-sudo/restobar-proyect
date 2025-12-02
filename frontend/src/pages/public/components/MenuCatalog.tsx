@@ -1,5 +1,5 @@
 // src/pages/public/components/MenuCatalog.tsx
-import { Search, Filter, ShoppingBag, ChevronDown, Plus, X } from 'lucide-react';
+import { Search, Filter, ShoppingBag, ChevronDown, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useRestobarCatalog } from '../hooks/useRestobarCatalog';
 import { useCart } from '../../../context/CartContext';

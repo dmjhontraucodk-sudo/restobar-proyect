@@ -17,6 +17,25 @@ import {
     CheckCircleIcon
 } from '../../components/icons';
 
+// Funciones de validación específicas para Perú
+const validarTelefonoPeruano = (telefono: string): boolean => {
+  // Validar que tenga 9 dígitos y empiece con 9
+  const regex = /^9\d{8}$/;
+  return regex.test(telefono);
+};
+
+const validarDNI = (dni: string): boolean => {
+  // Validar que tenga exactamente 8 dígitos
+  const regex = /^\d{8}$/;
+  return regex.test(dni);
+};
+
+const validarNombreRol = (nombre: string): boolean => {
+  // Validar que el rol no sea solo números
+  const soloNumeros = /^\d+$/;
+  return !soloNumeros.test(nombre);
+};
+
 // Componente de estadísticas
 const StatsCard: React.FC<{ 
     title: string; 
@@ -90,6 +109,24 @@ const TeamManagementPage: React.FC = () => {
     };
 
     const handleSubmit = async (data: any) => {
+        // Validaciones antes de enviar
+        const errores: string[] = [];
+        
+        // Validar teléfono
+        if (data.telefono && !validarTelefonoPeruano(data.telefono)) {
+            errores.push('El teléfono debe tener 9 dígitos y comenzar con 9');
+        }
+        
+        // Validar DNI si está presente
+        if (data.dni && !validarDNI(data.dni)) {
+            errores.push('El DNI debe tener 8 dígitos numéricos');
+        }
+        
+        if (errores.length > 0) {
+            alert(errores.join('\n'));
+            return false;
+        }
+        
         if (editingEmpleado) {
             return await updateEmpleado(editingEmpleado.id, data);
         } else {
@@ -108,6 +145,26 @@ const TeamManagementPage: React.FC = () => {
 
     const handleResetPassword = async (id: number) => {
         return await resetearPassword(id);
+    };
+
+    const handleCreateRol = async (data: any) => {
+        // Validar que el nombre del rol no sea solo números
+        if (!validarNombreRol(data.nombre)) {
+            alert('El nombre del rol no puede ser solo números');
+            return false;
+        }
+        
+        return await createRol(data);
+    };
+
+    const handleUpdateRol = async (id: number, data: any) => {
+        // Validar que el nombre del rol no sea solo números
+        if (!validarNombreRol(data.nombre)) {
+            alert('El nombre del rol no puede ser solo números');
+            return false;
+        }
+        
+        return await updateRol(id, data);
     };
 
     if (isLoading && empleados.length === 0) {
@@ -231,8 +288,8 @@ const TeamManagementPage: React.FC = () => {
                         {activeTab === 'roles' && (
                             <RolesTab 
                                 roles={todosRoles} 
-                                onCreateRol={createRol} 
-                                onUpdateRol={updateRol} 
+                                onCreateRol={handleCreateRol} // Usar el handler con validación
+                                onUpdateRol={handleUpdateRol} // Usar el handler con validación
                                 onDesactivarRol={desactivarRol} 
                                 onActivarRol={activarRol} 
                                 puedeGestionarRoles={puedeGestionarRoles} 

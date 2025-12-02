@@ -158,7 +158,6 @@ const HistorialCajasPage = () => {
                     // Lógica de colores para la diferencia
                     const isPerfect = diff === 0;
                     const isPositive = diff > 0;
-                    const isNegative = diff < 0;
 
                     return (
                       <tr key={caja.id} className="hover:bg-gray-50 transition-colors group">

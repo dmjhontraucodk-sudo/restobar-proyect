@@ -6,14 +6,32 @@ import { useCart } from '../../context/CartContext';
 import { useWebApi } from '../../hooks/useWebApi';
 import { useGlobalConfig } from '../../hooks/useGlobalConfig';
 import type { PedidoData } from '../../types';
+import { checkoutSchema } from '../../schemas/public.schema';
+import type { ZodIssue } from 'zod';
+import toast from 'react-hot-toast';
+
+// Funciones de validación específicas para Perú
+const validarTelefonoPeruano = (telefono: string): boolean => {
+  // Validar que tenga 9 dígitos y empiece con 9
+  const regex = /^9\d{8}$/;
+  return regex.test(telefono);
+};
+
+const validarEmail = (email: string): boolean => {
+  // Validar formato de email básico
+  if (!email) return true; // Email es opcional
+  const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  return regex.test(email);
+};
 
 export default function Checkout() {
   const navigate = useNavigate();
   const { items, getTotalPrice, clearCart } = useCart();
   const { createOrder, isLoading, error } = useWebApi();
-  const { pedidosWeb, metodosPago } = useGlobalConfig();
+  const { pedidosWeb } = useGlobalConfig();
 
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('');
+  const [formErrors, setFormErrors] = useState<Record<string, string | undefined>>({});
 
   useEffect(() => {
     const savedMethod = localStorage.getItem('selectedPaymentMethod');
@@ -69,26 +87,106 @@ export default function Checkout() {
   const total = subtotal + deliveryFee;
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    // Para teléfono: solo números, máximo 9 dígitos
+    let processedValue = value;
+    if (field === 'cliente_telefono') {
+      processedValue = value.replace(/\D/g, '').slice(0, 9);
+    }
+    
+    setFormData(prev => ({ ...prev, [field]: processedValue }));
+    if (formErrors[field]) {
+        setFormErrors(prev => ({ ...prev, [field]: undefined }));
+    }
   };
 
-  const canProceedStep1 = formData.cliente_nombre && formData.cliente_telefono;
-  const canProceedStep2 = formData.tipo_pedido === 'RecogerEnTienda' || 
-    (formData.tipo_pedido === 'EntregaDomicilio' && formData.direccion_entrega);
+  const validateStep = (step: number) => {
+    let schema;
+    if (step === 1) {
+        schema = checkoutSchema.pick({ cliente_nombre: true, cliente_telefono: true, cliente_email: true });
+    } else if (step === 2) {
+        schema = checkoutSchema.pick({ tipo_pedido: true, direccion_entrega: true });
+    } else {
+        return true;
+    }
+
+    const result = schema.safeParse(formData);
+    if (!result.success) {
+        const issues = result.error.issues;
+        const newErrors: Record<string, string> = {};
+        issues.forEach((issue: ZodIssue) => {
+            const path = issue.path[0];
+            if (typeof path === 'string') {
+                newErrors[path] = issue.message;
+            }
+        });
+        setFormErrors(newErrors);
+        return false;
+    }
+    
+    // Validaciones adicionales para Perú
+    const erroresManuales: Record<string, string> = {};
+    
+    if (step === 1) {
+      // Validar Teléfono (9 dígitos, empieza con 9)
+      if (!validarTelefonoPeruano(formData.cliente_telefono)) {
+        erroresManuales.cliente_telefono = 'El teléfono debe tener 9 dígitos y comenzar con 9';
+      }
+      
+      // Validar Email si está presente
+      if (formData.cliente_email && !validarEmail(formData.cliente_email)) {
+        erroresManuales.cliente_email = 'Por favor ingrese un correo electrónico válido';
+      }
+    }
+    
+    // Si hay errores manuales, mostrarlos y detener el envío
+    if (Object.keys(erroresManuales).length > 0) {
+      setFormErrors(prev => ({ ...prev, ...erroresManuales }));
+      return false;
+    }
+    
+    setFormErrors({});
+    return true;
+  };
 
   const handleSubmitOrder = async () => {
     if (isLoading) return;
+    
+    // Validaciones manuales antes de Zod
+    const erroresManuales: Record<string, string> = {};
+    
+    // Validar Teléfono (9 dígitos, empieza con 9)
+    if (!validarTelefonoPeruano(formData.cliente_telefono)) {
+      erroresManuales.cliente_telefono = 'El teléfono debe tener 9 dígitos y comenzar con 9';
+    }
+    
+    // Validar Email si está presente
+    if (formData.cliente_email && !validarEmail(formData.cliente_email)) {
+      erroresManuales.cliente_email = 'Por favor ingrese un correo electrónico válido';
+    }
+    
+    // Si hay errores manuales, mostrarlos y detener el envío
+    if (Object.keys(erroresManuales).length > 0) {
+      setFormErrors(erroresManuales);
+      toast.error("Por favor, corrige los errores en el formulario.");
+      return;
+    }
+    
+    const validationResult = checkoutSchema.safeParse(formData);
+    if (!validationResult.success) {
+        toast.error("Por favor, corrige los errores en el formulario.");
+        return;
+    }
 
     try {
       const orderData: PedidoData = {
-        cliente_nombre: formData.cliente_nombre,
-        cliente_email: formData.cliente_email || undefined,
-        cliente_telefono: formData.cliente_telefono,
-        tipo_pedido: formData.tipo_pedido,
-        direccion_entrega: formData.tipo_pedido === 'EntregaDomicilio' ? formData.direccion_entrega : undefined,
-        instrucciones_entrega: formData.instrucciones_entrega || undefined,
-        hora_programada: formData.hora_programada === 'custom' && formData.customTime ? formData.customTime : undefined,
-        notas_especiales: formData.notas_especiales || undefined,
+        cliente_nombre: validationResult.data.cliente_nombre,
+        cliente_email: validationResult.data.cliente_email || undefined,
+        cliente_telefono: validationResult.data.cliente_telefono,
+        tipo_pedido: validationResult.data.tipo_pedido,
+        direccion_entrega: validationResult.data.tipo_pedido === 'EntregaDomicilio' ? validationResult.data.direccion_entrega : undefined,
+        instrucciones_entrega: validationResult.data.instrucciones_entrega || undefined,
+        hora_programada: validationResult.data.hora_programada === 'custom' && validationResult.data.customTime ? validationResult.data.customTime : undefined,
+        notas_especiales: validationResult.data.notas_especiales || undefined,
         
         subtotal: subtotal,
         total: total,
@@ -114,7 +212,6 @@ export default function Checkout() {
     }
   };
 
-  // ⭐ PÁGINA DE ÉXITO (SOLO MÉTODO DE PAGO, SIN QR)
   if (orderSuccess && createdOrder) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center px-4 py-16">
@@ -153,7 +250,6 @@ export default function Checkout() {
               </div>
             </div>
 
-            {/* ⭐ SOLO MOSTRAR MÉTODO DE PAGO SELECCIONADO */}
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
               <p className="text-blue-700 text-sm font-medium">
                 {getPaymentMethodEmoji(selectedPaymentMethod)} <strong>Método de pago:</strong> {getPaymentMethodName(selectedPaymentMethod)} al {formData.tipo_pedido === 'RecogerEnTienda' ? 'recoger' : 'recibir'}
@@ -252,9 +348,10 @@ export default function Checkout() {
                   type="text"
                   value={formData.cliente_nombre}
                   onChange={(e) => handleInputChange('cliente_nombre', e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-blue-500"
+                  className={`w-full px-4 py-3 bg-white border rounded-lg text-gray-900 focus:outline-none focus:border-blue-500 ${formErrors.cliente_nombre ? 'border-red-500' : 'border-gray-300'}`}
                   placeholder="Tu nombre completo"
                 />
+                 {formErrors.cliente_nombre && <p className="text-red-500 text-xs mt-1">{formErrors.cliente_nombre}</p>}
               </div>
               
               <div>
@@ -263,9 +360,26 @@ export default function Checkout() {
                   type="email"
                   value={formData.cliente_email}
                   onChange={(e) => handleInputChange('cliente_email', e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-blue-500"
+                  className={`w-full px-4 py-3 bg-white border rounded-lg text-gray-900 focus:outline-none focus:border-blue-500 ${formErrors.cliente_email ? 'border-red-500' : 'border-gray-300'}`}
                   placeholder="tu@email.com"
+                  onBlur={() => {
+                    // Validar email cuando el usuario sale del campo
+                    if (formData.cliente_email && !validarEmail(formData.cliente_email)) {
+                      setFormErrors(prev => ({
+                        ...prev,
+                        cliente_email: 'Formato de correo inválido'
+                      }));
+                    } else if (formErrors.cliente_email) {
+                      // Limpiar error si el campo está vacío o es válido
+                      setFormErrors(prev => {
+                        const newErrors = { ...prev };
+                        delete newErrors.cliente_email;
+                        return newErrors;
+                      });
+                    }
+                  }}
                 />
+                 {formErrors.cliente_email && <p className="text-red-500 text-xs mt-1">{formErrors.cliente_email}</p>}
               </div>
               
               <div>
@@ -276,15 +390,21 @@ export default function Checkout() {
                   type="tel"
                   value={formData.cliente_telefono}
                   onChange={(e) => handleInputChange('cliente_telefono', e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-blue-500"
-                  placeholder="987 654 321"
+                  className={`w-full px-4 py-3 bg-white border rounded-lg text-gray-900 focus:outline-none focus:border-blue-500 ${formErrors.cliente_telefono ? 'border-red-500' : 'border-gray-300'}`}
+                  placeholder="912345678"
+                  maxLength={9}
                 />
+                {formErrors.cliente_telefono && <p className="text-red-500 text-xs mt-1">{formErrors.cliente_telefono}</p>}
+                <p className="text-xs text-gray-500 mt-1">Formato peruano: 9 dígitos, comienza con 9 (ej: 912345678)</p>
               </div>
             </div>
             
             <button
-              onClick={() => setStep(2)}
-              disabled={!canProceedStep1}
+              onClick={() => {
+                if (validateStep(1)) {
+                    setStep(2);
+                }
+              }}
               className="w-full mt-8 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 disabled:text-gray-600 text-white font-bold py-4 rounded-full transition-all"
             >
               Continuar
@@ -340,9 +460,10 @@ export default function Checkout() {
                     type="text"
                     value={formData.direccion_entrega}
                     onChange={(e) => handleInputChange('direccion_entrega', e.target.value)}
-                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-blue-500"
+                    className={`w-full px-4 py-3 bg-white border rounded-lg text-gray-900 focus:outline-none focus:border-blue-500 ${formErrors.direccion_entrega ? 'border-red-500' : 'border-gray-300'}`}
                     placeholder="Av. Principal 123, Surco"
                   />
+                  {formErrors.direccion_entrega && <p className="text-red-500 text-xs mt-1">{formErrors.direccion_entrega}</p>}
                 </div>
                 <div>
                   <label className="block text-gray-700 mb-2 font-medium">
@@ -382,8 +503,11 @@ export default function Checkout() {
                 Volver
               </button>
               <button
-                onClick={() => setStep(3)}
-                disabled={!canProceedStep2}
+                onClick={() => {
+                    if (validateStep(2)) {
+                        setStep(3)
+                    }
+                }}
                 className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 disabled:text-gray-600 text-white font-bold py-4 rounded-full transition-all"
               >
                 Continuar

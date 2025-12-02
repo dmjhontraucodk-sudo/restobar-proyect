@@ -9,10 +9,8 @@ import {
     RefreshIcon, 
     GlobeIcon, 
     TruckIcon, 
-    CheckIcon, 
     ClockIcon, 
     XIcon, 
-    UserIcon,
     MapPinIcon,
     PrinterIcon,
     SearchIcon

@@ -42,11 +42,9 @@ const MenuManagementPage: React.FC<MenuManagementPageProps> = ({ tipo }) => {
     // Setters
     setCategoryName,
     setShowCategoryModal,
-    setShowItemModal,
     setItemName,
     setItemPrice,
     setItemDescription,
-    setItemImagePreview,
 
     // Handlers de Filtros
     filterHandlers,

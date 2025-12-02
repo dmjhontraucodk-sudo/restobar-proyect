@@ -5,8 +5,6 @@ import {
   useDashboardApi,
   type ApiProduct,
   type ApiCategory,
-  type CreateProductData,
-  type UpdateProductWithRecipeData,
 } from "./useDashboardApi";
 import {
   type Category,

@@ -1,4 +1,3 @@
-import React from 'react';
 import { useKardex } from '../../../hooks/useKardex';
 import { 
   ClipboardListIcon, 

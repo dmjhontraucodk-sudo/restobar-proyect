@@ -3,6 +3,8 @@ import { useWebReservations } from './hooks/useWebReservations';
 import { type CreateReservationData } from '../../types';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import { reservationSchema } from '../../schemas/public.schema';
+import type { ZodIssue } from 'zod';
 
 import { 
   ClockIcon, 
@@ -26,6 +28,20 @@ const CheckIcon = (props: React.SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
+// Funciones de validación específicas para Perú
+const validarTelefonoPeruano = (telefono: string): boolean => {
+  // Validar que tenga 9 dígitos y empiece con 9
+  const regex = /^9\d{8}$/;
+  return regex.test(telefono);
+};
+
+const validarEmail = (email: string): boolean => {
+  // Validar formato de email básico
+  if (!email) return true; // Email es opcional
+  const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  return regex.test(email);
+};
+
 const ReservationForm: React.FC = () => {
   const { 
     isSubmitting, 
@@ -44,6 +60,7 @@ const ReservationForm: React.FC = () => {
     mesa_id: null,
   });
 
+  const [formErrors, setFormErrors] = useState<Record<string, string | undefined>>({});
   const [mostrarSelectorMesas, setMostrarSelectorMesas] = useState(false);
   const hasCargadoMesas = useRef(false);
   const mesaSeleccionadaId = formData.mesa_id;
@@ -63,10 +80,22 @@ const ReservationForm: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    
+    // Para teléfono: solo números, máximo 9 dígitos
+    let processedValue = value;
+    if (name === 'cliente_telefono') {
+      processedValue = value.replace(/\D/g, '').slice(0, 9);
+    }
+    
     setFormData((prev: CreateReservationData) => ({ 
       ...prev,
-      [name]: name === 'cantidad_personas' ? parseInt(value) : value,
+      [name]: name === 'cantidad_personas' ? parseInt(value) : processedValue,
     }));
+    
+    // Limpiar error si existe
+    if (formErrors[name]) {
+      setFormErrors(prev => ({ ...prev, [name]: undefined }));
+    }
   };
 
   const seleccionarMesa = (mesaId: number) => {
@@ -77,11 +106,41 @@ const ReservationForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (formData.cantidad_personas < 1) {
-      alert('La cantidad de personas debe ser al menos 1.');
+    // VALIDACIONES MANUALES PARA PERÚ
+    const erroresManuales: Record<string, string> = {};
+    
+    // Validar Teléfono (9 dígitos, empieza con 9)
+    if (!validarTelefonoPeruano(formData.cliente_telefono)) {
+      erroresManuales.cliente_telefono = 'El teléfono debe tener 9 dígitos y comenzar con 9';
+    }
+    
+    // Validar Email si está presente
+    if (formData.cliente_email && !validarEmail(formData.cliente_email)) {
+      erroresManuales.cliente_email = 'Por favor ingrese un correo electrónico válido';
+    }
+    
+    // Si hay errores manuales, mostrarlos y detener el envío
+    if (Object.keys(erroresManuales).length > 0) {
+      setFormErrors(erroresManuales);
       return;
     }
+    
+    const validationResult = reservationSchema.safeParse(formData);
 
+    if (!validationResult.success) {
+        const issues = validationResult.error.issues;
+        const newErrors: Record<string, string> = {};
+        issues.forEach((issue: ZodIssue) => {
+            const path = issue.path[0];
+            if (typeof path === 'string') {
+                newErrors[path] = issue.message;
+            }
+        });
+        setFormErrors(newErrors);
+        return;
+    }
+    setFormErrors({});
+    
     if (availableMesas.length > 0 && mesaActual) {
       if (mesaActual.capacidad < formData.cantidad_personas) {
         alert(`La mesa seleccionada solo tiene capacidad para ${mesaActual.capacidad} personas.`);
@@ -92,7 +151,7 @@ const ReservationForm: React.FC = () => {
       return;
     }
     
-    if (await handleSubmitReservation(formData)) {
+    if (await handleSubmitReservation(validationResult.data)) {
       setFormData({
         cliente_nombre: '',
         cliente_telefono: '',
@@ -145,10 +204,11 @@ const ReservationForm: React.FC = () => {
                         value={formData.cliente_nombre} 
                         onChange={handleChange} 
                         required 
-                        className="pl-10 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm" 
+                        className={`pl-10 w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm ${formErrors.cliente_nombre ? 'border-red-500' : 'border-gray-300'}`} 
                         placeholder="Nombre completo"
                       />
                     </div>
+                    {formErrors.cliente_nombre && <p className="text-red-500 text-xs mt-1">{formErrors.cliente_nombre}</p>}
                   </div>
                   
                   <div>
@@ -161,10 +221,13 @@ const ReservationForm: React.FC = () => {
                         value={formData.cliente_telefono} 
                         onChange={handleChange} 
                         required 
-                        className="pl-10 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm" 
-                        placeholder="+51 XXX XXX XXX"
+                        maxLength={9}
+                        className={`pl-10 w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm ${formErrors.cliente_telefono ? 'border-red-500' : 'border-gray-300'}`} 
+                        placeholder="912345678"
                       />
                     </div>
+                    {formErrors.cliente_telefono && <p className="text-red-500 text-xs mt-1">{formErrors.cliente_telefono}</p>}
+                    <p className="text-xs text-gray-500 mt-1">Formato peruano: 9 dígitos (ej: 912345678)</p>
                   </div>
                 </div>
                 
@@ -177,10 +240,27 @@ const ReservationForm: React.FC = () => {
                       name="cliente_email" 
                       value={formData.cliente_email} 
                       onChange={handleChange} 
-                      className="pl-10 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm" 
+                      className={`pl-10 w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm ${formErrors.cliente_email ? 'border-red-500' : 'border-gray-300'}`}
                       placeholder="tu@email.com (opcional)"
+                      onBlur={() => {
+                        // Validar email cuando el usuario sale del campo
+                        if (formData.cliente_email && !validarEmail(formData.cliente_email)) {
+                          setFormErrors(prev => ({
+                            ...prev,
+                            cliente_email: 'Formato de correo inválido'
+                          }));
+                        } else if (formErrors.cliente_email) {
+                          // Limpiar error si el campo está vacío o es válido
+                          setFormErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors.cliente_email;
+                            return newErrors;
+                          });
+                        }
+                      }}
                     />
                   </div>
+                  {formErrors.cliente_email && <p className="text-red-500 text-xs mt-1">{formErrors.cliente_email}</p>}
                 </div>
               </div>
 
@@ -202,9 +282,10 @@ const ReservationForm: React.FC = () => {
                         value={formData.fecha_hora} 
                         onChange={handleChange} 
                         required 
-                        className="pl-10 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm" 
+                        className={`pl-10 w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm ${formErrors.fecha_hora ? 'border-red-500' : 'border-gray-300'}`}
                       />
                     </div>
+                    {formErrors.fecha_hora && <p className="text-red-500 text-xs mt-1">{formErrors.fecha_hora}</p>}
                   </div>
                   
                   <div>
@@ -219,9 +300,10 @@ const ReservationForm: React.FC = () => {
                         min={1} 
                         max={20}
                         required 
-                        className="pl-10 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm" 
+                        className={`pl-10 w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm ${formErrors.cantidad_personas ? 'border-red-500' : 'border-gray-300'}`}
                       />
                     </div>
+                    {formErrors.cantidad_personas && <p className="text-red-500 text-xs mt-1">{formErrors.cantidad_personas}</p>}
                   </div>
                 </div>
               </div>
@@ -277,6 +359,7 @@ const ReservationForm: React.FC = () => {
                     )}
                   </div>
                 )}
+                 {formErrors.mesa_id && <p className="text-red-500 text-xs mt-1">{formErrors.mesa_id}</p>}
 
                 {/* Modal de Mesas - Compacto */}
                 {mostrarSelectorMesas && (

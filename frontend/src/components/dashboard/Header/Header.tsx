@@ -27,18 +27,9 @@ export const Header: React.FC<HeaderProps> = ({
   user,
   logout
 }) => {
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   
-  const notificationsRef = useRef<HTMLDivElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
-
-  // Notificaciones de ejemplo
-  const notifications = [
-    { id: 1, text: 'Nuevo pedido en Mesa 5', time: 'Hace 2 min', type: 'order' },
-    { id: 2, text: 'Stock bajo de Vino Tinto', time: 'Hace 1 hora', type: 'warning' },
-    { id: 3, text: 'Reserva confirmada para 20:00', time: 'Hace 3 horas', type: 'info' },
-  ];
 
   return (
     <header className="w-full bg-white/80 backdrop-blur-lg border-b border-gray-200/60 shadow-sm shrink-0">

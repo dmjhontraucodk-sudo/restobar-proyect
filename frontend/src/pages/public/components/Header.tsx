@@ -1,5 +1,5 @@
 // src/pages/public/components/Header.tsx - CON CONFIGURACIÓN GLOBAL
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ShoppingBag, Phone, Clock, UserPlus, CalendarCheck, Menu, X } from 'lucide-react';
 import { useCart } from '../../../context/CartContext';

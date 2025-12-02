@@ -14,6 +14,7 @@ const verifyTenantAccess_1 = require("./middleware/verifyTenantAccess");
 const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
 const dashboard_routes_1 = __importDefault(require("./routes/dashboard.routes"));
 const web_routes_1 = __importDefault(require("./routes/web.routes"));
+const cron_service_1 = require("./services/cron.service");
 dotenv_1.default.config();
 // Crea la instancia de la aplicación Express
 const app = (0, express_1.default)();
@@ -131,4 +132,8 @@ app.use((error, req, res, next) => {
         message: process.env.NODE_ENV === 'development' ? error.message : 'Contacte al administrador'
     });
 });
+if (process.env.NODE_ENV !== 'test') {
+    cron_service_1.cronService.iniciarCronJobs();
+    console.log('✅ [APP] Cron jobs iniciados');
+}
 exports.default = app;

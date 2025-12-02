@@ -4,6 +4,8 @@ import type { FormEvent, ChangeEvent } from 'react';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { loginSchema } from '../schemas/auth.schema';
+import type { ZodIssue } from 'zod';
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
@@ -11,28 +13,55 @@ export default function LoginPage() {
     password: '',
   });
   const [error, setError] = useState('');
+  const [formErrors, setFormErrors] = useState<Record<string, string | undefined>>({});
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   
   const { login } = useAuth();
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
+    // Limpiar el error del campo cuando el usuario empieza a escribir
+    if (formErrors[name]) {
+      setFormErrors(prev => ({ ...prev, [name]: undefined }));
+    }
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    // Limpiar errores globales
     setError('');
+    
+    // --- VALIDACIÓN CON ZOD ---
+    const validationResult = loginSchema.safeParse(formData);
+    
+    if (!validationResult.success) {
+      const issues = validationResult.error.issues;
+      const newErrors: Record<string, string> = {};
+      issues.forEach((issue: ZodIssue) => {
+        const path = issue.path[0];
+        if (typeof path === 'string') {
+          newErrors[path] = issue.message;
+        }
+      });
+      setFormErrors(newErrors);
+      return;
+    }
+    
+    // Limpiar errores de formulario si la validación es exitosa
+    setFormErrors({});
     setIsLoading(true);
 
     try {
       const hostname = window.location.hostname;
       const API_URL = `http://${hostname}:3000/api/auth/login`;
       
-      const response = await axios.post(API_URL, formData);
+      // Usar `validationResult.data` que tiene los tipos correctos
+      const response = await axios.post(API_URL, validationResult.data);
       const { token, user } = response.data;
       
       login(token, user);
@@ -94,10 +123,11 @@ export default function LoginPage() {
                   required
                   autoComplete="email"
                   disabled={isLoading}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition duration-150 disabled:opacity-50"
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-1 focus:border-blue-500 transition duration-150 disabled:opacity-50 ${formErrors.email ? 'border-red-500' : 'border-gray-300'}`}
                   placeholder="usuario@ejemplo.com"
                 />
               </div>
+              {formErrors.email && <p className="text-red-500 text-xs mt-1">{formErrors.email}</p>}
             </div>
 
             {/* Campo Contraseña */}
@@ -115,10 +145,11 @@ export default function LoginPage() {
                   required
                   autoComplete="current-password"
                   disabled={isLoading}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition duration-150 disabled:opacity-50"
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-1 focus:border-blue-500 transition duration-150 disabled:opacity-50 ${formErrors.password ? 'border-red-500' : 'border-gray-300'}`}
                   placeholder="••••••••"
                 />
               </div>
+              {formErrors.password && <p className="text-red-500 text-xs mt-1">{formErrors.password}</p>}
             </div>
 
             {/* Enlace Olvidé Contraseña */}

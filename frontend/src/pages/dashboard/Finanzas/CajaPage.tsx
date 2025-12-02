@@ -10,8 +10,7 @@ import {
   PlusIcon, 
   LockIcon, 
   ClockIcon, 
-  CurrencyDollarIcon,
-  ClipboardListIcon
+  CurrencyDollarIcon
 } from '../../../components/icons'; 
 
 // Definimos MinusIcon localmente

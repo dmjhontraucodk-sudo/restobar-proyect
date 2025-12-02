@@ -19,6 +19,34 @@ import {
   ResetIcon,
 } from "../components/icons/ConfigIcons";
 
+// Funciones de validación específicas para Perú
+const validarTelefonoPeruano = (telefono: string): boolean => {
+  if (!telefono) return true; // Campo opcional en configuración
+  // Validar que tenga 9 dígitos y empiece con 9, o formato +51
+  const regex = /^(9\d{8}|\+51\s?\d{9})$/;
+  return regex.test(telefono);
+};
+
+const validarRUC = (ruc: string): boolean => {
+  if (!ruc) return true; // Campo opcional
+  // Validar RUC peruano: 11 dígitos numéricos
+  const regex = /^\d{11}$/;
+  return regex.test(ruc);
+};
+
+const validarEmail = (email: string): boolean => {
+  if (!email) return true; // Campo opcional
+  const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  return regex.test(email);
+};
+
+const validarWhatsApp = (whatsapp: string): boolean => {
+  if (!whatsapp) return true; // Campo opcional
+  // Validar número de WhatsApp peruano: 9 dígitos que empieza con 9, o formato +51
+  const regex = /^(9\d{8}|\+51\s?\d{9})$/;
+  return regex.test(whatsapp);
+};
+
 const ConfigurationPage: React.FC = () => {
   const { config, isLoading, updateConfig, resetConfig, reloadConfig } =
     useTenantConfig();
@@ -35,6 +63,7 @@ const ConfigurationPage: React.FC = () => {
   const [yapeQrPreview, setYapeQrPreview] = useState<string | null>(null);
   const [plinQrFile, setPlinQrFile] = useState<File | null>(null);
   const [plinQrPreview, setPlinQrPreview] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // Tabs de configuración (SIMPLIFICADO)
   const tabs = [
@@ -58,6 +87,7 @@ const ConfigurationPage: React.FC = () => {
     if (config) {
       setFormData(config);
       setHasChanges(false);
+      setFieldErrors({});
 
       if (config.logo_url) {
         setLogoPreview(config.logo_url);
@@ -74,6 +104,40 @@ const ConfigurationPage: React.FC = () => {
   const handleChange = (field: string, value: any) => {
     setFormData((prev: any) => ({ ...prev, [field]: value }));
     setHasChanges(true);
+    
+    // Validar en tiempo real según el campo
+    let error = "";
+    
+    if (field === "ruc" && value && !validarRUC(value)) {
+      error = "El RUC debe tener 11 dígitos numéricos";
+    } else if ((field === "telefono_principal" || field === "telefono_secundario") && 
+               value && !validarTelefonoPeruano(value)) {
+      error = "El teléfono debe tener 9 dígitos y comenzar con 9 (ej: 912345678)";
+    } else if (field === "email_negocio" && value && !validarEmail(value)) {
+      error = "Por favor ingrese un correo electrónico válido";
+    } else if (field === "whatsapp_business" && value && !validarWhatsApp(value)) {
+      error = "El WhatsApp debe tener 9 dígitos y comenzar con 9 (ej: 912345678)";
+    } else if (field === "yape_numero" && value && !validarTelefonoPeruano(value)) {
+      error = "El número de Yape debe tener 9 dígitos y comenzar con 9";
+    } else if (field === "plin_numero" && value && !validarTelefonoPeruano(value)) {
+      error = "El número de Plin debe tener 9 dígitos y comenzar con 9";
+    } else if (field === "email_nuevos_pedidos" && value && !validarEmail(value)) {
+      error = "Por favor ingrese un correo electrónico válido";
+    } else if (field === "email_stock_critico" && value && !validarEmail(value)) {
+      error = "Por favor ingrese un correo electrónico válido";
+    } else if (field === "whatsapp_pedidos_listos" && value && !validarWhatsApp(value)) {
+      error = "El WhatsApp debe tener 9 dígitos y comenzar con 9 (ej: 912345678)";
+    }
+    
+    if (error) {
+      setFieldErrors(prev => ({ ...prev, [field]: error }));
+    } else if (fieldErrors[field]) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
   };
 
   const handleImageChange = (
@@ -141,7 +205,67 @@ const ConfigurationPage: React.FC = () => {
     }
   };
 
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+    
+    // Validar RUC
+    if (formData.ruc && !validarRUC(formData.ruc)) {
+      errors.ruc = "El RUC debe tener 11 dígitos numéricos";
+    }
+    
+    // Validar teléfonos
+    if (formData.telefono_principal && !validarTelefonoPeruano(formData.telefono_principal)) {
+      errors.telefono_principal = "El teléfono debe tener 9 dígitos y comenzar con 9 (ej: 912345678)";
+    }
+    
+    if (formData.telefono_secundario && !validarTelefonoPeruano(formData.telefono_secundario)) {
+      errors.telefono_secundario = "El teléfono debe tener 9 dígitos y comenzar con 9 (ej: 912345678)";
+    }
+    
+    // Validar emails
+    if (formData.email_negocio && !validarEmail(formData.email_negocio)) {
+      errors.email_negocio = "Por favor ingrese un correo electrónico válido";
+    }
+    
+    // Validar WhatsApp
+    if (formData.whatsapp_business && !validarWhatsApp(formData.whatsapp_business)) {
+      errors.whatsapp_business = "El WhatsApp debe tener 9 dígitos y comenzar con 9 (ej: 912345678)";
+    }
+    
+    // Validar números de Yape/Plin si están habilitados
+    if (formData.acepta_yape && formData.yape_numero && !validarTelefonoPeruano(formData.yape_numero)) {
+      errors.yape_numero = "El número de Yape debe tener 9 dígitos y comenzar con 9";
+    }
+    
+    if (formData.acepta_plin && formData.plin_numero && !validarTelefonoPeruano(formData.plin_numero)) {
+      errors.plin_numero = "El número de Plin debe tener 9 dígitos y comenzar con 9";
+    }
+    
+    // Validar emails de notificaciones
+    if (formData.email_nuevos_pedidos && !validarEmail(formData.email_nuevos_pedidos)) {
+      errors.email_nuevos_pedidos = "Por favor ingrese un correo electrónico válido";
+    }
+    
+    if (formData.email_stock_critico && !validarEmail(formData.email_stock_critico)) {
+      errors.email_stock_critico = "Por favor ingrese un correo electrónico válido";
+    }
+    
+    // Validar WhatsApp para pedidos listos
+    if (formData.whatsapp_pedidos_listos && !validarWhatsApp(formData.whatsapp_pedidos_listos)) {
+      errors.whatsapp_pedidos_listos = "El WhatsApp debe tener 9 dígitos y comenzar con 9 (ej: 912345678)";
+    }
+    
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSave = async () => {
+    // Validar antes de guardar
+    if (!validateForm()) {
+      toast.error("Por favor corrige los errores en el formulario");
+      return;
+    }
+
     try {
       setIsSaving(true);
 
@@ -221,6 +345,7 @@ const ConfigurationPage: React.FC = () => {
       try {
         await resetConfig();
         setHasChanges(false);
+        setFieldErrors({});
         if (logoPreview && logoPreview.startsWith("blob:")) {
           URL.revokeObjectURL(logoPreview);
         }
@@ -379,9 +504,20 @@ const ConfigurationPage: React.FC = () => {
                   type="text"
                   value={formData.ruc || ""}
                   onChange={(e) => handleChange("ruc", e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  maxLength={11}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    fieldErrors.ruc ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   placeholder="20123456789"
+                  onInput={(e) => {
+                    // Solo permite números
+                    e.currentTarget.value = e.currentTarget.value.replace(/\D/g, '').slice(0, 11);
+                  }}
                 />
+                {fieldErrors.ruc && (
+                  <p className="text-red-500 text-xs mt-1">{fieldErrors.ruc}</p>
+                )}
+                <p className="text-xs text-gray-500 mt-1">11 dígitos numéricos</p>
               </div>
 
               {/* Teléfono Principal */}
@@ -395,9 +531,20 @@ const ConfigurationPage: React.FC = () => {
                   onChange={(e) =>
                     handleChange("telefono_principal", e.target.value)
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="+51 999 999 999"
+                  maxLength={9}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    fieldErrors.telefono_principal ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="912345678"
+                  onInput={(e) => {
+                    // Solo permite números
+                    e.currentTarget.value = e.currentTarget.value.replace(/\D/g, '').slice(0, 9);
+                  }}
                 />
+                {fieldErrors.telefono_principal && (
+                  <p className="text-red-500 text-xs mt-1">{fieldErrors.telefono_principal}</p>
+                )}
+                <p className="text-xs text-gray-500 mt-1">9 dígitos, comienza con 9</p>
               </div>
 
               {/* Teléfono Secundario */}
@@ -411,9 +558,20 @@ const ConfigurationPage: React.FC = () => {
                   onChange={(e) =>
                     handleChange("telefono_secundario", e.target.value)
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="+51 999 999 999"
+                  maxLength={9}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    fieldErrors.telefono_secundario ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="912345678"
+                  onInput={(e) => {
+                    // Solo permite números
+                    e.currentTarget.value = e.currentTarget.value.replace(/\D/g, '').slice(0, 9);
+                  }}
                 />
+                {fieldErrors.telefono_secundario && (
+                  <p className="text-red-500 text-xs mt-1">{fieldErrors.telefono_secundario}</p>
+                )}
+                <p className="text-xs text-gray-500 mt-1">9 dígitos, comienza con 9</p>
               </div>
 
               {/* Email del Negocio */}
@@ -427,9 +585,14 @@ const ConfigurationPage: React.FC = () => {
                   onChange={(e) =>
                     handleChange("email_negocio", e.target.value)
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    fieldErrors.email_negocio ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   placeholder="contacto@mirestaurante.com"
                 />
+                {fieldErrors.email_negocio && (
+                  <p className="text-red-500 text-xs mt-1">{fieldErrors.email_negocio}</p>
+                )}
               </div>
             </div>
 
@@ -473,9 +636,20 @@ const ConfigurationPage: React.FC = () => {
                   onChange={(e) =>
                     handleChange("whatsapp_business", e.target.value)
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="+51 999 999 999"
+                  maxLength={9}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    fieldErrors.whatsapp_business ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="912345678"
+                  onInput={(e) => {
+                    // Solo permite números
+                    e.currentTarget.value = e.currentTarget.value.replace(/\D/g, '').slice(0, 9);
+                  }}
                 />
+                {fieldErrors.whatsapp_business && (
+                  <p className="text-red-500 text-xs mt-1">{fieldErrors.whatsapp_business}</p>
+                )}
+                <p className="text-xs text-gray-500 mt-1">9 dígitos, comienza con 9</p>
               </div>
 
               <div>
@@ -706,9 +880,20 @@ const ConfigurationPage: React.FC = () => {
                       onChange={(e) =>
                         handleChange("yape_numero", e.target.value)
                       }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="999 999 999"
+                      maxLength={9}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                        fieldErrors.yape_numero ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      placeholder="912345678"
+                      onInput={(e) => {
+                        // Solo permite números
+                        e.currentTarget.value = e.currentTarget.value.replace(/\D/g, '').slice(0, 9);
+                      }}
                     />
+                    {fieldErrors.yape_numero && (
+                      <p className="text-red-500 text-xs mt-1">{fieldErrors.yape_numero}</p>
+                    )}
+                    <p className="text-xs text-gray-500 mt-1">9 dígitos, comienza con 9</p>
                   </div>
 
                   {/* QR de Yape */}
@@ -832,9 +1017,20 @@ const ConfigurationPage: React.FC = () => {
                       onChange={(e) =>
                         handleChange("plin_numero", e.target.value)
                       }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="999 999 999"
+                      maxLength={9}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                        fieldErrors.plin_numero ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      placeholder="912345678"
+                      onInput={(e) => {
+                        // Solo permite números
+                        e.currentTarget.value = e.currentTarget.value.replace(/\D/g, '').slice(0, 9);
+                      }}
                     />
+                    {fieldErrors.plin_numero && (
+                      <p className="text-red-500 text-xs mt-1">{fieldErrors.plin_numero}</p>
+                    )}
+                    <p className="text-xs text-gray-500 mt-1">9 dígitos, comienza con 9</p>
                   </div>
 
                   {/* QR de Plin */}
@@ -1527,9 +1723,14 @@ const ConfigurationPage: React.FC = () => {
                 onChange={(e) =>
                   handleChange("email_nuevos_pedidos", e.target.value)
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  fieldErrors.email_nuevos_pedidos ? 'border-red-500' : 'border-gray-300'
+                }`}
                 placeholder="admin@mirestaurante.com"
               />
+              {fieldErrors.email_nuevos_pedidos && (
+                <p className="text-red-500 text-xs mt-1">{fieldErrors.email_nuevos_pedidos}</p>
+              )}
               <p className="text-xs text-gray-500 mt-1">
                 Enviar notificación cuando llegue un nuevo pedido web
               </p>
@@ -1546,9 +1747,19 @@ const ConfigurationPage: React.FC = () => {
                 onChange={(e) =>
                   handleChange("whatsapp_pedidos_listos", e.target.value)
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="+51 999 999 999"
+                maxLength={9}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  fieldErrors.whatsapp_pedidos_listos ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="912345678"
+                onInput={(e) => {
+                  // Solo permite números
+                  e.currentTarget.value = e.currentTarget.value.replace(/\D/g, '').slice(0, 9);
+                }}
               />
+              {fieldErrors.whatsapp_pedidos_listos && (
+                <p className="text-red-500 text-xs mt-1">{fieldErrors.whatsapp_pedidos_listos}</p>
+              )}
               <p className="text-xs text-gray-500 mt-1">
                 Número de WhatsApp para notificar cuando los pedidos estén
                 listos
@@ -1587,9 +1798,14 @@ const ConfigurationPage: React.FC = () => {
                     onChange={(e) =>
                       handleChange("email_stock_critico", e.target.value)
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                      fieldErrors.email_stock_critico ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     placeholder="inventario@mirestaurante.com"
                   />
+                  {fieldErrors.email_stock_critico && (
+                    <p className="text-red-500 text-xs mt-1">{fieldErrors.email_stock_critico}</p>
+                  )}
                 </div>
               )}
             </div>

@@ -1,7 +1,8 @@
 "use strict";
+// backend/src/services/web-orders.service.ts
+// ✅ VERSIÓN FINAL: Usa tenant_config en lugar de tenant_config_pedidos
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.webOrdersService = exports.webpedidos_tipo = exports.webpedidos_estado = void 0;
-// src/services/web-orders.service.ts - VERSIÓN CORREGIDA PARA ERRORES DE TIPOS
 const prisma_1 = require("../lib/prisma");
 // Definir enums manualmente hasta que Prisma los genere
 var webpedidos_estado;
@@ -19,6 +20,14 @@ var webpedidos_tipo;
     webpedidos_tipo["RecogerEnTienda"] = "RecogerEnTienda";
     webpedidos_tipo["EntregaDomicilio"] = "EntregaDomicilio";
 })(webpedidos_tipo || (exports.webpedidos_tipo = webpedidos_tipo = {}));
+// Helper para convertir Decimal a number
+function toNumber(value) {
+    if (typeof value === 'number')
+        return value;
+    if (value && typeof value.toNumber === 'function')
+        return value.toNumber();
+    return Number(value) || 0;
+}
 exports.webOrdersService = {
     // ==================== OBTENER PEDIDOS ====================
     /**
@@ -40,7 +49,8 @@ exports.webOrdersService = {
                                 nombre: true,
                                 precio: true,
                                 foto_url: true,
-                                descripcion: true
+                                descripcion: true,
+                                producto_inventario_id: true
                             }
                         }
                     }
@@ -53,6 +63,86 @@ exports.webOrdersService = {
                 }
             },
             orderBy: { created_at: 'desc' }
+        });
+    },
+    async processInventoryDeduction(tenantId, orderId, userId) {
+        console.log(`🔍 [Inventario] Buscando pedido #${orderId} para tenant ${tenantId}...`);
+        const order = await prisma_1.prisma.webpedidos.findUnique({
+            where: { id: orderId },
+            include: {
+                webpedidos_detalles: {
+                    include: {
+                        productos: true
+                    }
+                }
+            }
+        });
+        if (!order) {
+            console.error(`❌ [Inventario] Pedido #${orderId} no encontrado.`);
+            return;
+        }
+        if (order.tenant_id !== tenantId) {
+            console.error(`❌ [Inventario] Mismatch de Tenant. Pedido: ${order.tenant_id}, Req: ${tenantId}`);
+            return;
+        }
+        console.log(`📦 [Inventario] Pedido encontrado. Procesando ${order.webpedidos_detalles.length} items...`);
+        // Transacción
+        await prisma_1.prisma.$transaction(async (tx) => {
+            let itemsProcesados = 0;
+            for (const detalle of order.webpedidos_detalles) {
+                const productoMenu = detalle.productos;
+                // LOG PARA VERIFICAR VINCULACIÓN
+                if (!productoMenu.producto_inventario_id) {
+                    console.log(`⚠️ [Inventario] Item "${productoMenu.nombre}" (ID: ${productoMenu.id}) NO tiene vínculo con inventario. Se salta.`);
+                    continue;
+                }
+                console.log(`✅ [Inventario] Procesando item vinculado: "${productoMenu.nombre}" -> InvID: ${productoMenu.producto_inventario_id}`);
+                const inventarioId = productoMenu.producto_inventario_id;
+                const cantidad = detalle.cantidad;
+                // A. Obtener datos
+                const productoInv = await tx.productos_inventario.findUnique({
+                    where: { id: inventarioId }
+                });
+                if (!productoInv) {
+                    console.error(`❌ [Inventario] El ID de inventario ${inventarioId} no existe en la tabla productos_inventario.`);
+                    continue;
+                }
+                // B. Calcular nuevo stock
+                const stockActual = toNumber(productoInv.stock_actual);
+                const costoUnitario = toNumber(productoInv.costo_unitario);
+                const nuevoStock = stockActual - cantidad;
+                console.log(`📉 [Inventario] Descontando: Stock Actual ${stockActual} - Cantidad ${cantidad} = Nuevo ${nuevoStock}`);
+                // C. Actualizar
+                await tx.productos_inventario.update({
+                    where: { id: inventarioId },
+                    data: {
+                        stock_actual: nuevoStock,
+                        stock_anterior: stockActual,
+                        ultimo_conteo: new Date()
+                    }
+                });
+                // D. Kardex
+                await tx.kardex.create({
+                    data: {
+                        tenant_id: tenantId,
+                        fecha: new Date(),
+                        tipo_movimiento: 'Salida',
+                        motivo: `Venta Web #${order.numero_pedido}`,
+                        producto_inventario_id: inventarioId,
+                        cantidad: cantidad,
+                        costo_unitario: costoUnitario,
+                        valor_total: cantidad * costoUnitario,
+                        saldo_cantidad: nuevoStock,
+                        saldo_valor: nuevoStock * costoUnitario,
+                        documento_tipo: 'PedidoWeb',
+                        documento_id: orderId,
+                        usuario_id: userId || null,
+                        observaciones: 'Descuento automático por entrega de pedido web'
+                    }
+                });
+                itemsProcesados++;
+            }
+            console.log(`🏁 [Inventario] Proceso finalizado. Items descontados: ${itemsProcesados}`);
         });
     },
     /**
@@ -73,7 +163,8 @@ exports.webOrdersService = {
                                 nombre: true,
                                 descripcion: true,
                                 precio: true,
-                                foto_url: true
+                                foto_url: true,
+                                producto_inventario_id: true
                             }
                         }
                     }
@@ -120,20 +211,27 @@ exports.webOrdersService = {
         const subtotal = items.reduce((sum, item) => {
             return sum + (Number(item.precio) * Number(item.cantidad));
         }, 0);
-        // Calcular costo de envío
-        const config = await this.getOrderConfig(tenantId);
+        // ✅ CAMBIO: Obtener config desde tenant_config
+        const tenantConfig = await prisma_1.prisma.tenant_config.findUnique({
+            where: { tenant_id: tenantId }
+        });
+        if (!tenantConfig) {
+            throw new Error('Configuración del tenant no encontrada');
+        }
+        // ✅ CAMBIO: Calcular costo de envío desde tenant_config
         let costoEnvio = 0;
         if (tipo_pedido === 'EntregaDomicilio') {
-            costoEnvio = Number(config.costo_envio_estandar);
+            costoEnvio = toNumber(tenantConfig.costo_delivery);
             // Envío gratis si supera cierto monto
             if (subtotal >= 50) {
                 costoEnvio = 0;
             }
         }
         const total = subtotal + costoEnvio;
-        // Verificar monto mínimo
-        if (Number(config.monto_minimo_pedido) > 0 && subtotal < Number(config.monto_minimo_pedido)) {
-            throw new Error(`El pedido mínimo es de $${config.monto_minimo_pedido}`);
+        // ✅ CAMBIO: Verificar monto mínimo desde tenant_config
+        const montoMinimo = toNumber(tenantConfig.monto_minimo_pedido);
+        if (montoMinimo > 0 && subtotal < montoMinimo) {
+            throw new Error(`El pedido mínimo es de S/ ${montoMinimo.toFixed(2)}`);
         }
         // Generar número de pedido único
         const timestamp = Date.now();
@@ -175,7 +273,8 @@ exports.webOrdersService = {
                                 id: true,
                                 nombre: true,
                                 precio: true,
-                                foto_url: true
+                                foto_url: true,
+                                producto_inventario_id: true
                             }
                         }
                     }
@@ -219,7 +318,8 @@ exports.webOrdersService = {
                                 id: true,
                                 nombre: true,
                                 precio: true,
-                                foto_url: true
+                                foto_url: true,
+                                producto_inventario_id: true
                             }
                         }
                     }
@@ -274,7 +374,8 @@ exports.webOrdersService = {
     },
     // ==================== CONFIGURACIÓN ====================
     /**
-     * Obtener la configuración de pedidos del tenant
+     * ✅ MANTIENE COMPATIBILIDAD: Obtener configuración de pedidos
+     * Retorna tenant_config_pedidos para emails y notificaciones
      */
     async getOrderConfig(tenantId) {
         let config = await prisma_1.prisma.tenant_config_pedidos.findUnique({
@@ -291,12 +392,7 @@ exports.webOrdersService = {
                     notif_pedido_listo: true,
                     email_asunto_confirmado: 'Confirmación de tu pedido',
                     email_asunto_cancelado: 'Actualización sobre tu pedido',
-                    email_asunto_listo: '¡Tu pedido está listo!',
-                    costo_envio_estandar: 0,
-                    monto_minimo_pedido: 0,
-                    tiempo_preparacion_promedio: 30,
-                    horario_apertura: '08:00',
-                    horario_cierre: '22:00'
+                    email_asunto_listo: '¡Tu pedido está listo!'
                 }
             });
         }
@@ -326,11 +422,16 @@ exports.webOrdersService = {
     },
     // ==================== UTILIDADES ====================
     /**
-     * Calcular el costo de envío para un pedido
+     * ✅ ACTUALIZADO: Calcular el costo de envío desde tenant_config
      */
     async calculateShippingCost(tenantId, subtotal, address) {
-        const config = await this.getOrderConfig(tenantId);
-        let costoEnvio = Number(config.costo_envio_estandar);
+        const config = await prisma_1.prisma.tenant_config.findUnique({
+            where: { tenant_id: tenantId }
+        });
+        if (!config) {
+            return 0;
+        }
+        let costoEnvio = toNumber(config.costo_delivery);
         // Envío gratis si supera cierto monto (configurable)
         if (subtotal >= 50) {
             costoEnvio = 0;
@@ -338,15 +439,20 @@ exports.webOrdersService = {
         return costoEnvio;
     },
     /**
-     * Validar un pedido antes de crearlo
+     * ✅ ACTUALIZADO: Validar un pedido antes de crearlo usando tenant_config
      */
     async validateOrder(tenantId, items) {
         // Validar que haya items
         if (!items || items.length === 0) {
             throw new Error('El pedido debe contener al menos un producto');
         }
-        // Obtener configuración
-        const config = await this.getOrderConfig(tenantId);
+        // Obtener configuración desde tenant_config
+        const config = await prisma_1.prisma.tenant_config.findUnique({
+            where: { tenant_id: tenantId }
+        });
+        if (!config) {
+            throw new Error('Configuración del tenant no encontrada');
+        }
         // Verificar disponibilidad de productos
         const productIds = items.map(item => item.id);
         const productos = await prisma_1.prisma.productos.findMany({
@@ -364,12 +470,13 @@ exports.webOrdersService = {
         // Calcular subtotal con precios reales de la BD
         const subtotal = items.reduce((sum, item) => {
             const producto = productos.find((p) => p.id === item.id);
-            const precio = producto ? Number(producto.precio) : 0;
+            const precio = producto ? toNumber(producto.precio) : 0;
             return sum + (precio * item.cantidad);
         }, 0);
-        // Verificar monto mínimo
-        if (Number(config.monto_minimo_pedido) > 0 && subtotal < Number(config.monto_minimo_pedido)) {
-            throw new Error(`El pedido mínimo es de $${config.monto_minimo_pedido}`);
+        // ✅ CAMBIO: Verificar monto mínimo desde tenant_config
+        const montoMinimo = toNumber(config.monto_minimo_pedido);
+        if (montoMinimo > 0 && subtotal < montoMinimo) {
+            throw new Error(`El pedido mínimo es de S/ ${montoMinimo.toFixed(2)}`);
         }
         return {
             valid: true,
@@ -449,7 +556,7 @@ exports.webOrdersService = {
             pedidosHoy,
             pedidosPendientes,
             pedidosEnPreparacion,
-            ventasHoy: Number(ventasHoy._sum.total || 0)
+            ventasHoy: toNumber(ventasHoy._sum.total || 0)
         };
     },
     /**
@@ -469,7 +576,7 @@ exports.webOrdersService = {
         return stats.map((stat) => ({
             estado: stat.estado,
             cantidad: stat._count.id,
-            totalVentas: Number(stat._sum.total || 0)
+            totalVentas: toNumber(stat._sum.total || 0)
         }));
     },
     /**
@@ -485,7 +592,8 @@ exports.webOrdersService = {
                             select: {
                                 id: true,
                                 nombre: true,
-                                precio: true
+                                precio: true,
+                                producto_inventario_id: true
                             }
                         }
                     }

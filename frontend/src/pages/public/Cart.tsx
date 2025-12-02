@@ -40,7 +40,6 @@ export default function Cart() {
   const { 
     metodosPago, 
     pedidosWeb, 
-    nombreNegocio,
     isLoading: configLoading,
     validaciones 
   } = useGlobalConfig();

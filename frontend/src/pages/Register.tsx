@@ -2,8 +2,8 @@ import { useState } from 'react';
 import type { FormEvent, ChangeEvent } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom'; // Asumiendo que usas react-router-dom
-
-// El componente del icono SVG ha sido eliminado
+import { registerSchema } from '../schemas/auth.schema';
+import type { ZodIssue } from 'zod';
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -14,22 +14,24 @@ export default function RegisterPage() {
   });
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false); // Estado de carga
+  const [formErrors, setFormErrors] = useState<Record<string, string | undefined>>({});
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     
-    // Limpieza de subdominio: minúsculas y sin espacios
+    let processedValue = value;
     if (name === 'subdominio') {
-      setFormData({
-        ...formData,
-        [name]: value.toLowerCase().replace(/\s+/g, '-'),
-      });
-    } else {
-      setFormData({
-        ...formData,
-        [name]: value,
-      });
+      processedValue = value.toLowerCase().replace(/\s+/g, '-');
+    }
+    
+    setFormData({
+      ...formData,
+      [name]: processedValue,
+    });
+
+    if (formErrors[name]) {
+      setFormErrors(prev => ({ ...prev, [name]: undefined }));
     }
   };
 
@@ -37,29 +39,35 @@ export default function RegisterPage() {
     e.preventDefault();
     setMessage('');
     setError('');
-    setIsLoading(true); // Iniciar carga
 
-    if (!formData.password) {
-      setError('La contraseña es requerida');
-      setIsLoading(false); // Detener carga
+    const validationResult = registerSchema.safeParse(formData);
+    if (!validationResult.success) {
+      const issues = validationResult.error.issues;
+      const newErrors: Record<string, string> = {};
+      issues.forEach((issue: ZodIssue) => {
+        const path = issue.path[0];
+        if (typeof path === 'string') {
+          newErrors[path] = issue.message;
+        }
+      });
+      setFormErrors(newErrors);
       return;
     }
+    
+    setFormErrors({});
+    setIsLoading(true);
 
     try {
       const API_URL = 'http://localhost:3000/api/auth/register-tenant';
-      const response = await axios.post(API_URL, formData);
+      const response = await axios.post(API_URL, validationResult.data);
 
       console.log('Respuesta del servidor:', response.data);
 
-      // En src/pages/Register.tsx - Asegúrate de que redirige correctamente
-      // Busca esta parte y déjala así (ya está correcta):
-
-      const subdominio = formData.subdominio.toLowerCase();
+      const subdominio = validationResult.data.subdominio.toLowerCase();
       const currentPort = window.location.port;
       const ROOT_DOMAIN = 'localhost'; 
       const newLoginUrl = `http://${subdominio}.${ROOT_DOMAIN}:${currentPort}/login`;
 
-      // Redirección
       window.location.href = newLoginUrl;
     } catch (err) {
       console.error('Error al registrar:', err);
@@ -69,19 +77,15 @@ export default function RegisterPage() {
         setError('No se pudo conectar con el servidor');
       }
     } finally {
-      setIsLoading(false); // Detener carga
+      setIsLoading(false);
     }
   };
 
   return (
-    // Contenedor principal que centra el formulario
     <div className="flex items-center justify-center min-h-screen px-4 py-12 bg-slate-100 font-sans">
-      
       <div className="w-full max-w-md p-8 space-y-6 bg-white border rounded-xl shadow-lg border-slate-200">
         
-        {/* Encabezado con logo y título */}
         <div className="flex flex-col items-center space-y-4">
-          {/* El <LogoIcon /> ha sido eliminado de aquí */}
           <h2 className="text-3xl font-bold text-center text-slate-900">
             Crea tu espacio de trabajo
           </h2>
@@ -90,8 +94,7 @@ export default function RegisterPage() {
           </p>
         </div>
 
-        {/* Formulario */}
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
           
           <div>
             <label
@@ -108,9 +111,10 @@ export default function RegisterPage() {
                 value={formData.nombre_empresa}
                 onChange={handleChange}
                 required
-                className="block w-full rounded-md border-0 py-2.5 px-3.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+                className={`block w-full rounded-md border-0 py-2.5 px-3.5 text-slate-900 shadow-sm ring-1 ring-inset placeholder:text-slate-400 focus:ring-2 focus:ring-inset sm:text-sm sm:leading-6 ${formErrors.nombre_empresa ? 'ring-red-500' : 'ring-slate-300 focus:ring-blue-600'}`}
               />
             </div>
+            {formErrors.nombre_empresa && <p className="text-red-500 text-xs mt-1">{formErrors.nombre_empresa}</p>}
           </div>
 
           <div>
@@ -129,12 +133,13 @@ export default function RegisterPage() {
                 value={formData.subdominio}
                 onChange={handleChange}
                 required
-                className="block w-full rounded-md border-0 py-2.5 px-3.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+                className={`block w-full rounded-md border-0 py-2.5 px-3.5 text-slate-900 shadow-sm ring-1 ring-inset placeholder:text-slate-400 focus:ring-2 focus:ring-inset sm:text-sm sm:leading-6 ${formErrors.subdominio ? 'ring-red-500' : 'ring-slate-300 focus:ring-blue-600'}`}
               />
             </div>
             <p className="mt-2 text-xs text-slate-500">
-              {formData.subdominio ? `Tu URL será: ${formData.subdominio}.localhost:puerto` : "Tu URL de acceso única."}
+              {formData.subdominio ? `Tu URL será: ${formData.subdominio}.localhost:${window.location.port}` : "Tu URL de acceso única."}
             </p>
+            {formErrors.subdominio && <p className="text-red-500 text-xs mt-1">{formErrors.subdominio}</p>}
           </div>
 
           <div>
@@ -153,9 +158,10 @@ export default function RegisterPage() {
                 value={formData.email_admin}
                 onChange={handleChange}
                 required
-                className="block w-full rounded-md border-0 py-2.5 px-3.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+                className={`block w-full rounded-md border-0 py-2.5 px-3.5 text-slate-900 shadow-sm ring-1 ring-inset placeholder:text-slate-400 focus:ring-2 focus:ring-inset sm:text-sm sm:leading-6 ${formErrors.email_admin ? 'ring-red-500' : 'ring-slate-300 focus:ring-blue-600'}`}
               />
             </div>
+            {formErrors.email_admin && <p className="text-red-500 text-xs mt-1">{formErrors.email_admin}</p>}
           </div>
 
           <div>
@@ -174,12 +180,12 @@ export default function RegisterPage() {
                 value={formData.password}
                 onChange={handleChange}
                 required
-                className="block w-full rounded-md border-0 py-2.5 px-3.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+                className={`block w-full rounded-md border-0 py-2.5 px-3.5 text-slate-900 shadow-sm ring-1 ring-inset placeholder:text-slate-400 focus:ring-2 focus:ring-inset sm:text-sm sm:leading-6 ${formErrors.password ? 'ring-red-500' : 'ring-slate-300 focus:ring-blue-600'}`}
               />
             </div>
+            {formErrors.password && <p className="text-red-500 text-xs mt-1">{formErrors.password}</p>}
           </div>
 
-          {/* Botón de envío con estado de carga y CORRECCIÓN de focus-visible */}
           <button
             type="submit"
             disabled={isLoading}
@@ -195,7 +201,6 @@ export default function RegisterPage() {
             )}
           </button>
 
-          {/* Mensajes de error o éxito */}
           {message && (
             <p className="text-sm text-center text-green-600">
               {message}
@@ -209,8 +214,7 @@ export default function RegisterPage() {
 
         </form>
 
-        {/* Link para iniciar sesión */}
-        <p className="text-sm text-center text-slate-600">
+        <p className="text-sm text-center text-slate-600 mt-6 pt-4 border-t border-slate-100">
           ¿Ya tienes una cuenta?{' '}
           <Link to="/login" className="font-semibold text-blue-600 hover:text-blue-500">
             Inicia sesión aquí
@@ -221,4 +225,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-

@@ -1,7 +1,9 @@
-// frontend/src/components/team/CreateEmployeeModal.tsx - VERSIÓN COMPLETA CON SALARIO
+// frontend/src/components/team/CreateEmployeeModal.tsx - VERSIÓN COMPLETA CON ZOD
 import React, { useState, useEffect } from 'react';
 import { type ApiEmpleado, type ApiRol, type CreateEmpleadoData, type UpdateEmpleadoData } from '../../types';
 import { XIcon, UserIcon, MailIcon, PhoneIcon, IdCardIcon, LockIcon, DollarSignIcon, CalendarIcon } from '../icons';
+import { createEmployeeSchema } from '../../schemas/empleado.schema';
+import type { ZodIssue } from 'zod';
 
 interface CreateEmployeeModalProps {
     isOpen: boolean;
@@ -32,7 +34,7 @@ export const CreateEmployeeModal: React.FC<CreateEmployeeModalProps> = ({
         fecha_ingreso: ''
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [errors, setErrors] = useState<Record<string, string>>({});
+    const [formErrors, setFormErrors] = useState<Record<string, string | undefined>>({});
 
     const isEditMode = !!empleado;
 
@@ -65,21 +67,41 @@ export const CreateEmployeeModal: React.FC<CreateEmployeeModalProps> = ({
                     fecha_ingreso: ''
                 });
             }
-            setErrors({});
+            setFormErrors({});
         }
     }, [isOpen, empleado, roles]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value, type } = e.target;
         const checked = (e.target as HTMLInputElement).checked;
+        
+        let processedValue = value;
+        
+        // Validación en tiempo real para DNI (solo números, máximo 8)
+        if (name === 'documento_identidad') {
+            processedValue = value.replace(/\D/g, '').slice(0, 8);
+        }
+        
+        // Validación en tiempo real para teléfono (solo números, máximo 9, debe empezar con 9)
+        if (name === 'telefono') {
+            let cleanValue = value.replace(/\D/g, '');
+            
+            // Si el primer dígito no es 9, limpiar el valor
+            if (cleanValue.length > 0 && cleanValue[0] !== '9') {
+                cleanValue = cleanValue.replace(/^[0-8]/, '');
+            }
+            
+            processedValue = cleanValue.slice(0, 9);
+        }
 
         setFormData(prev => ({
             ...prev,
-            [name]: type === 'checkbox' ? checked : (name === 'rol_id' ? Number(value) : value)
+            [name]: type === 'checkbox' ? checked : (name === 'rol_id' ? Number(processedValue) : processedValue)
         }));
 
-        if (errors[name]) {
-            setErrors(prev => {
+        // Limpiar error si existe
+        if (formErrors[name]) {
+            setFormErrors(prev => {
                 const newErrors = { ...prev };
                 delete newErrors[name];
                 return newErrors;
@@ -87,42 +109,44 @@ export const CreateEmployeeModal: React.FC<CreateEmployeeModalProps> = ({
         }
     };
 
-    const validate = (): boolean => {
-        const newErrors: Record<string, string> = {};
-
-        if (!formData.nombre.trim()) {
-            newErrors.nombre = 'El nombre es requerido';
-        }
-
-        if (!formData.email.trim()) {
-            newErrors.email = 'El email es requerido';
-        } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-            newErrors.email = 'Email inválido';
-        }
-
-        if (!formData.rol_id || formData.rol_id === 0) {
-            newErrors.rol_id = 'Debes seleccionar un rol';
-        }
-
-        if (formData.requiere_login && !isEditMode && !formData.password) {
-            newErrors.password = 'La contraseña es requerida para usuarios con acceso al sistema';
-        }
-
-        if (formData.password && formData.password.length < 8) {
-            newErrors.password = 'La contraseña debe tener al menos 8 caracteres';
-        }
-
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!validate()) {
+        // Preparar datos para validación (convertir campos vacíos a undefined)
+        const dataToValidate = {
+            ...formData,
+            documento_identidad: formData.documento_identidad || undefined,
+            telefono: formData.telefono || undefined,
+            salario: formData.salario || undefined,
+            fecha_ingreso: formData.fecha_ingreso || undefined,
+        };
+
+        const validationResult = createEmployeeSchema.safeParse(dataToValidate);
+
+        if (!validationResult.success) {
+            const issues = validationResult.error.issues;
+            const newErrors: Record<string, string> = {};
+            issues.forEach((issue: ZodIssue) => {
+                const path = issue.path[0];
+                if (typeof path === 'string') {
+                    newErrors[path] = issue.message;
+                }
+            });
+            setFormErrors(newErrors);
+            
+            // Desplazar al primer error
+            const firstErrorField = Object.keys(newErrors)[0];
+            if (firstErrorField) {
+                const element = document.querySelector(`[name="${firstErrorField}"]`);
+                if (element) {
+                    (element as HTMLElement).focus();
+                }
+            }
+            
             return;
         }
 
+        setFormErrors({});
         setIsSubmitting(true);
 
         try {
@@ -130,20 +154,20 @@ export const CreateEmployeeModal: React.FC<CreateEmployeeModalProps> = ({
 
             if (isEditMode) {
                 dataToSubmit = {
-                    nombre: formData.nombre,
-                    email: formData.email,
-                    rol_id: formData.rol_id,
-                    documento_identidad: formData.documento_identidad || undefined,
-                    telefono: formData.telefono || undefined,
-                    salario: formData.salario || undefined,
-                    fecha_ingreso: formData.fecha_ingreso || undefined,
+                    nombre: validationResult.data.nombre,
+                    email: validationResult.data.email,
+                    rol_id: validationResult.data.rol_id,
+                    documento_identidad: validationResult.data.documento_identidad || undefined,
+                    telefono: validationResult.data.telefono || undefined,
+                    salario: validationResult.data.salario || undefined,
+                    fecha_ingreso: validationResult.data.fecha_ingreso || undefined,
                 };
             } else {
                 dataToSubmit = {
-                    ...formData,
-                    password: formData.requiere_login && formData.password ? formData.password : undefined,
-                    salario: formData.salario || undefined,
-                    fecha_ingreso: formData.fecha_ingreso || undefined,
+                    ...validationResult.data,
+                    password: validationResult.data.requiere_login && validationResult.data.password ? validationResult.data.password : undefined,
+                    salario: validationResult.data.salario || undefined,
+                    fecha_ingreso: validationResult.data.fecha_ingreso || undefined,
                 };
             }
 
@@ -203,12 +227,12 @@ export const CreateEmployeeModal: React.FC<CreateEmployeeModalProps> = ({
                                             value={formData.nombre}
                                             onChange={handleChange}
                                             className={`w-full pl-10 pr-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                                                errors.nombre ? 'border-red-500' : 'border-gray-300'
+                                                formErrors.nombre ? 'border-red-500' : 'border-gray-300'
                                             }`}
                                             placeholder="Ej: Juan Pérez"
                                         />
                                     </div>
-                                    {errors.nombre && <p className="text-red-500 text-sm mt-1">{errors.nombre}</p>}
+                                    {formErrors.nombre && <p className="text-red-500 text-sm mt-1">{formErrors.nombre}</p>}
                                 </div>
 
                                 {/* Email */}
@@ -224,18 +248,18 @@ export const CreateEmployeeModal: React.FC<CreateEmployeeModalProps> = ({
                                             value={formData.email}
                                             onChange={handleChange}
                                             className={`w-full pl-10 pr-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                                                errors.email ? 'border-red-500' : 'border-gray-300'
+                                                formErrors.email ? 'border-red-500' : 'border-gray-300'
                                             }`}
                                             placeholder="empleado@restaurante.com"
                                         />
                                     </div>
-                                    {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+                                    {formErrors.email && <p className="text-red-500 text-sm mt-1">{formErrors.email}</p>}
                                 </div>
 
                                 {/* Documento */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Documento de Identidad
+                                        Documento de Identidad (DNI)
                                     </label>
                                     <div className="relative">
                                         <IdCardIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -244,10 +268,17 @@ export const CreateEmployeeModal: React.FC<CreateEmployeeModalProps> = ({
                                             name="documento_identidad"
                                             value={formData.documento_identidad}
                                             onChange={handleChange}
-                                            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                            placeholder="DNI o RUC"
+                                            maxLength={8}
+                                            className={`w-full pl-10 pr-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                                                formErrors.documento_identidad ? 'border-red-500' : 'border-gray-300'
+                                            }`}
+                                            placeholder="87654321"
                                         />
                                     </div>
+                                    {formErrors.documento_identidad && (
+                                        <p className="text-red-500 text-sm mt-1">{formErrors.documento_identidad}</p>
+                                    )}
+                                    <p className="text-xs text-gray-500 mt-1">8 dígitos numéricos exactos (opcional)</p>
                                 </div>
 
                                 {/* Teléfono */}
@@ -262,10 +293,17 @@ export const CreateEmployeeModal: React.FC<CreateEmployeeModalProps> = ({
                                             name="telefono"
                                             value={formData.telefono}
                                             onChange={handleChange}
-                                            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                            placeholder="+51 999 999 999"
+                                            maxLength={9}
+                                            className={`w-full pl-10 pr-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                                                formErrors.telefono ? 'border-red-500' : 'border-gray-300'
+                                            }`}
+                                            placeholder="912345678"
                                         />
                                     </div>
+                                    {formErrors.telefono && (
+                                        <p className="text-red-500 text-sm mt-1">{formErrors.telefono}</p>
+                                    )}
+                                    <p className="text-xs text-gray-500 mt-1">9 dígitos, debe comenzar con 9 (ej: 912345678) (opcional)</p>
                                 </div>
                             </div>
                         </div>
@@ -284,7 +322,7 @@ export const CreateEmployeeModal: React.FC<CreateEmployeeModalProps> = ({
                                         value={formData.rol_id}
                                         onChange={handleChange}
                                         className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                                            errors.rol_id ? 'border-red-500' : 'border-gray-300'
+                                            formErrors.rol_id ? 'border-red-500' : 'border-gray-300'
                                         }`}
                                     >
                                         <option value={0}>Seleccionar rol...</option>
@@ -294,7 +332,7 @@ export const CreateEmployeeModal: React.FC<CreateEmployeeModalProps> = ({
                                             </option>
                                         ))}
                                     </select>
-                                    {errors.rol_id && <p className="text-red-500 text-sm mt-1">{errors.rol_id}</p>}
+                                    {formErrors.rol_id && <p className="text-red-500 text-sm mt-1">{formErrors.rol_id}</p>}
                                 </div>
 
                                 {/* Checkbox Acceso */}
@@ -330,12 +368,12 @@ export const CreateEmployeeModal: React.FC<CreateEmployeeModalProps> = ({
                                                 value={formData.password}
                                                 onChange={handleChange}
                                                 className={`w-full pl-10 pr-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                                                    errors.password ? 'border-red-500' : 'border-gray-300'
+                                                    formErrors.password ? 'border-red-500' : 'border-gray-300'
                                                 }`}
                                                 placeholder="Mínimo 8 caracteres"
                                             />
                                         </div>
-                                        {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
+                                        {formErrors.password && <p className="text-red-500 text-sm mt-1">{formErrors.password}</p>}
                                         {!isEditMode && (
                                             <p className="text-xs text-gray-500 mt-1">
                                                 Si no defines contraseña, se generará una temporal automáticamente

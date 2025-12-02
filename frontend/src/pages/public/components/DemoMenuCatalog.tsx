@@ -1,6 +1,6 @@
 // src/pages/public/components/DemoMenuCatalog.tsx - VERSIÓN SIMPLIFICADA
-import { useState, useEffect } from 'react';
-import { Search, Filter, Leaf, Flame, Award, Sparkles, ShoppingBag } from 'lucide-react';
+import { useState } from 'react';
+import { Search, Filter, Award, ShoppingBag } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../../context/CartContext';
 import type { Producto } from '../../../types';

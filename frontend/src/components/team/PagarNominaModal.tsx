@@ -5,9 +5,10 @@ import {
   DollarSignIcon, 
   CheckCircleIcon, 
   TrendingDownIcon,
-  ExclamationIcon // Asegúrate de importar este icono o XCircleIcon
+  ExclamationIcon
 } from '../icons'; 
 import toast from 'react-hot-toast';
+import { pagarNominaSchema } from '../../schemas/finanzas.schema';
 
 interface Props {
   isOpen: boolean;
@@ -41,12 +42,12 @@ const PagarNominaModal: React.FC<Props> = ({ isOpen, onClose, empleadoId, onPaym
 
       Promise.all([fetchCalculo, fetchTipos])
         .then(([data]) => setCalculo(data))
-        .catch(err => toast.error("Error cargando datos"))
+        .catch(() => toast.error("Error cargando datos"))
         .finally(() => setLoading(false));
     } else {
         setCalculo(null);
     }
-  }, [isOpen, empleadoId]);
+  }, [isOpen, empleadoId, calcularPagoNomina, getTiposGasto]);
 
   const handlePagar = async (forzar: boolean = false) => {
     if (!calculo || !tipoGastoSueldoId) {
@@ -54,26 +55,33 @@ const PagarNominaModal: React.FC<Props> = ({ isOpen, onClose, empleadoId, onPaym
         return;
     }
 
-    // Doble confirmación si ya está pagado
     if (calculo.ya_pagado_mes_actual && !forzar) {
         if(!window.confirm("⚠️ ADVERTENCIA CRÍTICA ⚠️\n\nEste empleado YA RECIBIÓ un pago este mes.\n\n¿Estás 100% seguro de que quieres pagarle de nuevo (ej. un bono extra)?")) return;
-    } else if (!window.confirm(`¿Confirmar pago de S/ ${calculo.total_pagar.toFixed(2)} a ${calculo.empleado}?`)) {
+    } else if (!forzar && !window.confirm(`¿Confirmar pago de S/ ${calculo.total_pagar.toFixed(2)} a ${calculo.empleado}?`)) {
+        return;
+    }
+
+    const descuentosIds = calculo.descuentos_detalle.map((d: any) => d.id);
+    const dataToValidate = {
+        tipo_gasto_id: tipoGastoSueldoId,
+        fecha: new Date().toISOString(),
+        monto: calculo.total_pagar,
+        descripcion: `Pago de Nómina: ${calculo.empleado} (Mes Actual)`,
+        metodo_pago: 'Efectivo',
+        descuentos_ids: descuentosIds,
+    };
+
+    const validationResult = pagarNominaSchema.safeParse(dataToValidate);
+
+    if (!validationResult.success) {
+        toast.error("Datos de pago inválidos. No se pudo procesar.");
+        console.error("Zod validation errors:", validationResult.error.issues);
         return;
     }
 
     setProcessing(true);
     try {
-        const descuentosIds = calculo.descuentos_detalle.map((d: any) => d.id);
-
-        await createGastoOperativo({
-            tipo_gasto_id: tipoGastoSueldoId,
-            fecha: new Date().toISOString(),
-            monto: calculo.total_pagar,
-            descripcion: `Pago de Nómina: ${calculo.empleado} (Mes Actual)`,
-            metodo_pago: 'Efectivo',
-            // @ts-ignore
-            descuentos_ids: descuentosIds 
-        });
+        await createGastoOperativo(validationResult.data);
 
         toast.success("¡Pago registrado exitosamente!");
         onPaymentSuccess();
@@ -95,7 +103,6 @@ const PagarNominaModal: React.FC<Props> = ({ isOpen, onClose, empleadoId, onPaym
       ) : calculo ? (
         <div className="space-y-6">
            
-           {/* 🛑 ALERTA SI YA SE PAGÓ */}
            {calculo.ya_pagado_mes_actual && (
                <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
                    <div className="text-red-600 p-1 bg-white rounded-full shadow-sm">
@@ -152,10 +159,9 @@ const PagarNominaModal: React.FC<Props> = ({ isOpen, onClose, empleadoId, onPaym
            <div className="flex justify-end gap-3 pt-2">
               <button onClick={onClose} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">Cancelar</button>
               
-              {/* Botón condicional */}
               {calculo.ya_pagado_mes_actual ? (
                   <button 
-                    onClick={() => handlePagar(true)} // Pasa 'true' para forzar
+                    onClick={() => handlePagar(true)}
                     disabled={processing || !tipoGastoSueldoId}
                     className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium shadow-sm flex items-center gap-2"
                   >

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useTeamManagement } from '../../../hooks/useTeamManagement';
 import { NominaTab } from '../../../components/team/NominaTab';
 import { 

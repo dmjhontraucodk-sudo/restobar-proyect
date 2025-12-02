@@ -1,5 +1,5 @@
 "use strict";
-// backend/src/controllers/cierreInventario.controller.ts - VERSIÓN CORREGIDA
+// backend/src/controllers/cierreInventario.controller.ts - ARCHIVO NUEVO
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getCierreEstadisticas = exports.finalizarCierre = exports.updateCierreInventario = exports.createCierreInventario = exports.getCierreById = exports.getCierresInventario = void 0;
 const client_1 = require("@prisma/client");
@@ -116,6 +116,21 @@ const createCierreInventario = async (req, res) => {
         const tenantId = req.tenantId;
         const empleadoId = req.userId;
         const { fecha_inicio, fecha_fin, tipo_cierre, observaciones, detalles } = req.body;
+        console.log('📋 [DEBUG] Datos recibidos:', {
+            tenantId,
+            empleadoId,
+            fecha_inicio,
+            fecha_fin,
+            tipo_cierre,
+            detallesCount: detalles?.length
+        });
+        // Validar tenantId y empleadoId
+        if (!tenantId) {
+            return res.status(400).json({ error: 'TenantId no encontrado en la solicitud' });
+        }
+        if (!empleadoId) {
+            return res.status(400).json({ error: 'Usuario no autenticado correctamente' });
+        }
         // Validaciones
         if (!fecha_inicio || !fecha_fin || !tipo_cierre) {
             return res.status(400).json({
@@ -139,10 +154,11 @@ const createCierreInventario = async (req, res) => {
                     error: `Producto con ID ${detalle.producto_inventario_id} no encontrado`
                 });
             }
-            const stockSistema = new client_1.Prisma.Decimal(producto.stock_actual);
+            const stockSistema = new client_1.Prisma.Decimal(producto.stock_actual || 0);
             const stockFisico = new client_1.Prisma.Decimal(detalle.stock_fisico);
             const diferencia = stockFisico.minus(stockSistema);
-            const valorDiferencia = diferencia.mul(producto.costo_unitario);
+            const costoUnitario = new client_1.Prisma.Decimal(producto.costo_unitario || 0);
+            const valorDiferencia = diferencia.mul(costoUnitario);
             totalDiferencias = totalDiferencias.plus(valorDiferencia.abs());
             detallesConDatos.push({
                 producto_inventario_id: detalle.producto_inventario_id,
@@ -242,10 +258,11 @@ const updateCierreInventario = async (req, res) => {
                 });
                 if (!producto)
                     continue;
-                const stockSistema = new client_1.Prisma.Decimal(producto.stock_actual);
+                const stockSistema = new client_1.Prisma.Decimal(producto.stock_actual || 0);
                 const stockFisico = new client_1.Prisma.Decimal(detalle.stock_fisico);
                 const diferencia = stockFisico.minus(stockSistema);
-                const valorDiferencia = diferencia.mul(producto.costo_unitario);
+                const costoUnitario = new client_1.Prisma.Decimal(producto.costo_unitario || 0);
+                const valorDiferencia = diferencia.mul(costoUnitario);
                 totalDiferencias = totalDiferencias.plus(valorDiferencia.abs());
                 detallesConDatos.push({
                     producto_inventario_id: detalle.producto_inventario_id,
@@ -396,12 +413,12 @@ const getCierreEstadisticas = async (req, res) => {
         }
         // Calcular estadísticas
         const totalProductos = cierre.detalles.length;
-        // CORRECCIÓN: Los campos diferencia y valor_diferencia son NOT NULL en el schema
         const diferenciasPositivas = cierre.detalles.filter(d => new client_1.Prisma.Decimal(d.diferencia).greaterThan(0)).length;
         const diferenciasNegativas = cierre.detalles.filter(d => new client_1.Prisma.Decimal(d.diferencia).lessThan(0)).length;
         const valorTotalMermas = cierre.detalles
             .filter(d => d.tipo_diferencia === 'Merma')
             .reduce((sum, d) => sum + parseFloat(d.valor_diferencia.toString()), 0);
+        // Productos con mayor diferencia (absoluta)
         const productosMayorDiferencia = cierre.detalles
             .map(d => ({
             producto: d.productos_inventario.nombre,
@@ -410,6 +427,7 @@ const getCierreEstadisticas = async (req, res) => {
         }))
             .sort((a, b) => Math.abs(b.valor) - Math.abs(a.valor))
             .slice(0, 5);
+        // Diferencias por tipo
         const diferenciasPorTipo = cierre.detalles
             .filter(d => d.tipo_diferencia)
             .reduce((acc, d) => {

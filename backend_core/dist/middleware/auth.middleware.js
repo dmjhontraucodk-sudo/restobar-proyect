@@ -17,8 +17,12 @@ const validateToken = (req, res, next) => {
         }
         // 3. Verificar el token
         const payload = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
-        // 4. Si el token es válido, guardamos el payload (info del usuario) en req.user
+        // 4. Si el token es válido, guardamos el payload en req.user
         req.user = payload;
+        // ✨ NUEVO: También exponer en el formato que esperan algunos controladores
+        req.userId = payload.id;
+        req.tenantId = payload.tenant_id;
+        req.rolId = payload.rol_id;
         console.log('🔐 AUTH MIDDLEWARE - User authenticated:', {
             id: payload.id,
             email: payload.email,

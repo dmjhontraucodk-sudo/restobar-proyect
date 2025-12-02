@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Modal from "../ui/Modal";
-import { ExclamationIcon, DollarSignIcon } from "../icons"; // Ajusta tus imports de iconos
+import { ExclamationIcon, DollarSignIcon } from "../icons";
+import { addIncidenciaSchema } from '../../schemas/team.schema';
+import type { ZodIssue } from 'zod';
 
 interface Props {
   isOpen: boolean;
@@ -24,24 +26,51 @@ const AddIncidenciaModal: React.FC<Props> = ({
   const [motivo, setMotivo] = useState("");
   const [esAdelanto, setEsAdelanto] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string | undefined>>({});
+
+  useEffect(() => {
+    if (isOpen) {
+      setMonto("");
+      setMotivo("");
+      setEsAdelanto(false);
+      setFormErrors({});
+    }
+  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!empleado || !monto || !motivo) return;
+    if (!empleado) return;
 
+    const validationResult = addIncidenciaSchema.safeParse({
+        monto: Number(monto),
+        motivo,
+        es_adelanto: esAdelanto,
+    });
+
+    if (!validationResult.success) {
+        const issues = validationResult.error.issues;
+        const newErrors: Record<string, string> = {};
+        issues.forEach((issue: ZodIssue) => {
+            const path = issue.path[0];
+            if (typeof path === 'string') {
+                newErrors[path] = issue.message;
+            }
+        });
+        setFormErrors(newErrors);
+        return;
+    }
+
+    setFormErrors({});
     setLoading(true);
     const success = await onConfirm({
       id: empleado.id,
-      monto: Number(monto),
-      motivo,
-      es_adelanto: esAdelanto,
+      monto: validationResult.data.monto,
+      motivo: validationResult.data.motivo,
+      es_adelanto: validationResult.data.es_adelanto,
     });
     setLoading(false);
 
     if (success) {
-      setMonto("");
-      setMotivo("");
-      setEsAdelanto(false);
       onClose();
     }
   };
@@ -134,11 +163,15 @@ const AddIncidenciaModal: React.FC<Props> = ({
                 ? "Ej. Emergencia familiar"
                 : "Ej. Rotura de vajilla, Tardanza"
             }
-            className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+            className={`w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none ${formErrors.motivo ? 'border-red-500' : 'border-gray-300'}`}
             value={motivo}
-            onChange={(e) => setMotivo(e.target.value)}
+            onChange={(e) => {
+              setMotivo(e.target.value);
+              if (formErrors.motivo) setFormErrors(prev => ({ ...prev, motivo: undefined }));
+            }}
             required
           />
+          {formErrors.motivo && <p className="text-red-500 text-xs mt-1">{formErrors.motivo}</p>}
         </div>
 
         <div>
@@ -153,12 +186,16 @@ const AddIncidenciaModal: React.FC<Props> = ({
               type="number"
               step="0.10"
               placeholder="0.00"
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold text-lg text-gray-800"
+              className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-bold text-lg text-gray-800 ${formErrors.monto ? 'border-red-500' : 'border-gray-300'}`}
               value={monto}
-              onChange={(e) => setMonto(e.target.value)}
+              onChange={(e) => {
+                setMonto(e.target.value);
+                if (formErrors.monto) setFormErrors(prev => ({ ...prev, monto: undefined }));
+              }}
               required
             />
           </div>
+          {formErrors.monto && <p className="text-red-500 text-xs mt-1">{formErrors.monto}</p>}
         </div>
 
         <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useDashboardApi } from './useDashboardApi';
-import { type EstadoCajaResponse, type CajaHistorialItem } from '../types';
+import { type EstadoCajaResponse } from '../types';
 import toast from 'react-hot-toast';
 
 // ✨ NUEVA INTERFAZ PARA ESTADÍSTICAS POR MÉTODO DE PAGO ✨

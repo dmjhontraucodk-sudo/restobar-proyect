@@ -1,7 +1,9 @@
 // components/menu/AddCategoryModal.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import Modal from '../ui/Modal';
 import { PlusIcon } from '../icons';
+import { addCategorySchema } from '../../schemas/menu.schema';
+import type { ZodIssue } from 'zod';
 
 interface AddCategoryModalProps {
   isOpen: boolean;
@@ -20,11 +22,34 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
   isSubmitting,
   onSubmit
 }) => {
+  const [formErrors, setFormErrors] = useState<Record<string, string | undefined>>({});
+
+  const handleLocalSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const validationResult = addCategorySchema.safeParse({ categoryName });
+
+    if (!validationResult.success) {
+        const issues = validationResult.error.issues;
+        const newErrors: Record<string, string> = {};
+        issues.forEach((issue: ZodIssue) => {
+            const path = issue.path[0];
+            if (typeof path === 'string') {
+                newErrors[path] = issue.message;
+            }
+        });
+        setFormErrors(newErrors);
+        return;
+    }
+
+    setFormErrors({});
+    onSubmit(e);
+  };
+  
   if (!isOpen) return null;
 
   return (
     <Modal title="Nueva Categoría" onClose={onClose}>
-      <form onSubmit={onSubmit} className="space-y-4">
+      <form onSubmit={handleLocalSubmit} className="space-y-4">
         <div>
           <label htmlFor="categoryName" className="block text-sm font-medium text-gray-700 mb-2">
             Nombre de la categoría
@@ -33,12 +58,16 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
             type="text" 
             id="categoryName" 
             value={categoryName} 
-            onChange={(e) => onCategoryNameChange(e.target.value)} 
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200" 
+            onChange={(e) => {
+                onCategoryNameChange(e.target.value)
+                if (formErrors.categoryName) setFormErrors(prev => ({ ...prev, categoryName: undefined }));
+            }} 
+            className={`w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${formErrors.categoryName ? 'border-red-500' : 'border-gray-300'}`} 
             placeholder="Ej. Entradas, Platos Principales, Postres..." 
             autoFocus 
             disabled={isSubmitting}
           />
+          {formErrors.categoryName && <p className="text-red-500 text-xs mt-1">{formErrors.categoryName}</p>}
         </div>
         <div className="flex justify-end space-x-3 pt-4">
           <button 

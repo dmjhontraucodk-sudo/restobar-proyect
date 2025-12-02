@@ -1,7 +1,7 @@
 // src/pages/public/hooks/useRestobarCatalog.ts
 import { useState, useEffect } from 'react';
 import { useWebApi } from '../../../hooks/useWebApi';
-import type { CategoriaMenu, Producto } from '../../../types';
+import type { CategoriaMenu } from '../../../types';
 
 
 export const useRestobarCatalog = () => {
