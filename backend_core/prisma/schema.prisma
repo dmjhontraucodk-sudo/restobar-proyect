@@ -644,7 +644,7 @@ model tenants {
   id             Int      @id @default(autoincrement())
   nombre_empresa String   @db.VarChar(255)
   subdominio     String   @unique(map: "subdominio") @db.VarChar(100)
-  isActive       Boolean? @default(false)
+  isActive       Boolean? @default(true)
   configuracion  String?  @db.LongText
   created_at     DateTime @default(now()) @db.Timestamp(0)
 

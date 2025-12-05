@@ -62,7 +62,7 @@ interface MesaDemo {
 }
 
 export default function ReservationFormDemo() {
-  const navigate = useNavigate();
+  //const navigate = useNavigate();
   
   // Estado del formulario DEMO
   const [formData, setFormData] = useState({
