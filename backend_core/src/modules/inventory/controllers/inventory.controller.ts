@@ -6,7 +6,7 @@ import { inventoryAlertsService } from '../services/inventory-alerts.service';
 // import { AuthRequest } from '@shared/middleware/auth.middleware';
 // import { RequestWithTenant } from '@shared/middleware/tenant.middleware';
 
-// // type InvRequest = AuthRequest & RequestWithTenant;
+// // // // type InvRequest = AuthRequest & RequestWithTenant;
 
 // Schemas
 const createProductoSchema = z.object({

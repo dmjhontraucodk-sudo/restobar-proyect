@@ -14,7 +14,7 @@ export const inventoryAlertsService = {
    */
   async verificarProductoAgotado(
     tenantId: number,
-    __productoInventarioId: number,
+    ____productoInventarioId: number,
     nombreProducto: string,
     stockActual: number
   ) {

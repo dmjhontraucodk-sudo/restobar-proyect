@@ -10,7 +10,7 @@ interface AuthRequest extends Request {
 
 export const reviewsController = {
   
-  async createReview(req: AuthRequest, res: Response) {
+  async createReview(req: AuthRequest, res: Response) : Promise<any> {
     try {
       const tenantId = req.tenant?.id;
       if (!tenantId) {
@@ -41,7 +41,7 @@ export const reviewsController = {
     }
   },
   
-  async getPublicReviews(req: AuthRequest, res: Response) {
+  async getPublicReviews(req: AuthRequest, res: Response) : Promise<any> {
       try {
           const tenantId = req.tenant?.id;
           if (!tenantId) {

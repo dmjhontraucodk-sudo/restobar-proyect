@@ -358,7 +358,7 @@ exports.webOrdersService = {
             });
         }
     },
-    async calculateShippingCost(tenantId, subtotal, __address) {
+    async calculateShippingCost(tenantId, subtotal, ____address) {
         const config = await prisma_service_1.prisma.tenant_config.findUnique({
             where: { tenant_id: tenantId }
         });

@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const pos_orders_controller_1 = require("../controllers/pos-orders.controller");
 const web_ready_orders_controller_1 = require("../controllers/web-ready-orders.controller");
+const cierre_pos_controller_1 = require("../controllers/cierre-pos.controller");
 const auth_middleware_1 = require("@shared/middleware/auth.middleware");
 const tenant_middleware_1 = require("@shared/middleware/tenant.middleware");
 const verifyTenantAccess_1 = require("@shared/middleware/verifyTenantAccess");
@@ -13,6 +14,7 @@ router.get('/', pos_orders_controller_1.posOrdersController.getOrdenes);
 router.post('/', pos_orders_controller_1.posOrdersController.createOrden);
 router.patch('/:id/estado', pos_orders_controller_1.posOrdersController.updateOrdenEstado);
 router.post('/:id/items', pos_orders_controller_1.posOrdersController.addItemsToOrden);
+router.patch('/:id/cierre', cierre_pos_controller_1.cierrePosController.closeOrder);
 router.get('/mesas', pos_orders_controller_1.posOrdersController.getMesasConOrdenes);
 // Web Ready Orders (Para la pantalla de despacho/repartidor)
 router.get('/web-ready', web_ready_orders_controller_1.webReadyOrdersController.getReadyOrders);

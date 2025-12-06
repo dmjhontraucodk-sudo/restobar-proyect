@@ -10,7 +10,7 @@ interface TenantRequest extends Request {
 
 export const webCatalogController = {
   
-  async getCatalog(req: TenantRequest, res: Response) {
+  async getCatalog(req: TenantRequest, res: Response) : Promise<any> {
     try {
       const tenantId = req.tenant?.id;
       

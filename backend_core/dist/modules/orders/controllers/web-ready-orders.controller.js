@@ -5,11 +5,7 @@ const zod_1 = require("zod");
 const client_1 = require("@prisma/client");
 const web_ready_orders_service_1 = require("../services/web-ready-orders.service");
 const updateStatusSchema = zod_1.z.object({
-    nuevo_estado: zod_1.z.nativeEnum(client_1.webpedidos_estado).refine(val => val === client_1.webpedidos_estado.Entregado ||
-        val === client_1.webpedidos_estado.Cancelado ||
-        val === client_1.webpedidos_estado.EnCamino, {
-        message: "Estado inválido. Solo se permite 'Entregado', 'Cancelado' o 'EnCamino'.",
-    }),
+    nuevo_estado: zod_1.z.nativeEnum(client_1.webpedidos_estado),
     razon_cancelacion: zod_1.z.string().optional(),
 });
 exports.webReadyOrdersController = {

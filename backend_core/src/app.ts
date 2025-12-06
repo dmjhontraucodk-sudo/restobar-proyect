@@ -18,6 +18,7 @@ import { mesasRoutes, tablesPublicRoutes } from '@modules/tables';
 import { tenantRoutes, tenantPublicConfigRoutes } from '@modules/tenant';
 import { catalogPublicRoutes, adminCatalogRoutes } from '@modules/catalog';
 import { reviewsRoutes } from '@modules/reviews'; //Reseñas
+import uploadRoutes from '@shared/upload/upload.routes'; // Import the new upload route
 dotenv.config();
 
 const app = express();
@@ -53,10 +54,10 @@ const corsOptions: cors.CorsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.use((_req: Request, res: Response, _next: NextFunction) => {
+app.use((_req: Request, res: Response, __next: NextFunction) => {
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Tenant-Subdomain, X-Requested-With, Accept');
   res.header('Access-Control-Expose-Headers', 'X-Tenant-Subdomain');
-  _next();
+  __next();
 });
 
 app.use(express.json());
@@ -98,6 +99,7 @@ dashboardRouter.use('/mesas', mesasRoutes);
 dashboardRouter.use('/catalog', adminCatalogRoutes);
 dashboardRouter.use('/', tenantRoutes);
 dashboardRouter.use('/', reportsRoutes);
+dashboardRouter.use('/', uploadRoutes); // Use the new upload route
 
 app.use('/api/dashboard', dashboardRouter);
 
@@ -119,7 +121,7 @@ app.use('*', (_req: Request, res: Response) => {
   });
 });
 
-app.use((error: any, _req: Request, res: Response, _next: NextFunction) => {
+app.use((error: any, _req: Request, res: Response, __next: NextFunction) => {
   console.error('💥 GLOBAL ERROR:', error);
   res.status(500).json({ 
     error: 'Error interno del servidor',

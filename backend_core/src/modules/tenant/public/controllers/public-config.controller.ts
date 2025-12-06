@@ -9,7 +9,7 @@ interface TenantRequest extends Request {
 }
 
 export const publicConfigController = {
-  async getPublicConfig(req: TenantRequest, res: Response) {
+  async getPublicConfig(req: TenantRequest, res: Response) : Promise<any> {
     try {
       const tenantId = req.tenant?.id;
       

@@ -15,7 +15,7 @@ exports.inventoryAlertsService = {
     /**
      * Verificar si un producto está agotado y enviar alerta
      */
-    async verificarProductoAgotado(tenantId, __productoInventarioId, nombreProducto, stockActual) {
+    async verificarProductoAgotado(tenantId, ____productoInventarioId, nombreProducto, stockActual) {
         try {
             const config = await tenant_config_service_1.tenantConfigService.getOperacionesConfig(tenantId);
             if (!config.alertar_agotados) {

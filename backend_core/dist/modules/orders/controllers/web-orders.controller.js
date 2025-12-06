@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.webOrdersController = void 0;
 const web_orders_service_1 = require("../services/web-orders.service");
 const email_service_1 = require("@core/email/email.service");
-const cierre_pos_service_1 = require("@modules/finance/services/cierre-pos.service");
+const cierre_pos_service_1 = require("../../orders/services/cierre-pos.service");
 // Comenta o elimina esta línea:
 // import { notificationService } from '@core/notifications/notification.service';
 const client_1 = require("@prisma/client");
@@ -81,6 +81,7 @@ exports.webOrdersController = {
                     estados_validos: Object.values(web_orders_service_1.webpedidos_estado)
                 });
             }
+            // Lógica de caja y cobro, y descuento de inventario solo cuando se ENTREGA
             if (nuevo_estado === web_orders_service_1.webpedidos_estado.Entregado) {
                 const cajaAbierta = await cierre_pos_service_1.cierrePosService.verificarCajaAbierta(tenantId, empleadoId);
                 if (!cajaAbierta) {
@@ -96,7 +97,7 @@ exports.webOrdersController = {
                     const pedidoParaCaja = await web_orders_service_1.webOrdersService.getWebOrderById(tenantId, orderId);
                     if (!pedidoParaCaja)
                         return res.status(404).json({ error: 'Pedido no encontrado' });
-                    const metodoPago = client_1.pagos_metodo_pago.Efectivo;
+                    const metodoPago = client_1.pagos_metodo_pago.Efectivo; // Asumiendo efectivo por defecto para cobro admin
                     const montoTotal = toNumber(pedidoParaCaja.total);
                     await cierre_pos_service_1.cierrePosService.registrarVentaEnCaja({
                         tenantId,
@@ -106,6 +107,7 @@ exports.webOrdersController = {
                         metodoPago: metodoPago,
                         tipoDocumento: 'WebPedido'
                     });
+                    console.log(`✅ Venta registrada en caja para pedido ${orderId}`);
                 }
                 catch (cajaError) {
                     return res.status(500).json({
@@ -114,13 +116,16 @@ exports.webOrdersController = {
                         details: cajaError.message
                     });
                 }
+                // ✅ Descuento de inventario aquí, para productos "cerrados" (con ID)
                 try {
                     await web_orders_service_1.webOrdersService.processInventoryDeduction(tenantId, orderId, empleadoId);
+                    console.log(`✅ Inventario descontado para pedido ${orderId} (estado: Entregado)`);
                 }
                 catch (invError) {
+                    console.error(`❌ Error al descontar inventario para pedido ${orderId}:`, invError.message);
                     return res.status(500).json({
                         success: false,
-                        error: 'Error al actualizar el inventario',
+                        error: 'Error al descontar el inventario para el pedido.',
                         details: invError.message
                     });
                 }

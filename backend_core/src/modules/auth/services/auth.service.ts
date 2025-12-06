@@ -61,7 +61,7 @@ export const authService = {
             if (existingSubdomain) throw new Error('Este subdominio ya está en uso.');
 
             // Comentamos la variable no usada o la eliminamos
-            // const __existingEmail = await prisma.empleados.findUnique({ 
+            // const ____existingEmail = await prisma.empleados.findUnique({ 
             //     where: { 
             //         tenant_id_email: { tenant_id: 0, email: email_admin }
             //     }

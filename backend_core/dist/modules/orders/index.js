@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.pedidosWebFlowService = exports.webReadyOrdersService = exports.webOrdersService = exports.ordenesPosService = exports.ordenesService = exports.pedidosWebFlowController = exports.webReadyOrdersController = exports.webOrdersController = exports.posOrdersController = exports.webPublicRoutes = exports.webAdminRoutes = exports.ordersRoutes = void 0;
+exports.cierrePosService = exports.pedidosWebFlowService = exports.webReadyOrdersService = exports.webOrdersService = exports.ordenesPosService = exports.ordenesService = exports.cierrePosController = exports.pedidosWebFlowController = exports.webReadyOrdersController = exports.webOrdersController = exports.posOrdersController = exports.webPublicRoutes = exports.webAdminRoutes = exports.ordersRoutes = void 0;
 var orders_routes_1 = require("./routes/orders.routes");
 Object.defineProperty(exports, "ordersRoutes", { enumerable: true, get: function () { return __importDefault(orders_routes_1).default; } });
 var web_admin_routes_1 = require("./routes/web-admin.routes");
@@ -18,6 +18,8 @@ var web_ready_orders_controller_1 = require("./controllers/web-ready-orders.cont
 Object.defineProperty(exports, "webReadyOrdersController", { enumerable: true, get: function () { return web_ready_orders_controller_1.webReadyOrdersController; } });
 var pedidos_web_flow_controller_1 = require("./controllers/pedidos-web-flow.controller");
 Object.defineProperty(exports, "pedidosWebFlowController", { enumerable: true, get: function () { return pedidos_web_flow_controller_1.pedidosWebFlowController; } });
+var cierre_pos_controller_1 = require("./controllers/cierre-pos.controller");
+Object.defineProperty(exports, "cierrePosController", { enumerable: true, get: function () { return cierre_pos_controller_1.cierrePosController; } });
 var pos_orders_service_1 = require("./services/pos-orders.service");
 Object.defineProperty(exports, "ordenesService", { enumerable: true, get: function () { return pos_orders_service_1.ordenesService; } });
 var ordenes_pos_service_1 = require("./services/ordenes-pos.service");
@@ -28,3 +30,5 @@ var web_ready_orders_service_1 = require("./services/web-ready-orders.service");
 Object.defineProperty(exports, "webReadyOrdersService", { enumerable: true, get: function () { return web_ready_orders_service_1.webReadyOrdersService; } });
 var pedidos_web_flow_service_1 = require("./services/pedidos-web-flow.service");
 Object.defineProperty(exports, "pedidosWebFlowService", { enumerable: true, get: function () { return pedidos_web_flow_service_1.pedidosWebFlowService; } });
+var cierre_pos_service_1 = require("./services/cierre-pos.service");
+Object.defineProperty(exports, "cierrePosService", { enumerable: true, get: function () { return cierre_pos_service_1.cierrePosService; } });

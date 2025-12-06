@@ -24,6 +24,9 @@ const mapWebPedidoToOutput = (pedido) => ({
 exports.webReadyOrdersService = {
     async getReadyOrders(tenantId) {
         const estadosListos = [
+            client_1.webpedidos_estado.Pendiente,
+            client_1.webpedidos_estado.Confirmado,
+            client_1.webpedidos_estado.EnPreparacion,
             client_1.webpedidos_estado.ListoParaRecoger,
             client_1.webpedidos_estado.EnCamino,
         ];

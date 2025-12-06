@@ -270,7 +270,7 @@ const AddPlatoModal: React.FC<AddPlatoModalProps> = ({
             <option value="">-- Sin vincular (Solo Venta) --</option>
             {insumos.map((insumo) => (
               <option key={insumo.id} value={insumo.id}>
-                📦 {insumo.nombre} (Stock: {Number(insumo.stock_actual).toFixed(0)} {insumo.unidad_medida?.abreviatura})
+                📦 {insumo.nombre} (Stock: {insumo.stock_actual?.toFixed(0) || 'N/A'} {insumo.unidad_medida?.abreviatura || 'un'})
               </option>
             ))}
           </select>

@@ -14,9 +14,9 @@ export const gastosService = {
         });
     },
 
-    async getById(__tenantId: number, id: number) {
+    async getById(tenantId: number, id: number) {
         return await prisma.gastos.findFirst({
-            where: { id, tenant_id: __tenantId }, // Cambiado: tenantId → __tenantId
+            where: { id, tenant_id: tenantId },
             include: {
                 tipos_gasto: true,
                 proveedores: true,
@@ -26,13 +26,13 @@ export const gastosService = {
         });
     },
 
-    async create(__tenantId: number, userId: number, data: any) {
+    async create(tenantId: number, userId: number, data: any) {
         const { tipo_gasto_id, proveedor_id, fecha, monto, numero_documento, descripcion, metodo_pago, descuentos_ids } = data;
 
         return await prisma.$transaction(async (tx) => {
             const gasto = await tx.gastos.create({
                 data: {
-                    tenant_id: __tenantId, // Cambiado: tenantId → __tenantId
+                    tenant_id: tenantId, // Cambiado: tenantId → tenantId
                     tipo_gasto_id,
                     proveedor_id: proveedor_id || null,
                     fecha: new Date(fecha),
@@ -51,7 +51,7 @@ export const gastosService = {
 
             if (descuentos_ids && Array.isArray(descuentos_ids) && descuentos_ids.length > 0) {
                 await tx.descuentos_empleados.updateMany({
-                    where: { id: { in: descuentos_ids }, tenant_id: __tenantId }, // Cambiado: tenantId → __tenantId
+                    where: { id: { in: descuentos_ids }, tenant_id: tenantId }, // Cambiado: tenantId → tenantId
                     data: { estado: 'Aplicado', gasto_id: gasto.id }
                 });
             }
@@ -60,9 +60,9 @@ export const gastosService = {
         });
     },
 
-    async update(__tenantId: number, id: number, data: any) {
+    async update(tenantId: number, id: number, data: any) {
         return await prisma.gastos.update({
-            where: { id },
+            where: { id, tenant_id: tenantId },
             data: {
                 ...data,
                 fecha: data.fecha ? new Date(data.fecha) : undefined
@@ -71,14 +71,14 @@ export const gastosService = {
         });
     },
 
-    async delete(__tenantId: number, id: number) {
+    async delete(tenantId: number, id: number) {
         return await prisma.$transaction([
             prisma.descuentos_empleados.updateMany({
-                where: { gasto_id: id },
+                where: { gasto_id: id, tenant_id: tenantId },
                 data: { estado: 'Pendiente', gasto_id: null }
             }),
             prisma.gastos.delete({
-                where: { id }
+                where: { id, tenant_id: tenantId }
             })
         ]);
     },

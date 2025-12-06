@@ -24,10 +24,10 @@ const updateOrderItemsSchema = z.object({
     items: z.array(ordenItemSchema).min(1, "Debe añadir al menos un item."),
 }).strict();
 
-// El esquema __updateEstadoSchema está comentado, así que no necesitas pagos_metodo_pago
-// const __updateEstadoSchema = z.object({
+// El esquema ____updateEstadoSchema está comentado, así que no necesitas pagos___metodo_pago
+// const ____updateEstadoSchema = z.object({
 //   estado: z.nativeEnum(ordenes_estado),
-//   __metodo_pago: z.nativeEnum(pagos_metodo_pago).optional(), // Si necesitas esto, entonces sí necesitas la importación
+//   ____metodo_pago: z.nativeEnum(pagos___metodo_pago).optional(), // Si necesitas esto, entonces sí necesitas la importación
 // }).strict();
 
 export const posOrdersController = {
@@ -192,7 +192,7 @@ export const posOrdersController = {
             }
 
             const ordenId = parseInt(req.params.id);
-            const { estado, __metodo_pago: _metodo_pago } = req.body; // _metodo_pago no se usa
+            const { estado, ____metodo_pago: ___metodo_pago } = req.body; // ___metodo_pago no se usa
 
             if (estado === 'Pagada') {
                  return res.status(400).json({ error: "Para cerrar la orden y pagar, use el endpoint de cierre." });

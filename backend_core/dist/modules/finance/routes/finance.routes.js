@@ -5,7 +5,6 @@ const caja_controller_1 = require("../controllers/caja.controller");
 const gastos_controller_1 = require("../controllers/gastos.controller");
 const finanzas_controller_1 = require("../controllers/finanzas.controller");
 const nomina_controller_1 = require("../controllers/nomina.controller");
-const cierre_pos_controller_1 = require("../controllers/cierre-pos.controller");
 const auth_middleware_1 = require("@shared/middleware/auth.middleware");
 const tenant_middleware_1 = require("@shared/middleware/tenant.middleware");
 const verifyTenantAccess_1 = require("@shared/middleware/verifyTenantAccess");
@@ -30,6 +29,6 @@ router.get('/finanzas/resumen', finanzas_controller_1.finanzasController.getResu
 router.get('/nomina', nomina_controller_1.nominaController.getNomina);
 router.get('/nomina/estadisticas', nomina_controller_1.nominaController.getEstadisticasNomina);
 router.get('/nomina/calcular/:id', nomina_controller_1.nominaController.calcularPagoEmpleado);
+router.post('/nomina/pagar/:id', nomina_controller_1.nominaController.pagarNomina);
 // CIERRE POS (Aunque es de órdenes, afecta caja)
-router.patch('/ordenes/:id/cierre', cierre_pos_controller_1.cierrePosController.closeOrder);
 exports.default = router;

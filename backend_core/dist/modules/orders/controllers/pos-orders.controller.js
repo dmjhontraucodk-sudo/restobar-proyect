@@ -18,18 +18,20 @@ const createOrdenSchema = zod_1.z.object({
 const updateOrderItemsSchema = zod_1.z.object({
     items: zod_1.z.array(ordenItemSchema).min(1, "Debe añadir al menos un item."),
 }).strict();
-// El esquema __updateEstadoSchema está comentado, así que no necesitas pagos_metodo_pago
-// const __updateEstadoSchema = z.object({
+// El esquema ____updateEstadoSchema está comentado, así que no necesitas pagos___metodo_pago
+// const ____updateEstadoSchema = z.object({
 //   estado: z.nativeEnum(ordenes_estado),
-//   __metodo_pago: z.nativeEnum(pagos_metodo_pago).optional(), // Si necesitas esto, entonces sí necesitas la importación
+//   ____metodo_pago: z.nativeEnum(pagos___metodo_pago).optional(), // Si necesitas esto, entonces sí necesitas la importación
 // }).strict();
 exports.posOrdersController = {
     async getOrdenes(req, res) {
         try {
             const tenantId = req.user?.tenant_id;
             if (!tenantId || tenantId !== req.tenant?.id) {
+                console.log('DEBUG: Acceso prohibido por tenantId.');
                 return res.status(403).json({ error: 'Acceso prohibido.' });
             }
+            console.log('DEBUG: Validando query params:', req.query);
             const querySchema = zod_1.z.object({
                 estado: zod_1.z.nativeEnum(client_1.ordenes_estado).optional(),
                 fechaInicio: zod_1.z.string().datetime().optional(),
@@ -37,6 +39,7 @@ exports.posOrdersController = {
             });
             const validation = querySchema.safeParse(req.query);
             if (!validation.success) {
+                console.log('DEBUG: Query params inválidos:', validation.error.issues);
                 return res.status(400).json({ error: 'Parámetros de filtro inválidos', details: validation.error.issues });
             }
             const { estado, fechaInicio, fechaFin } = validation.data;
@@ -53,6 +56,7 @@ exports.posOrdersController = {
                 if (fechaFin)
                     whereClause.created_at.lte = new Date(fechaFin);
             }
+            console.log('DEBUG: Cláusula WHERE para Prisma:', whereClause);
             const ordenes = await prisma_service_1.prisma.ordenes.findMany({
                 where: whereClause,
                 include: {
@@ -66,10 +70,11 @@ exports.posOrdersController = {
                 },
                 orderBy: { created_at: 'desc' }
             });
+            console.log(`DEBUG: Órdenes encontradas: ${ordenes.length}`);
             return res.status(200).json(ordenes);
         }
         catch (error) {
-            console.error('Error en getOrdenes:', error);
+            console.error('DEBUG: Error en getOrdenes (catch block):', error);
             return res.status(500).json({ error: 'Error interno del servidor.' });
         }
     },
@@ -148,7 +153,7 @@ exports.posOrdersController = {
                 return res.status(403).json({ error: 'Acceso prohibido.' });
             }
             const ordenId = parseInt(req.params.id);
-            const { estado, __metodo_pago: _metodo_pago } = req.body; // _metodo_pago no se usa
+            const { estado, ____metodo_pago: ___metodo_pago } = req.body; // ___metodo_pago no se usa
             if (estado === 'Pagada') {
                 return res.status(400).json({ error: "Para cerrar la orden y pagar, use el endpoint de cierre." });
             }

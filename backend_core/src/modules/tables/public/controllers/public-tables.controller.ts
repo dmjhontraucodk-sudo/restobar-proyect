@@ -14,7 +14,7 @@ export const publicTablesController = {
    * GET /api/web/mesas/disponibles
    * Obtiene las mesas disponibles del tenant para reservas públicas
    */
-  async getAvailableTables(req: TenantRequest, res: Response) {
+  async getAvailableTables(req: TenantRequest, res: Response) : Promise<any> {
     try {
       const tenantId = req.tenant?.id;
       

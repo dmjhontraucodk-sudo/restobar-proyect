@@ -7,7 +7,7 @@ const inventory_alerts_service_1 = require("../services/inventory-alerts.service
 // Comenta o elimina las importaciones no usadas
 // import { AuthRequest } from '@shared/middleware/auth.middleware';
 // import { RequestWithTenant } from '@shared/middleware/tenant.middleware';
-// // type InvRequest = AuthRequest & RequestWithTenant;
+// // // // type InvRequest = AuthRequest & RequestWithTenant;
 // Schemas
 const createProductoSchema = zod_1.z.object({
     nombre: zod_1.z.string().min(1),

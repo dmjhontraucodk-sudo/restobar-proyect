@@ -7,9 +7,7 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const morgan_1 = __importDefault(require("morgan"));
 const dotenv_1 = __importDefault(require("dotenv"));
-const auth_middleware_1 = require("@shared/middleware/auth.middleware");
 const tenant_middleware_1 = require("@shared/middleware/tenant.middleware");
-const verifyTenantAccess_1 = require("@shared/middleware/verifyTenantAccess");
 const cron_service_1 = require("@core/cron/cron.service");
 // Modules
 const auth_1 = require("@modules/auth");
@@ -22,6 +20,9 @@ const reports_1 = require("@modules/reports");
 const employees_1 = require("@modules/employees");
 const tables_1 = require("@modules/tables");
 const tenant_1 = require("@modules/tenant");
+const catalog_1 = require("@modules/catalog");
+const reviews_1 = require("@modules/reviews"); //Reseñas
+const upload_routes_1 = __importDefault(require("@shared/upload/upload.routes")); // Import the new upload route
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 // --- Configuración de CORS ---
@@ -55,10 +56,10 @@ const corsOptions = {
     exposedHeaders: ['X-Tenant-Subdomain']
 };
 app.use((0, cors_1.default)(corsOptions));
-app.use((_req, res, _next) => {
+app.use((_req, res, __next) => {
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Tenant-Subdomain, X-Requested-With, Accept');
     res.header('Access-Control-Expose-Headers', 'X-Tenant-Subdomain');
-    _next();
+    __next();
 });
 app.use(express_1.default.json());
 app.use((0, morgan_1.default)('dev'));
@@ -66,49 +67,34 @@ app.use((0, morgan_1.default)('dev'));
 // 1. AUTH (Público)
 app.use('/api/auth', auth_1.authRoutes);
 // 2. WEB PÚBLICA (Requiere Tenant pero no Usuario)
-// Montamos todas las rutas públicas bajo /api/web
 const webRouter = express_1.default.Router();
-webRouter.use(tenant_middleware_1.tenantMiddleware); // Aplicar middleware de tenant
-webRouter.use('/orders', orders_1.webPublicRoutes); // /api/web/orders
-webRouter.use('/reservations', reservations_1.reservationsPublicRoutes); // /api/web/reservations
-webRouter.use('/', kitchen_1.ticketRoutes); // /api/web/orders/:n/ticket (Ticket route is /orders/:n/ticket in module)
+webRouter.use(tenant_middleware_1.tenantMiddleware);
+webRouter.use('/orders', orders_1.webPublicRoutes);
+webRouter.use('/reservations', reservations_1.reservationsPublicRoutes);
+webRouter.use('/catalog', catalog_1.catalogPublicRoutes);
+webRouter.use('/config', tenant_1.tenantPublicConfigRoutes);
+webRouter.use('/mesas', tables_1.tablesPublicRoutes);
+webRouter.use('/reviews', reviews_1.reviewsRoutes); // Reseñas
+webRouter.use('/', kitchen_1.ticketRoutes);
 app.use('/api/web', webRouter);
 // 3. DASHBOARD (Privado: Auth + Tenant + Access)
 const dashboardRouter = express_1.default.Router();
-dashboardRouter.use(auth_middleware_1.validateToken, tenant_middleware_1.tenantMiddleware, verifyTenantAccess_1.verifyTenantAccess);
-dashboardRouter.use('/orders', orders_1.ordersRoutes); // POS Orders
-dashboardRouter.use('/web-orders', orders_1.webAdminRoutes); // Web Orders Admin
+dashboardRouter.use('/finance/tipos-gasto', finance_1.tiposGastoRoutes);
+dashboardRouter.use('/orders', orders_1.ordersRoutes);
+dashboardRouter.use('/web-orders', orders_1.webAdminRoutes);
 dashboardRouter.use('/reservations', reservations_1.reservationsAdminRoutes);
-dashboardRouter.use('/kitchen', kitchen_1.kitchenRoutes); // /api/dashboard/kitchen/pedidos
-dashboardRouter.use('/inventory', inventory_1.inventoryRoutes); // /api/dashboard/inventory/productos...
-dashboardRouter.use('/finance', finance_1.financeRoutes); // /api/dashboard/finance/caja...
-dashboardRouter.use('/reports', reports_1.reportsRoutes); // /api/dashboard/reports/sales...
+dashboardRouter.use('/kitchen', kitchen_1.kitchenRoutes);
+dashboardRouter.use('/inventory', inventory_1.inventoryRoutes);
+dashboardRouter.use('/inventory/compras', inventory_1.comprasRoutes);
+dashboardRouter.use('/finance', finance_1.financeRoutes);
+dashboardRouter.use('/finance/tipos-gasto', finance_1.tiposGastoRoutes);
+dashboardRouter.use('/reports', reports_1.reportsRoutes);
 dashboardRouter.use('/employees', employees_1.employeesRoutes);
 dashboardRouter.use('/mesas', tables_1.mesasRoutes);
-dashboardRouter.use('/config', tenant_1.tenantRoutes); // /api/dashboard/config/config... (Check path)
-// tenantRoutes has /config, so /api/dashboard/config/config -> let's check tenantRoutes
-// tenantRoutes: get('/config', ...). So /api/dashboard/config/config. 
-// Maybe mount at /api/dashboard/tenant? 
-// dashboard.routes.ts had: router.get('/config', ...). So it was /api/dashboard/config
-// Let's mount tenantRoutes at root of dashboard? No, conflicts.
-// Let's mount at / (root of dashboard)?
-// If I mount tenantRoutes at /api/dashboard/tenant, the route becomes /api/dashboard/tenant/config.
-// Frontend likely expects /api/dashboard/config.
-// Let's change tenantRoutes to NOT have /config prefix inside?
-// tenantRoutes has: router.get('/config', ...).
-// So if I mount it at /api/dashboard, it matches /api/dashboard/config.
-// Perfect.
+dashboardRouter.use('/catalog', catalog_1.adminCatalogRoutes);
 dashboardRouter.use('/', tenant_1.tenantRoutes);
-// Inventory routes has /productos, /categorias... so /api/dashboard/inventory/productos. Correct.
-// Finance routes: /caja/estado... so /api/dashboard/finance/caja/estado. Correct.
-// Kitchen routes: /pedidos... so /api/dashboard/kitchen/pedidos. Correct.
-// Employees routes: / (get all), /:id... so /api/dashboard/employees/. Correct.
-// Mesas routes: / (get all)... so /api/dashboard/mesas/. Correct.
-// Dashboard Info & Overview (Reports module)
-// reportsRoutes has /info, /overview.
-// Mount at /api/dashboard?
-// Then /api/dashboard/info. Correct.
 dashboardRouter.use('/', reports_1.reportsRoutes);
+dashboardRouter.use('/', upload_routes_1.default); // Use the new upload route
 app.use('/api/dashboard', dashboardRouter);
 // ==================== DIAGNÓSTICO ====================
 app.get('/health', (_req, res) => {
@@ -126,7 +112,7 @@ app.use('*', (_req, res) => {
         method: _req.method
     });
 });
-app.use((error, _req, res, _next) => {
+app.use((error, _req, res, __next) => {
     console.error('💥 GLOBAL ERROR:', error);
     res.status(500).json({
         error: 'Error interno del servidor',
