@@ -17,7 +17,7 @@ import { employeesRoutes } from '@modules/employees';
 import { mesasRoutes, tablesPublicRoutes } from '@modules/tables';
 import { tenantRoutes, tenantPublicConfigRoutes } from '@modules/tenant';
 import { catalogPublicRoutes, adminCatalogRoutes } from '@modules/catalog';
-
+import { reviewsRoutes } from '@modules/reviews'; //Reseñas
 dotenv.config();
 
 const app = express();
@@ -76,6 +76,7 @@ webRouter.use('/reservations', reservationsPublicRoutes);
 webRouter.use('/catalog', catalogPublicRoutes);
 webRouter.use('/config', tenantPublicConfigRoutes);
 webRouter.use('/mesas', tablesPublicRoutes);
+webRouter.use('/reviews', reviewsRoutes); // Reseñas
 webRouter.use('/', ticketRoutes);
 
 app.use('/api/web', webRouter);

@@ -52,10 +52,14 @@ import ProductCatalog from "@pages/public/catalog/ProductCatalogPage";
 import Cart from "@pages/public/cart/CartPage";
 import Checkout from "@pages/public/checkout/CheckoutPage";
 import ReservationForm from "@pages/public/reservation/ReservationFormPage";
+//--Reseñas--///
+import { ReviewsList } from "@features/reviews";
 
 // --- Componentes y Gestión ---
 import ProtectedRoute from "./ProtectedRoute";
 import TenantGuard from "./TenantGuard";
+
+
 
 // --- Lógica de Subdominio ---
 const getTenantId = () => {
@@ -88,6 +92,7 @@ const TenantPublicRoutes = () => (
     <Route path="/cart" element={<Cart />} />
     <Route path="/checkout" element={<Checkout />} />
     <Route path="/reservar" element={<ReservationForm />} />
+    <Route path="/reviews" element={<ReviewsList />} />
     <Route path="*" element={<Navigate to="/" />} />
   </Routes>
 );

@@ -3,6 +3,7 @@ import { useCart } from '@app/providers/CartProvider';
 import { Hero } from '@widgets/landing-sections/ui/Hero';
 import { Features } from '@widgets/landing-sections/ui/Features';
 import { MenuCatalog } from '@features/menu/products/ui/MenuCatalog';
+import { ReviewsList } from '@features/reviews';
 import { PublicHeader as Header } from '@widgets/public-header';
 import { PublicFooter as Footer } from '@widgets/public-footer';
 
@@ -23,6 +24,7 @@ export default function RestobarLanding() {
       
       <div className="min-h-screen">
         <Hero onScrollToMenu={scrollToMenu} />
+        <ReviewsList />
         <Features />
         <MenuCatalog />
       </div>

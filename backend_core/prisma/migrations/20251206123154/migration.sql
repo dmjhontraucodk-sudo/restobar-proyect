@@ -207,6 +207,7 @@ CREATE TABLE `productos` (
     `nombre` VARCHAR(255) NOT NULL,
     `descripcion` TEXT NULL,
     `precio` DECIMAL(10, 2) NOT NULL,
+    `precio_oferta` DECIMAL(10, 2) NULL,
     `foto_url` VARCHAR(2048) NULL,
     `disponible` BOOLEAN NULL DEFAULT true,
     `visible_en_web` BOOLEAN NULL DEFAULT false,
@@ -217,6 +218,7 @@ CREATE TABLE `productos` (
     `es_recomendado` BOOLEAN NULL DEFAULT false,
     `es_nuevo` BOOLEAN NULL DEFAULT false,
     `producto_inventario_id` INTEGER NULL,
+    `motivo_no_disponible` VARCHAR(255) NULL,
 
     INDEX `categoria_id`(`categoria_id`),
     INDEX `productos_tenant_id_idx`(`tenant_id`),
@@ -247,12 +249,17 @@ CREATE TABLE `webpedidos` (
     `notas` TEXT NULL,
     `created_at` TIMESTAMP(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
     `updated_at` TIMESTAMP(0) NULL,
+    `motorizado_id` INTEGER NULL,
+    `hora_salida_delivery` TIMESTAMP(0) NULL,
+    `hora_entrega_delivery` TIMESTAMP(0) NULL,
+    `tracking_url` VARCHAR(2048) NULL,
 
     INDEX `webpedidos_tenant_id_idx`(`tenant_id`),
     INDEX `cliente_id`(`cliente_id`),
     INDEX `estado`(`estado`),
     INDEX `created_at`(`created_at`),
     INDEX `hora_programada`(`hora_programada`),
+    INDEX `webpedidos_motorizado_id_idx`(`motorizado_id`),
     UNIQUE INDEX `tenant_numero_pedido`(`tenant_id`, `numero_pedido`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -291,6 +298,12 @@ CREATE TABLE `tenant_config` (
     `instagram_url` VARCHAR(500) NULL,
     `horario_apertura` VARCHAR(10) NULL DEFAULT '08:00',
     `horario_cierre` VARCHAR(10) NULL DEFAULT '22:00',
+    `ruc_emisor` VARCHAR(20) NULL,
+    `menu_web_url` VARCHAR(2048) NULL,
+    `qr_code_menu_url` VARCHAR(2048) NULL,
+    `moneda_base_codigo` VARCHAR(10) NOT NULL DEFAULT 'PEN',
+    `moneda_base_simbolo` VARCHAR(10) NOT NULL DEFAULT 'S/',
+    `monedas_visualizacion` VARCHAR(100) NULL,
     `acepta_efectivo` BOOLEAN NOT NULL DEFAULT true,
     `acepta_tarjeta` BOOLEAN NOT NULL DEFAULT false,
     `acepta_yape` BOOLEAN NOT NULL DEFAULT false,
@@ -311,14 +324,7 @@ CREATE TABLE `tenant_config` (
     `ticket_incluir_qr` BOOLEAN NOT NULL DEFAULT false,
     `ticket_mostrar_metodo` BOOLEAN NOT NULL DEFAULT true,
     `tiempo_preparacion` INTEGER NOT NULL DEFAULT 30,
-    `activar_propina` BOOLEAN NOT NULL DEFAULT false,
-    `propina_porcentaje` DECIMAL(5, 2) NULL DEFAULT 10,
-    `propina_suma_total` BOOLEAN NOT NULL DEFAULT true,
-    `activar_servicio` BOOLEAN NOT NULL DEFAULT false,
-    `servicio_porcentaje` DECIMAL(5, 2) NULL DEFAULT 10,
-    `permitir_dividir` BOOLEAN NOT NULL DEFAULT true,
-    `alertar_agotados` BOOLEAN NOT NULL DEFAULT true,
-    `auto_liberar_mesa` BOOLEAN NOT NULL DEFAULT true,
+    `alertar_agotados` BOOLEAN NOT NULL DEFAULT false,
     `pedidos_online_activos` BOOLEAN NOT NULL DEFAULT false,
     `costo_delivery` DECIMAL(10, 2) NOT NULL DEFAULT 0,
     `monto_minimo_pedido` DECIMAL(10, 2) NOT NULL DEFAULT 0,
@@ -328,36 +334,18 @@ CREATE TABLE `tenant_config` (
     `mensaje_bienvenida_web` TEXT NULL,
     `reservas_activas` BOOLEAN NOT NULL DEFAULT false,
     `dias_limite_reserva` INTEGER NOT NULL DEFAULT 7,
-    `notif_pedido_confirmado` BOOLEAN NOT NULL DEFAULT true,
-    `notif_pedido_cancelado` BOOLEAN NOT NULL DEFAULT true,
-    `notif_pedido_listo` BOOLEAN NOT NULL DEFAULT true,
-    `email_asunto_confirmado` VARCHAR(255) NULL,
-    `email_asunto_cancelado` VARCHAR(255) NULL,
-    `email_asunto_listo` VARCHAR(255) NULL,
-    `alertas_stock_bajo` BOOLEAN NOT NULL DEFAULT true,
+    `alertas_stock_bajo` BOOLEAN NOT NULL DEFAULT false,
     `nivel_alerta_stock` DECIMAL(10, 3) NOT NULL DEFAULT 10,
-    `metodo_costeo` VARCHAR(50) NOT NULL DEFAULT 'Promedio',
-    `frecuencia_cierre_inv` VARCHAR(50) NOT NULL DEFAULT 'Mensual',
     `fondo_caja_inicial` DECIMAL(10, 2) NOT NULL DEFAULT 100,
     `alerta_diferencia_monto` DECIMAL(10, 2) NOT NULL DEFAULT 50,
     `alerta_diferencia_pct` DECIMAL(5, 2) NOT NULL DEFAULT 5,
-    `requiere_obs_cierre` BOOLEAN NOT NULL DEFAULT true,
-    `permitir_multiples_cajas` BOOLEAN NOT NULL DEFAULT false,
-    `requiere_login_todos` BOOLEAN NOT NULL DEFAULT false,
-    `timeout_sesion` INTEGER NOT NULL DEFAULT 480,
-    `cambiar_pass_obligatorio` BOOLEAN NOT NULL DEFAULT true,
-    `permitir_multi_sesion` BOOLEAN NOT NULL DEFAULT false,
+    `requiere_obs_cierre` BOOLEAN NOT NULL DEFAULT false,
     `email_nuevos_pedidos` VARCHAR(255) NULL,
     `whatsapp_pedidos_listos` VARCHAR(50) NULL,
-    `notif_stock_critico` BOOLEAN NOT NULL DEFAULT true,
+    `notif_stock_critico` BOOLEAN NOT NULL DEFAULT false,
     `email_stock_critico` VARCHAR(255) NULL,
     `resumen_diario_activo` BOOLEAN NOT NULL DEFAULT false,
     `resumen_diario_hora` VARCHAR(10) NULL DEFAULT '20:00',
-    `color_primario` VARCHAR(20) NULL DEFAULT '#3B82F6',
-    `color_secundario` VARCHAR(20) NULL DEFAULT '#10B981',
-    `banner_url` VARCHAR(2048) NULL,
-    `mostrar_recomendados` BOOLEAN NOT NULL DEFAULT true,
-    `mostrar_badge_nuevo` BOOLEAN NOT NULL DEFAULT true,
     `created_at` TIMESTAMP(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
     `updated_at` TIMESTAMP(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
 
@@ -377,11 +365,6 @@ CREATE TABLE `tenant_config_pedidos` (
     `email_asunto_confirmado` VARCHAR(255) NULL,
     `email_asunto_cancelado` VARCHAR(255) NULL,
     `email_asunto_listo` VARCHAR(255) NULL,
-    `costo_envio_estandar` DECIMAL(10, 2) NOT NULL DEFAULT 0,
-    `monto_minimo_pedido` DECIMAL(10, 2) NOT NULL DEFAULT 0,
-    `tiempo_preparacion_promedio` INTEGER NOT NULL DEFAULT 30,
-    `horario_apertura` VARCHAR(50) NOT NULL DEFAULT '08:00',
-    `horario_cierre` VARCHAR(50) NOT NULL DEFAULT '22:00',
 
     UNIQUE INDEX `tenant_config_pedidos_tenant_id_key`(`tenant_id`),
     PRIMARY KEY (`id`)
@@ -394,9 +377,15 @@ CREATE TABLE `clientes` (
     `nombre` VARCHAR(255) NOT NULL,
     `email` VARCHAR(255) NULL,
     `telefono` VARCHAR(50) NULL,
+    `tipo_documento` VARCHAR(10) NULL,
+    `documento_identidad` VARCHAR(20) NULL,
+    `fecha_nacimiento` DATE NULL,
     `created_at` TIMESTAMP(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
+    `puntos_lealtad` INTEGER NOT NULL DEFAULT 0,
+    `ultimo_pedido_at` TIMESTAMP(0) NULL,
 
     UNIQUE INDEX `clientes_tenant_id_email_key`(`tenant_id`, `email`),
+    UNIQUE INDEX `cliente_documento_unico`(`tenant_id`, `tipo_documento`, `documento_identidad`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -457,11 +446,21 @@ CREATE TABLE `ordenes` (
     `created_at` TIMESTAMP(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
     `closed_at` TIMESTAMP(0) NULL,
     `webpedido_id` INTEGER NULL,
+    `tipo_comprobante` VARCHAR(50) NULL,
+    `serie_comprobante` VARCHAR(10) NULL,
+    `numero_comprobante` INTEGER NULL,
+    `igv_porcentaje` DECIMAL(5, 2) NULL DEFAULT 0.18,
+    `igv_monto` DECIMAL(10, 2) NULL DEFAULT 0.00,
+    `cliente_documento` VARCHAR(20) NULL,
+    `cliente_razon_social` VARCHAR(255) NULL,
+    `descuento_lealtad` DECIMAL(10, 2) NULL DEFAULT 0.00,
+    `regla_descuento_id` INTEGER NULL,
 
     INDEX `empleado_id`(`empleado_id`),
     INDEX `mesa_id`(`mesa_id`),
     INDEX `ordenes_tenant_id_idx`(`tenant_id`),
     INDEX `webpedido_id`(`webpedido_id`),
+    INDEX `ordenes_regla_descuento_id_idx`(`regla_descuento_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -474,10 +473,15 @@ CREATE TABLE `ordendetalles` (
     `cantidad` INTEGER NOT NULL,
     `precio_unitario` DECIMAL(10, 2) NOT NULL,
     `notas` TEXT NULL,
+    `empleado_cocinero_id` INTEGER NULL,
+    `estado_preparacion` VARCHAR(50) NULL DEFAULT 'Pendiente',
+    `regla_descuento_id` INTEGER NULL,
 
     INDEX `orden_id`(`orden_id`),
     INDEX `producto_id`(`producto_id`),
     INDEX `ordendetalles_tenant_id_idx`(`tenant_id`),
+    INDEX `ordendetalles_empleado_cocinero_id_idx`(`empleado_cocinero_id`),
+    INDEX `ordendetalles_regla_descuento_id_idx`(`regla_descuento_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -490,10 +494,15 @@ CREATE TABLE `pagos` (
     `metodo_pago` ENUM('Efectivo', 'Tarjeta', 'Transferencia', 'Otro') NOT NULL,
     `monto` DECIMAL(10, 2) NOT NULL,
     `created_at` TIMESTAMP(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
+    `moneda_pago_codigo` VARCHAR(10) NULL,
+    `monto_pago_original` DECIMAL(10, 2) NULL,
+    `tasa_conversion_real` DECIMAL(10, 4) NULL,
+    `pasarela_id` VARCHAR(255) NULL,
 
     INDEX `empleado_id`(`empleado_id`),
     INDEX `orden_id`(`orden_id`),
     INDEX `pagos_tenant_id_idx`(`tenant_id`),
+    INDEX `pagos_moneda_pago_codigo_idx`(`moneda_pago_codigo`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -524,6 +533,7 @@ CREATE TABLE `roles` (
     `nombre` VARCHAR(50) NOT NULL,
     `descripcion` TEXT NULL,
     `activo` BOOLEAN NOT NULL DEFAULT true,
+    `permisos_json` TEXT NULL,
 
     UNIQUE INDEX `nombre`(`nombre`),
     INDEX `activo_idx`(`activo`),
@@ -574,7 +584,7 @@ CREATE TABLE `tenants` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `nombre_empresa` VARCHAR(255) NOT NULL,
     `subdominio` VARCHAR(100) NOT NULL,
-    `isActive` BOOLEAN NULL DEFAULT false,
+    `isActive` BOOLEAN NULL DEFAULT true,
     `configuracion` LONGTEXT NULL,
     `created_at` TIMESTAMP(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
 
@@ -687,6 +697,133 @@ CREATE TABLE `cajas_movimientos` (
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- CreateTable
+CREATE TABLE `reseñas` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `tenant_id` INTEGER NOT NULL,
+    `cliente_id` INTEGER NOT NULL,
+    `orden_id` INTEGER NULL,
+    `empleado_id` INTEGER NULL,
+    `calificacion_general` INTEGER NULL,
+    `comentario` TEXT NULL,
+    `fecha_reseña` TIMESTAMP(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
+    `aprobada` BOOLEAN NOT NULL DEFAULT false,
+
+    UNIQUE INDEX `reseñas_orden_id_key`(`orden_id`),
+    INDEX `reseñas_cliente_id_idx`(`cliente_id`),
+    INDEX `reseñas_empleado_id_idx`(`empleado_id`),
+    UNIQUE INDEX `reseñas_tenant_id_orden_id_key`(`tenant_id`, `orden_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `reseñas_calificaciones` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `tenant_id` INTEGER NOT NULL,
+    `reseña_id` INTEGER NOT NULL,
+    `producto_id` INTEGER NULL,
+    `aspecto` VARCHAR(100) NOT NULL,
+    `calificacion` INTEGER NOT NULL,
+
+    INDEX `reseñas_calificaciones_producto_id_idx`(`producto_id`),
+    UNIQUE INDEX `reseñas_calificaciones_reseña_id_aspecto_key`(`reseña_id`, `aspecto`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `tipos_cambio` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `tenant_id` INTEGER NOT NULL,
+    `moneda_origen` VARCHAR(10) NOT NULL,
+    `moneda_destino` VARCHAR(10) NOT NULL,
+    `fecha` DATE NOT NULL,
+    `valor_compra` DECIMAL(10, 4) NOT NULL,
+    `valor_venta` DECIMAL(10, 4) NOT NULL,
+    `created_at` TIMESTAMP(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
+
+    INDEX `tipos_cambio_tenant_id_fecha_idx`(`tenant_id`, `fecha`),
+    UNIQUE INDEX `tipos_cambio_tenant_id_moneda_origen_moneda_destino_fecha_key`(`tenant_id`, `moneda_origen`, `moneda_destino`, `fecha`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `devoluciones` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `tenant_id` INTEGER NOT NULL,
+    `orden_id` INTEGER NOT NULL,
+    `empleado_id` INTEGER NOT NULL,
+    `fecha` TIMESTAMP(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
+    `monto_total` DECIMAL(10, 2) NOT NULL,
+    `motivo` TEXT NULL,
+
+    INDEX `devoluciones_tenant_id_idx`(`tenant_id`),
+    INDEX `devoluciones_orden_id_idx`(`orden_id`),
+    INDEX `devoluciones_empleado_id_idx`(`empleado_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `devoluciones_detalles` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `devolucion_id` INTEGER NOT NULL,
+    `producto_id` INTEGER NOT NULL,
+    `cantidad` INTEGER NOT NULL,
+    `motivo` TEXT NULL,
+
+    INDEX `devoluciones_detalles_devolucion_id_idx`(`devolucion_id`),
+    INDEX `devoluciones_detalles_producto_id_idx`(`producto_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `reglas_descuento` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `tenant_id` INTEGER NOT NULL,
+    `nombre` VARCHAR(100) NOT NULL,
+    `codigo` VARCHAR(20) NULL,
+    `tipo` ENUM('PORCENTAJE', 'MONTO_FIJO', 'PUNTOS_LEALTAD') NOT NULL,
+    `valor` DECIMAL(10, 2) NOT NULL,
+    `aplica_a` VARCHAR(50) NOT NULL DEFAULT 'TOTAL',
+    `fecha_inicio` TIMESTAMP(0) NOT NULL,
+    `fecha_fin` TIMESTAMP(0) NULL,
+    `activo` BOOLEAN NOT NULL DEFAULT true,
+
+    INDEX `reglas_descuento_tenant_id_idx`(`tenant_id`),
+    INDEX `reglas_descuento_activo_idx`(`activo`),
+    UNIQUE INDEX `tenant_codigo_descuento`(`tenant_id`, `codigo`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `programa_lealtad` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `tenant_id` INTEGER NOT NULL,
+    `activo` BOOLEAN NOT NULL DEFAULT false,
+    `puntos_por_sol` DECIMAL(5, 2) NOT NULL DEFAULT 0.1,
+    `monto_minimo_canje` DECIMAL(10, 2) NOT NULL DEFAULT 50,
+    `equivalencia_sol_por_punto` DECIMAL(5, 2) NOT NULL DEFAULT 0.05,
+
+    UNIQUE INDEX `programa_lealtad_tenant_id_key`(`tenant_id`),
+    INDEX `programa_lealtad_tenant_id_idx`(`tenant_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `carritos_abandonados` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `tenant_id` INTEGER NOT NULL,
+    `cliente_id` INTEGER NULL,
+    `session_id` VARCHAR(255) NULL,
+    `fecha_abandono` TIMESTAMP(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
+    `subtotal_estimado` DECIMAL(10, 2) NOT NULL,
+    `productos_json` TEXT NOT NULL,
+
+    INDEX `carritos_abandonados_tenant_id_idx`(`tenant_id`),
+    INDEX `carritos_abandonados_fecha_abandono_idx`(`fecha_abandono`),
+    INDEX `carritos_abandonados_cliente_id_idx`(`cliente_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 -- AddForeignKey
 ALTER TABLE `categorias_inventario` ADD CONSTRAINT `categorias_inventario_tenant_id_fkey` FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -769,6 +906,9 @@ ALTER TABLE `webpedidos` ADD CONSTRAINT `webpedidos_tenant_id_fkey` FOREIGN KEY 
 ALTER TABLE `webpedidos` ADD CONSTRAINT `webpedidos_cliente_id_fkey` FOREIGN KEY (`cliente_id`) REFERENCES `clientes`(`id`) ON DELETE SET NULL ON UPDATE RESTRICT;
 
 -- AddForeignKey
+ALTER TABLE `webpedidos` ADD CONSTRAINT `webpedidos_motorizado_id_fkey` FOREIGN KEY (`motorizado_id`) REFERENCES `empleados`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE `webpedidos_detalles` ADD CONSTRAINT `webpedidos_detalles_tenant_id_fkey` FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -814,6 +954,9 @@ ALTER TABLE `ordenes` ADD CONSTRAINT `ordenes_ibfk_3` FOREIGN KEY (`empleado_id`
 ALTER TABLE `ordenes` ADD CONSTRAINT `ordenes_ibfk_4` FOREIGN KEY (`webpedido_id`) REFERENCES `webpedidos`(`id`) ON DELETE SET NULL ON UPDATE RESTRICT;
 
 -- AddForeignKey
+ALTER TABLE `ordenes` ADD CONSTRAINT `ordenes_regla_descuento_id_fkey` FOREIGN KEY (`regla_descuento_id`) REFERENCES `reglas_descuento`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE `ordendetalles` ADD CONSTRAINT `ordendetalles_tenant_id_fkey` FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE ON UPDATE RESTRICT;
 
 -- AddForeignKey
@@ -821,6 +964,12 @@ ALTER TABLE `ordendetalles` ADD CONSTRAINT `ordendetalles_orden_id_fkey` FOREIGN
 
 -- AddForeignKey
 ALTER TABLE `ordendetalles` ADD CONSTRAINT `ordendetalles_producto_id_fkey` FOREIGN KEY (`producto_id`) REFERENCES `productos`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+
+-- AddForeignKey
+ALTER TABLE `ordendetalles` ADD CONSTRAINT `ordendetalles_empleado_cocinero_id_fkey` FOREIGN KEY (`empleado_cocinero_id`) REFERENCES `empleados`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `ordendetalles` ADD CONSTRAINT `ordendetalles_regla_descuento_id_fkey` FOREIGN KEY (`regla_descuento_id`) REFERENCES `reglas_descuento`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `pagos` ADD CONSTRAINT `pagos_ibfk_1` FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE ON UPDATE RESTRICT;
@@ -884,3 +1033,54 @@ ALTER TABLE `cajas_movimientos` ADD CONSTRAINT `cajas_movimientos_tenant_id_fkey
 
 -- AddForeignKey
 ALTER TABLE `cajas_movimientos` ADD CONSTRAINT `cajas_movimientos_usuario_id_fkey` FOREIGN KEY (`usuario_id`) REFERENCES `empleados`(`id`) ON DELETE RESTRICT ON UPDATE RESTRICT;
+
+-- AddForeignKey
+ALTER TABLE `reseñas` ADD CONSTRAINT `reseñas_tenant_id_fkey` FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `reseñas` ADD CONSTRAINT `reseñas_cliente_id_fkey` FOREIGN KEY (`cliente_id`) REFERENCES `clientes`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `reseñas` ADD CONSTRAINT `reseñas_empleado_id_fkey` FOREIGN KEY (`empleado_id`) REFERENCES `empleados`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `reseñas` ADD CONSTRAINT `reseñas_orden_id_fkey` FOREIGN KEY (`orden_id`) REFERENCES `ordenes`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `reseñas_calificaciones` ADD CONSTRAINT `reseñas_calificaciones_tenant_id_fkey` FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `reseñas_calificaciones` ADD CONSTRAINT `reseñas_calificaciones_reseña_id_fkey` FOREIGN KEY (`reseña_id`) REFERENCES `reseñas`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `reseñas_calificaciones` ADD CONSTRAINT `reseñas_calificaciones_producto_id_fkey` FOREIGN KEY (`producto_id`) REFERENCES `productos`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `tipos_cambio` ADD CONSTRAINT `tipos_cambio_tenant_id_fkey` FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `devoluciones` ADD CONSTRAINT `devoluciones_tenant_id_fkey` FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `devoluciones` ADD CONSTRAINT `devoluciones_orden_id_fkey` FOREIGN KEY (`orden_id`) REFERENCES `ordenes`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `devoluciones` ADD CONSTRAINT `devoluciones_empleado_id_fkey` FOREIGN KEY (`empleado_id`) REFERENCES `empleados`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `devoluciones_detalles` ADD CONSTRAINT `devoluciones_detalles_devolucion_id_fkey` FOREIGN KEY (`devolucion_id`) REFERENCES `devoluciones`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `devoluciones_detalles` ADD CONSTRAINT `devoluciones_detalles_producto_id_fkey` FOREIGN KEY (`producto_id`) REFERENCES `productos`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `reglas_descuento` ADD CONSTRAINT `reglas_descuento_tenant_id_fkey` FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `programa_lealtad` ADD CONSTRAINT `programa_lealtad_tenant_id_fkey` FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `carritos_abandonados` ADD CONSTRAINT `carritos_abandonados_tenant_id_fkey` FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `carritos_abandonados` ADD CONSTRAINT `carritos_abandonados_cliente_id_fkey` FOREIGN KEY (`cliente_id`) REFERENCES `clientes`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;

@@ -13,7 +13,6 @@ import {
   type NominaResponse,
   type CalcularPagoResponse,
   type PagarNominaData,
-  type PagarNominaResponse,
 } from '@shared/types';
 
 export const useTeamManagement = () => {

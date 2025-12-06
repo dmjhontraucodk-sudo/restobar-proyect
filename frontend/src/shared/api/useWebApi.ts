@@ -1,6 +1,7 @@
 // src/hooks/useWebApi.ts
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import type { CatalogResponse, PedidoData, OrderResponse, Producto, CreateReservationData } from '@shared/types';
+import type { CreateReviewData, PublicReview, ApiResponse } from '@shared/types/reviews.types';
 
 const API_BASE = '/api/web';
 
@@ -17,7 +18,7 @@ export const useWebApi = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const makeRequest = async <T>(endpoint: string, options: RequestInit = {}): Promise<T> => {
+  const makeRequest = useCallback(async <T>(endpoint: string, options: RequestInit = {}): Promise<T> => {
     setIsLoading(true);
     setError(null);
 
@@ -71,7 +72,7 @@ export const useWebApi = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   // Catálogo
   const getCatalog = (): Promise<CatalogResponse> => 
@@ -108,6 +109,16 @@ export const useWebApi = () => {
   const getAvailableMesas = (): Promise<ApiMesa[]> => 
     makeRequest<ApiMesa[]>(`/mesas/disponibles`);
 
+  // Reviews
+  const createReview = (data: CreateReviewData): Promise<ApiResponse<{ needsApproval: boolean }>> =>
+    makeRequest<ApiResponse<{ needsApproval: boolean }>>('/reviews', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+
+  const fetchPublicReviews = (): Promise<PublicReview[]> =>
+    makeRequest<{ data: PublicReview[] }>('/reviews/public').then(res => res.data);
+
   return {
     isLoading,
     error,
@@ -117,6 +128,8 @@ export const useWebApi = () => {
     checkAvailability,
     createOrder,
     createReservation,
-    getAvailableMesas, // ✅ NUEVO: Exportar la función
+    getAvailableMesas,
+    createReview,
+    fetchPublicReviews,
   };
 };

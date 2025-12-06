@@ -1,5 +1,3 @@
-// prisma/schema.prisma - VERSIÓN LIMPIA OPTIMIZADA
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -246,29 +244,33 @@ model categoriasmenu {
 }
 
 model productos {
-  id             Int      @id @default(autoincrement())
-  tenant_id      Int
-  categoria_id   Int
-  nombre         String   @db.VarChar(255)
-  descripcion    String?  @db.Text
-  precio         Decimal  @db.Decimal(10, 2)
-  foto_url       String?  @db.VarChar(2048)
-  disponible     Boolean? @default(true)
-  visible_en_web Boolean? @default(false)
-  es_vegetariano Boolean? @default(false)
-  es_vegano      Boolean? @default(false)
-  sin_gluten     Boolean? @default(false)
-  es_picante     Boolean? @default(false)
-  es_recomendado Boolean? @default(false)
-  es_nuevo       Boolean? @default(false)
+  id                     Int      @id @default(autoincrement())
+  tenant_id              Int
+  categoria_id           Int
+  nombre                 String   @db.VarChar(255)
+  descripcion            String?  @db.Text
+  precio                 Decimal  @db.Decimal(10, 2)
+  precio_oferta          Decimal? @db.Decimal(10, 2) // REQ 7: Precio promocional
+  foto_url               String?  @db.VarChar(2048)
+  disponible             Boolean? @default(true)
+  visible_en_web         Boolean? @default(false)
+  es_vegetariano         Boolean? @default(false)
+  es_vegano              Boolean? @default(false)
+  sin_gluten             Boolean? @default(false)
+  es_picante             Boolean? @default(false)
+  es_recomendado         Boolean? @default(false)
+  es_nuevo               Boolean? @default(false)
 
   producto_inventario_id Int?
+  motivo_no_disponible   String?  @db.VarChar(255) // REQ 8
 
-  ordendetalles       ordendetalles[]
-  tenants             tenants               @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "productos_ibfk_1")
-  categoriasmenu      categoriasmenu        @relation(fields: [categoria_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "productos_ibfk_2")
-  webpedidos_detalles webpedidos_detalles[]
-  producto_inventario productos_inventario? @relation(fields: [producto_inventario_id], references: [id])
+  ordendetalles          ordendetalles[]
+  tenants                tenants               @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "productos_ibfk_1")
+  categoriasmenu         categoriasmenu        @relation(fields: [categoria_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "productos_ibfk_2")
+  webpedidos_detalles    webpedidos_detalles[]
+  producto_inventario    productos_inventario? @relation(fields: [producto_inventario_id], references: [id])
+  reseñas_calificaciones reseñas_calificaciones[] // REQ 3
+  devoluciones_detalles  devoluciones_detalles[] // REQ 11
 
   @@index([categoria_id], map: "categoria_id")
   @@index([tenant_id])
@@ -298,10 +300,16 @@ model webpedidos {
   created_at            DateTime          @default(now()) @db.Timestamp(0)
   updated_at            DateTime?         @db.Timestamp(0)
 
+  motorizado_id         Int?              // REQ 6 & 9: Empleado motorizado asignado
+  hora_salida_delivery  DateTime?         @db.Timestamp(0) // REQ 9
+  hora_entrega_delivery DateTime?         @db.Timestamp(0) // REQ 9
+  tracking_url          String?           @db.VarChar(2048) // REQ 6
+
   tenants             tenants               @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
   clientes            clientes?             @relation(fields: [cliente_id], references: [id], onUpdate: Restrict)
   webpedidos_detalles webpedidos_detalles[]
   ordenes             ordenes[]
+  motorizado          empleados?            @relation(fields: [motorizado_id], references: [id]) // NUEVA RELACIÓN
 
   @@unique([tenant_id, numero_pedido], map: "tenant_numero_pedido")
   @@index([tenant_id])
@@ -309,6 +317,7 @@ model webpedidos {
   @@index([estado], map: "estado")
   @@index([created_at], map: "created_at")
   @@index([hora_programada], map: "hora_programada")
+  @@index([motorizado_id]) // NUEVO INDEX
 }
 
 model webpedidos_detalles {
@@ -351,6 +360,18 @@ model tenant_config {
   horario_apertura    String? @default("08:00") @db.VarChar(10)
   horario_cierre      String? @default("22:00") @db.VarChar(10)
 
+  // REQ 1: RUC del emisor
+  ruc_emisor          String? @db.VarChar(20) 
+
+  // REQ 7: Configuración de carta virtual
+  menu_web_url        String? @db.VarChar(2048) 
+  qr_code_menu_url    String? @db.VarChar(2048)
+  
+  // REQ 10: Moneda Base (NUEVO)
+  moneda_base_codigo  String  @default("PEN") @db.VarChar(10) // <-- NUEVO
+  moneda_base_simbolo String  @default("S/") @db.VarChar(10) // <-- NUEVO
+  monedas_visualizacion String? @db.VarChar(100) // <-- NUEVO: Ej. "USD,EUR"
+  
   // ========== 💵 MÉTODOS DE PAGO ==========
   acepta_efectivo      Boolean @default(true)
   acepta_tarjeta       Boolean @default(false)
@@ -437,13 +458,26 @@ model clientes {
   nombre     String   @db.VarChar(255)
   email      String?  @db.VarChar(255)
   telefono   String?  @db.VarChar(50)
+  
+  // Modificaciones para trazabilidad de documento (Busqueda)
+  tipo_documento      String?   @db.VarChar(10) // DNI, RUC, PASAPORTE, etc.
+  documento_identidad String? @db.VarChar(20) // Número de documento
+  fecha_nacimiento    DateTime? @db.Date // Para verificación o cumpleaños
+
   created_at DateTime @default(now()) @db.Timestamp(0)
+
+  puntos_lealtad   Int       @default(0) // REQ 12
+  ultimo_pedido_at DateTime? @db.Timestamp(0) // REQ 12
 
   tenants    tenants      @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "clientes_ibfk_1")
   reservas   reservas[]
   webpedidos webpedidos[]
+  reseñas    reseñas[] // REQ 3
+  carritos_abandonados carritos_abandonados[] // REQ 5
 
   @@unique([tenant_id, email])
+  // ÍNDICE ÚNICO para la búsqueda rápida por documento
+  @@unique([tenant_id, tipo_documento, documento_identidad], map: "cliente_documento_unico")
 }
 
 model empleados {
@@ -477,6 +511,10 @@ model empleados {
   movimientos_caja   cajas_movimientos[]
   kardex             kardex[]
   descuentos         descuentos_empleados[]
+  ordenes_cocinadas  ordendetalles[] @relation(name: "empleado_cocinero") // REQ 2
+  webpedidos_motorizado webpedidos[] // REQ 6
+  reseñas_recibidas  reseñas[] // REQ 3
+  devoluciones_registradas devoluciones[] // REQ 11
 
   @@unique([tenant_id, email])
   @@index([rol_id], map: "rol_id")
@@ -517,17 +555,35 @@ model ordenes {
   closed_at    DateTime?       @db.Timestamp(0)
   webpedido_id Int?
 
+  // REQ 1: Facturación
+  tipo_comprobante      String?         @db.VarChar(50)
+  serie_comprobante     String?         @db.VarChar(10)
+  numero_comprobante    Int?
+  igv_porcentaje        Decimal?        @default(0.18) @db.Decimal(5, 2)
+  igv_monto             Decimal?        @default(0.00) @db.Decimal(10, 2)
+  cliente_documento     String?         @db.VarChar(20)
+  cliente_razon_social  String?         @db.VarChar(255)
+  // REQ 12: Descuento por lealtad
+  descuento_lealtad     Decimal?        @default(0.00) @db.Decimal(10, 2) 
+
+  // REQ 12: Descuento General
+  regla_descuento_id Int? // ID de la regla de descuento total
+  
   ordendetalles ordendetalles[]
   tenants       tenants         @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "ordenes_ibfk_1")
   mesas         mesas           @relation(fields: [mesa_id], references: [id], onUpdate: Restrict, map: "ordenes_ibfk_2")
   empleados     empleados       @relation(fields: [empleado_id], references: [id], onUpdate: Restrict, map: "ordenes_ibfk_3")
   pagos         pagos[]
   webpedidos    webpedidos?     @relation(fields: [webpedido_id], references: [id], onUpdate: Restrict, map: "ordenes_ibfk_4")
+  reseñas       reseñas? // REQ 3
+  devoluciones  devoluciones[] // REQ 11
+  reglas_descuento reglas_descuento? @relation("descuento_general", fields: [regla_descuento_id], references: [id]) // NUEVA RELACIÓN
 
   @@index([empleado_id], map: "empleado_id")
   @@index([mesa_id], map: "mesa_id")
   @@index([tenant_id])
   @@index([webpedido_id], map: "webpedido_id")
+  @@index([regla_descuento_id])
 }
 
 model ordendetalles {
@@ -539,13 +595,24 @@ model ordendetalles {
   precio_unitario Decimal @db.Decimal(10, 2)
   notas           String? @db.Text
 
+  // REQ 2 & 6: Seguimiento de preparación
+  empleado_cocinero_id Int?
+  estado_preparacion   String? @default("Pendiente") @db.VarChar(50) 
+  
+  // REQ 12: Descuento de ítem
+  regla_descuento_id Int? // ID de la regla de descuento aplicada al ítem
+
   tenants   tenants   @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Restrict)
   ordenes   ordenes   @relation(fields: [orden_id], references: [id], onDelete: Cascade, onUpdate: Restrict)
   productos productos @relation(fields: [producto_id], references: [id], onUpdate: Restrict)
+  empleado_cocinero empleados? @relation(fields: [empleado_cocinero_id], references: [id], name: "empleado_cocinero") // NUEVA RELACIÓN
+  regla_descuento reglas_descuento? @relation(fields: [regla_descuento_id], references: [id]) // NUEVA RELACIÓN
 
   @@index([orden_id], map: "orden_id")
   @@index([producto_id], map: "producto_id")
   @@index([tenant_id])
+  @@index([empleado_cocinero_id])
+  @@index([regla_descuento_id])
 }
 
 model pagos {
@@ -557,6 +624,12 @@ model pagos {
   monto       Decimal           @db.Decimal(10, 2)
   created_at  DateTime          @default(now()) @db.Timestamp(0)
 
+  // NUEVOS CAMPOS DE TRAZABILIDAD DEL PAGO
+  moneda_pago_codigo String? @db.VarChar(10) // <-- NUEVO: Moneda que pagó el cliente (Ej. USD, EUR)
+  monto_pago_original Decimal? @db.Decimal(10, 2) // <-- NUEVO: Monto cobrado en la moneda original
+  tasa_conversion_real Decimal? @db.Decimal(10, 4) // <-- NUEVO: Tasa real usada por la pasarela/banco
+  pasarela_id String? @db.VarChar(255) // <-- NUEVO: ID de transacción de la pasarela
+
   tenants   tenants   @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "pagos_ibfk_1")
   ordenes   ordenes   @relation(fields: [orden_id], references: [id], onUpdate: Restrict, map: "pagos_ibfk_2")
   empleados empleados @relation(fields: [empleado_id], references: [id], onUpdate: Restrict, map: "pagos_ibfk_3")
@@ -564,6 +637,7 @@ model pagos {
   @@index([empleado_id], map: "empleado_id")
   @@index([orden_id], map: "orden_id")
   @@index([tenant_id])
+  @@index([moneda_pago_codigo]) // NUEVO INDEX
 }
 
 model reservas {
@@ -594,6 +668,8 @@ model roles {
   nombre      String      @unique(map: "nombre") @db.VarChar(50)
   descripcion String?     @db.Text
   activo      Boolean     @default(true)
+  permisos_json String? @db.Text // REQ 4: Permisos detallados para reportes/vistas
+
   empleados   empleados[]
 
   @@index([activo], map: "activo_idx")
@@ -678,6 +754,17 @@ model tenants {
   kardex                kardex[]
   cajas                 cajas[]
   cajas_movimientos     cajas_movimientos[]
+  
+  // NUEVOS MODELOS DE RELACIÓN
+  reseñas               reseñas[] // REQ 3
+  reseñas_calificaciones reseñas_calificaciones[] // REQ 3
+  tipos_cambio          tipos_cambio[] // REQ 10
+  devoluciones          devoluciones[] // REQ 11
+  // REQ 12: Descuentos y Lealtad
+  reglas_descuento      reglas_descuento[]
+  programa_lealtad      programa_lealtad?
+  // REQ 5: Ventas no concretadas
+  carritos_abandonados carritos_abandonados[]
 }
 
 model cierres_inventario {
@@ -796,6 +883,158 @@ model cajas_movimientos {
   @@index([tipo])
 }
 
+// ========== NUEVOS MODELOS DE REQUERIMIENTOS ==========
+
+// REQ 3: Reseñas del cliente
+model reseñas {
+  id                    Int                      @id @default(autoincrement())
+  tenant_id             Int
+  cliente_id            Int
+  orden_id              Int?                     @unique // Vínculo opcional con una orden específica
+  empleado_id           Int?                     // Para calificar al empleado (camarero/cajero)
+  calificacion_general  Int?                     @db.Int // Puntuación de 1 a 5
+  comentario            String?                  @db.Text
+  fecha_reseña          DateTime                 @default(now()) @db.Timestamp(0)
+  aprobada              Boolean                  @default(false)
+
+  tenants               tenants                  @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  clientes              clientes                 @relation(fields: [cliente_id], references: [id])
+  empleados             empleados?               @relation(fields: [empleado_id], references: [id])
+  ordenes               ordenes?                 @relation(fields: [orden_id], references: [id])
+  calificaciones_detalle reseñas_calificaciones[]
+
+  @@unique([tenant_id, orden_id])
+  @@index([cliente_id])
+  @@index([empleado_id])
+}
+
+// REQ 3: Detalle de calificaciones por aspecto/producto
+model reseñas_calificaciones {
+  id              Int     @id @default(autoincrement())
+  tenant_id       Int
+  reseña_id       Int
+  producto_id     Int?    // Para calificar un producto específico (plato)
+  aspecto         String  @db.VarChar(100) // Ej. 'Servicio', 'Ambiente', 'Calidad Plato'
+  calificacion    Int     @db.Int // Puntuación de 1 a 5
+
+  tenants         tenants   @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  reseñas         reseñas   @relation(fields: [reseña_id], references: [id], onDelete: Cascade)
+  productos       productos? @relation(fields: [producto_id], references: [id])
+
+  @@unique([reseña_id, aspecto])
+  @@index([producto_id])
+}
+
+// REQ 10: Tipo de cambio
+model tipos_cambio {
+  id               Int      @id @default(autoincrement())
+  tenant_id        Int
+  moneda_origen    String   @db.VarChar(10) // Ej. PEN
+  moneda_destino   String   @db.VarChar(10) // Ej. USD
+  fecha            DateTime @db.Date // Fecha de la tasa
+  valor_compra     Decimal  @db.Decimal(10, 4)
+  valor_venta      Decimal  @db.Decimal(10, 4)
+  created_at       DateTime @default(now()) @db.Timestamp(0)
+
+  tenants tenants @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+
+  @@unique([tenant_id, moneda_origen, moneda_destino, fecha])
+  @@index([tenant_id, fecha])
+}
+
+// REQ 11: Registro de devoluciones
+model devoluciones {
+  id           Int      @id @default(autoincrement())
+  tenant_id    Int
+  orden_id     Int
+  empleado_id  Int      // Empleado que autorizó/registró la devolución
+  fecha        DateTime @default(now()) @db.Timestamp(0)
+  monto_total  Decimal  @db.Decimal(10, 2)
+  motivo       String?  @db.Text
+
+  tenants  tenants   @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  ordenes  ordenes   @relation(fields: [orden_id], references: [id])
+  empleados empleados @relation(fields: [empleado_id], references: [id])
+  detalles devoluciones_detalles[]
+
+  @@index([tenant_id])
+  @@index([orden_id])
+  @@index([empleado_id])
+}
+
+// REQ 11: Detalle de productos devueltos
+model devoluciones_detalles {
+  id            Int     @id @default(autoincrement())
+  devolucion_id Int
+  producto_id   Int
+  cantidad      Int
+  motivo        String? @db.Text
+
+  devoluciones devoluciones @relation(fields: [devolucion_id], references: [id], onDelete: Cascade)
+  productos    productos    @relation(fields: [producto_id], references: [id])
+
+  @@index([devolucion_id])
+  @@index([producto_id])
+}
+
+// REQ 12: Reglas de Descuento (Promociones Generales y Cupones)
+model reglas_descuento {
+  id Int @id @default(autoincrement())
+  tenant_id Int
+  nombre String @db.VarChar(100)
+  codigo String? @db.VarChar(20) // Código del cupón (ej: "NAVIDAD20")
+  tipo tipo_regla_descuento
+  valor Decimal @db.Decimal(10, 2) // 0.10 para 10% ó 15.00 para S/15
+  aplica_a String @default("TOTAL") @db.VarChar(50) // 'TOTAL', 'CATEGORIA', 'PRODUCTO'
+  fecha_inicio DateTime @db.Timestamp(0)
+  fecha_fin DateTime? @db.Timestamp(0)
+  activo Boolean @default(true)
+
+  tenants tenants @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  ordenes_totales ordenes[] @relation("descuento_general")
+  ordenes_detalles ordendetalles[]
+
+  @@unique([tenant_id, codigo], map: "tenant_codigo_descuento")
+  @@index([tenant_id])
+  @@index([activo])
+  @@map("reglas_descuento")
+}
+
+// REQ 12: Configuración del Programa de Lealtad (Puntos)
+model programa_lealtad {
+  id Int @id @default(autoincrement())
+  tenant_id Int @unique
+  activo Boolean @default(false)
+  puntos_por_sol Decimal @default(0.1) @db.Decimal(5, 2) // 0.1 puntos por cada sol gastado
+  monto_minimo_canje Decimal @default(50) @db.Decimal(10, 2) // Monto mínimo de puntos para poder canjear
+  equivalencia_sol_por_punto Decimal @default(0.05) @db.Decimal(5, 2) // 1 punto equivale a 0.05 Soles
+
+  tenants tenants @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+
+  @@index([tenant_id])
+  @@map("programa_lealtad")
+}
+
+// REQ 5: Ventas No Concretadas (Carritos Abandonados)
+model carritos_abandonados {
+  id Int @id @default(autoincrement())
+  tenant_id Int
+  cliente_id Int? // Cliente registrado (FK a clientes)
+  session_id String? @db.VarChar(255) // ID de sesión para clientes no registrados
+  fecha_abandono DateTime @default(now()) @db.Timestamp(0)
+  subtotal_estimado Decimal @db.Decimal(10, 2)
+  productos_json String @db.Text // Detalle de los ítems y cantidades serializado
+
+  tenants tenants @relation(fields: [tenant_id], references: [id], onDelete: Cascade)
+  clientes clientes? @relation(fields: [cliente_id], references: [id])
+
+  @@index([tenant_id])
+  @@index([fecha_abandono])
+  @@index([cliente_id])
+  @@map("carritos_abandonados")
+}
+
+
 // ========== ENUMS ==========
 
 enum TipoCategoria {
@@ -853,4 +1092,10 @@ enum cajas_estado {
 enum cajas_tipo_mov {
   INGRESO
   EGRESO
+}
+
+enum tipo_regla_descuento {
+  PORCENTAJE
+  MONTO_FIJO
+  PUNTOS_LEALTAD // Para descuentos que se canjean con puntos
 }
