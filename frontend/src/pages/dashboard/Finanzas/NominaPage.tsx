@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
-import { useTeamManagement } from '../../../hooks/useTeamManagement';
-import { NominaTab } from '../../../components/team/NominaTab';
+import { useTeamManagement } from '@features/team/model/useTeamManagement';
+import { NominaTab } from '@features/team';
 import { 
   DollarSignIcon 
-} from '../../../components/dashboard/Sidebar/icons';
+} from '@shared/ui/Icons';
 
 const NominaPage = () => {
   // Reutilizamos el hook de equipo que ya trae la lógica de nómina

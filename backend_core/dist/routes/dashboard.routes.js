@@ -14,11 +14,11 @@ const gastos_controller_1 = require("../controller/gastos.controller");
 // ✅ IMPORTACIÓN CORREGIDA: CONTROLADOR DE CAJA (NUEVO SISTEMA)
 const caja_controller_1 = require("../controller/app/caja.controller");
 const finanzas_controller_1 = require("../controller/app/finanzas.controller");
-const reservations_controller_1 = require("../controller/auth/reservations.controller");
-const mesas_controller_1 = require("../controller/app/mesas.controller");
+const reservations_controller_1 = require("@modules/reservations/controllers/reservations.controller");
+const mesas_controller_1 = require("@modules/tables/controllers/mesas.controller");
 const cocina_controller_1 = require("../controller/app/cocina.controller");
-const empleados_controller_1 = require("../controller/app/empleados.controller");
-const roles_controller_1 = require("../controller/app/roles.controller");
+const empleados_controller_1 = require("@modules/employees/controllers/empleados.controller");
+const roles_controller_1 = require("@modules/employees/controllers/roles.controller");
 const nomina_controller_1 = require("../controller/app/nomina.controller");
 const inventory_controller_1 = require("../controller/inventory.controller");
 const cron_controller_1 = require("../controller/cron.controller");

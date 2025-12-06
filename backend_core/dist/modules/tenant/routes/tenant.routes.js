@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const tenant_config_controller_1 = require("../controllers/tenant-config.controller");
+const auth_middleware_1 = require("@shared/middleware/auth.middleware");
+const tenant_middleware_1 = require("@shared/middleware/tenant.middleware");
+const verifyTenantAccess_1 = require("@shared/middleware/verifyTenantAccess");
+const router = (0, express_1.Router)();
+router.use(auth_middleware_1.validateToken, tenant_middleware_1.tenantMiddleware, verifyTenantAccess_1.verifyTenantAccess);
+router.get('/config', tenant_config_controller_1.tenantConfigController.getConfig);
+router.put('/config', tenant_config_controller_1.tenantConfigController.updateConfig);
+router.put('/config/:section', tenant_config_controller_1.tenantConfigController.updateSection);
+router.post('/config/reset', tenant_config_controller_1.tenantConfigController.resetConfig);
+exports.default = router;

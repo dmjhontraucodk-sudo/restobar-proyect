@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { useTeamManagement } from '../../hooks/useTeamManagement';
-import { CreateEmployeeModal } from '../../components/team/CreateEmployeeModal';
-import { EmployeeTable } from '../../components/team/EmployeeTable';
-import { EmployeeCard } from '../../components/team/EmployeeCard';
-import { RolesTab } from '../../components/team/RolesTab';
-import AddIncidenciaModal from '../../components/team/AddIncidenciaModal';
-import { type ApiEmpleado } from '../../types';
+import { useTeamManagement } from '@features/team/model/useTeamManagement';
+import { 
+    CreateEmployeeModal, 
+    EmployeeTable, 
+    EmployeeCard, 
+    RolesTab, 
+    AddIncidenciaModal 
+} from '@features/team';
+import { type ApiEmpleado } from '@shared/types';
 import { 
     XCircleIcon,
     UsersIcon, 
@@ -15,7 +17,7 @@ import {
     RefreshIcon,
     PlusIcon,
     CheckCircleIcon
-} from '../../components/icons';
+} from '@shared/ui/Icons';
 
 // Funciones de validación específicas para Perú
 const validarTelefonoPeruano = (telefono: string): boolean => {

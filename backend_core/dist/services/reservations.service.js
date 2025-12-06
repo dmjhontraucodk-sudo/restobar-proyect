@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.reservationsService = exports.reservas_estado = void 0;
 // src/services/reservations.service.ts
-const prisma_1 = require("../lib/prisma");
+const prisma_service_1 = require("../shared/database/prisma.service");
 // Estado de la Reserva (Basado en tu schema.prisma)
 var reservas_estado;
 (function (reservas_estado) {
@@ -15,7 +15,7 @@ exports.reservationsService = {
     async createReservation(tenantId, data, mesaId) {
         const { cliente_nombre, cliente_email, cliente_telefono, fecha_hora, cantidad_personas, notas } = data;
         // Crear la reserva en estado Pendiente
-        return await prisma_1.prisma.reservas.create({
+        return await prisma_service_1.prisma.reservas.create({
             data: {
                 tenant_id: tenantId,
                 cliente_nombre,
@@ -37,7 +37,7 @@ exports.reservationsService = {
         if (filters?.estado) {
             where.estado = filters.estado;
         }
-        return await prisma_1.prisma.reservas.findMany({
+        return await prisma_service_1.prisma.reservas.findMany({
             where,
             include: {
                 mesas: {
@@ -51,7 +51,7 @@ exports.reservationsService = {
     * 3. Actualizar el estado de una reserva (Confirmar/Cancelar).
     */
     async updateReservationStatus(tenantId, reservationId, newStatus, mesaId) {
-        const existing = await prisma_1.prisma.reservas.findFirst({
+        const existing = await prisma_service_1.prisma.reservas.findFirst({
             where: { id: reservationId, tenant_id: tenantId }
         });
         if (!existing) {
@@ -63,20 +63,20 @@ exports.reservationsService = {
                 throw new Error('Se requiere asignar una mesa para confirmar.');
             dataToUpdate.mesa_id = mesaId;
             // Lógica adicional: Marcar mesa como Reservada (si ya no lo está)
-            await prisma_1.prisma.mesas.updateMany({
+            await prisma_service_1.prisma.mesas.updateMany({
                 where: { id: mesaId, tenant_id: tenantId },
                 data: { estado: 'Reservada' }
             });
         }
         else if (existing.mesa_id && (newStatus === reservas_estado.Cancelada || newStatus === reservas_estado.Completada)) {
             // Lógica adicional: Liberar la mesa si la reserva fue cancelada o completada
-            await prisma_1.prisma.mesas.updateMany({
+            await prisma_service_1.prisma.mesas.updateMany({
                 where: { id: existing.mesa_id, tenant_id: tenantId },
                 data: { estado: 'Libre' }
             });
             dataToUpdate.mesa_id = null;
         }
-        return await prisma_1.prisma.reservas.update({
+        return await prisma_service_1.prisma.reservas.update({
             where: { id: reservationId },
             data: dataToUpdate,
             include: { mesas: true }

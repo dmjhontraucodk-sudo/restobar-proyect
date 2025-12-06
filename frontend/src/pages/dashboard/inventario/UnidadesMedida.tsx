@@ -1,9 +1,9 @@
 // src/pages/dashboard/UnidadesMedida.tsx - VERSIÓN COMPACTA
 
 import React, { useState, useEffect } from 'react';
-import { useDashboardApi } from '../../../hooks/useDashboardApi';
+import { useDashboardApi } from '@shared/api/useDashboardApi';
 import toast from 'react-hot-toast';
-import { type UnidadMedida, type CreateUnidadMedidaData } from '../../../types';
+import { type UnidadMedida, type CreateUnidadMedidaData } from '@shared/types';
 
 const UnidadesMedida: React.FC = () => {
   const { getUnidadesMedida, createUnidadMedida, isLoading } = useDashboardApi();

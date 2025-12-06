@@ -4,7 +4,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const web_catalog_controller_1 = require("../controller/web-catalog.controller");
 const web_orders_controller_1 = require("../controller/web-orders.controller");
-const reservations_controller_1 = require("../controller/auth/reservations.controller");
+const reservations_controller_1 = require("@modules/reservations/controllers/reservations.controller");
 const auth_middleware_1 = require("../middleware/auth.middleware");
 const pedidos_web_flow_controller_1 = require("../controller/pedidos-web-flow.controller");
 const ticket_controller_1 = require("../controller/ticket.controller");

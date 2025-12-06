@@ -1,11 +1,11 @@
 // frontend/src/pages/dashboard/KitchenManagement.tsx - SOLO PEDIDOS EN COCINA
 
 import React, { useState } from 'react';
-import { useKitchenManagement, type KitchenOrder } from '../../hooks/useKitchenManagement';
+import { useKitchenManagement, type KitchenOrder } from '@features/kitchen/model/useKitchenManagement';
 import { 
     type webpedidos_estado, 
     WEBPEDIDOS_ESTADO,
-} from '../../types';
+} from '@shared/types';
 import { 
     RefreshIcon, 
     ClockIcon, 
@@ -15,7 +15,7 @@ import {
     ExclamationIcon,
     TableIcon,
     SearchIcon
-} from '../../components/icons'; 
+} from '@shared/ui/Icons'; 
 import toast from 'react-hot-toast';
 
 // --- Función Auxiliar para mapear estados a colores ---

@@ -1,9 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.reservationsController = void 0;
-const reservations_service_1 = require("../../services/reservations.service");
-const mesas_service_1 = require("../../services/mesas.service"); // ✅ IMPORTAR mesasService
-const email_service_1 = require("../../services/email.service");
+const reservations_service_1 = require("../../modules/reservations/services/reservations.service");
+const mesas_service_1 = require("../../modules/tables/services/mesas.service"); // ✅ IMPORTAR mesasService
+const email_service_1 = require("../../core/email/email.service");
 const zod_1 = require("zod");
 // ✅ ACTUALIZADO: Agregar mesa_id al esquema de validación
 const createReservationSchema = zod_1.z.object({

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useDashboardApi } from '../../../hooks/useDashboardApi';
-import { type CajaHistorialItem } from '../../../types';
+import { useDashboardApi } from '@shared/api/useDashboardApi';
+import { type CajaHistorialItem } from '@shared/types';
 import { 
   CalendarIcon, 
   SearchIcon,
   ClipboardListIcon
-} from '../../../components/icons';
+} from '@shared/ui/Icons';
 
 // Icono de Flecha para regresar (Definido localmente para evitar errores de importación)
 const ArrowLeftIcon = (props: React.SVGProps<SVGSVGElement>) => (

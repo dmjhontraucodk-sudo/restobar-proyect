@@ -1,7 +1,7 @@
 // src/pages/dashboard/inventario/ProductosInventario.tsx - VERSIÓN COMPACTA
 
 import React, { useState, useEffect } from 'react';
-import { useDashboardApi } from '../../../hooks/useDashboardApi';
+import { useDashboardApi } from '@shared/api/useDashboardApi';
 import toast from 'react-hot-toast';
 import { 
   type ProductoInventario,
@@ -9,8 +9,8 @@ import {
   type UnidadMedida,
   type CreateProductoInventarioData,
   type UpdateProductoInventarioData
-} from '../../../types';
-import { productoInventarioSchema } from '../../../schemas/inventario.schema';
+} from '@shared/types';
+import { productoInventarioSchema } from '@features/inventory/model/schemas';
 import type { ZodIssue } from 'zod';
 
 const ProductosInventario: React.FC = () => {

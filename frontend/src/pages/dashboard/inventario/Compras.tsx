@@ -1,9 +1,9 @@
 // frontend/src/pages/dashboard/inventario/Compras.tsx - CON MODAL
 
 import React, { useState, useEffect } from 'react';
-import { useDashboardApi } from '../../../hooks/useDashboardApi';
+import { useDashboardApi } from '@shared/api/useDashboardApi';
 import toast from 'react-hot-toast';
-import { type Compra, type TipoGasto, type ProductoInventario } from '../../../types';
+import { type Compra, type TipoGasto, type ProductoInventario } from '@shared/types';
 
 const Compras: React.FC = () => {
   const { 

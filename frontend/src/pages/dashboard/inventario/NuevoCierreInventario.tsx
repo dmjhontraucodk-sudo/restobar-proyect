@@ -2,14 +2,14 @@
 
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useDashboardApi } from "../../../hooks/useDashboardApi";
+import { useDashboardApi } from '@shared/api/useDashboardApi';
 import toast from "react-hot-toast";
 import {
   type ProductoInventario,
   type CreateCierreInventarioData,
   type TipoCierre,
   type TipoDiferencia,
-} from "../../../types";
+} from '@shared/types';
 
 interface ProductoConteo {
   producto: ProductoInventario;

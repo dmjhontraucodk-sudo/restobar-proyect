@@ -1,9 +1,9 @@
 // src/pages/dashboard/TiposGasto.tsx
 
 import React, { useState, useEffect } from "react";
-import { useDashboardApi } from "../../../hooks/useDashboardApi";
+import { useDashboardApi } from '@shared/api/useDashboardApi';
 import toast from "react-hot-toast";
-import { type TipoGasto, type CreateTipoGastoData } from "../../../types";
+import { type TipoGasto, type CreateTipoGastoData } from '@shared/types';
 
 const TiposGasto: React.FC = () => {
   const { getTiposGasto, createTipoGasto, isLoading } = useDashboardApi();

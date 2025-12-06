@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 
-import { useDashboardApi, type Insumo, type CreateInsumoData } from '../hooks/useDashboardApi';
+import { useDashboardApi, type Insumo, type CreateInsumoData } from '@shared/api/useDashboardApi';
 
 import toast from 'react-hot-toast';
 

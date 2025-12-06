@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useDashboardApi } from '../../../hooks/useDashboardApi';
+import { useDashboardApi } from '@shared/api/useDashboardApi';
 import { 
   CurrencyDollarIcon, 
   TrendingDownIcon, 
   ChartBarIcon,
   CalendarIcon,
-} from '../../../components/dashboard/Sidebar/icons';
+} from '@shared/ui/Icons';
 
 const FinancialPage = () => {
   const { getResumenFinanciero } = useDashboardApi();

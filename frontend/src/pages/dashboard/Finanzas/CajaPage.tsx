@@ -2,8 +2,8 @@
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useCaja } from '../../../hooks/useCaja';
-import Modal from '../../../components/ui/Modal';
+import { useCaja } from '@features/finance/model/useCaja';
+import Modal from '@shared/ui/Modal/Modal';
 
 // Importamos TUS iconos existentes
 import { 
@@ -11,7 +11,7 @@ import {
   LockIcon, 
   ClockIcon, 
   CurrencyDollarIcon
-} from '../../../components/icons'; 
+} from '@shared/ui/Icons'; 
 
 // Definimos MinusIcon localmente
 const MinusIcon = (props: React.SVGProps<SVGSVGElement>) => (

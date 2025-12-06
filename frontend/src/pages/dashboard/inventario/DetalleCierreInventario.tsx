@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useDashboardApi } from '../../../hooks/useDashboardApi';
+import { useDashboardApi } from '@shared/api/useDashboardApi';
 import toast from 'react-hot-toast';
-import { type CierreInventario, type CierreEstadisticas } from '../../../types';
+import { type CierreInventario, type CierreEstadisticas } from '@shared/types';
 
 const DetalleCierreInventario: React.FC = () => {
   const { id } = useParams<{ id: string }>();

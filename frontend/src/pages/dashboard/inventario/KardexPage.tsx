@@ -1,9 +1,9 @@
-import { useKardex } from '../../../hooks/useKardex';
+import { useKardex } from '@features/inventory/model/useKardex';
 import { 
   ClipboardListIcon, 
   FilterIcon,
   RotateCcwIcon // ✅ Importamos el icono para limpiar
-} from '../../../components/icons';
+} from '@shared/ui/Icons';
 
 const KardexPage = () => {
   const { movimientos, productosFilter, isLoading, filters, setFilters } = useKardex();

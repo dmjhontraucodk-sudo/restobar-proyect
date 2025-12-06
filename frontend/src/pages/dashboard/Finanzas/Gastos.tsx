@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { useDashboardApi } from "../../../hooks/useDashboardApi";
+import { useDashboardApi } from '@shared/api/useDashboardApi';
 import toast from "react-hot-toast";
-import Modal from "../../../components/ui/Modal";
-import { type GastoOperativo, type TipoGasto } from "../../../types";
+import Modal from "@shared/ui/Modal/Modal";
+import { type GastoOperativo, type TipoGasto } from '@shared/types';
 import { 
   TrendingDownIcon, 
   PlusIcon, 
   TrashIcon, 
   CalendarIcon, 
-  SearchIcon,
-  FilterIcon,
-  CurrencyDollarIcon
-} from "../../../components/icons";
+  SearchIcon, 
+  FilterIcon, 
+  CurrencyDollarIcon 
+} from "@shared/ui/Icons";
 
 const Gastos: React.FC = () => {
   const { getGastosOperativos, createGastoOperativo, deleteGastoOperativo, getTiposGasto, isLoading } = useDashboardApi();
