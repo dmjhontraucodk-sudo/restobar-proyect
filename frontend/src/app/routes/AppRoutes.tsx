@@ -21,12 +21,10 @@ import ReservationsManagementPage from "@pages/dashboard/reservations/Reservatio
 import TeamManagement from '@pages/dashboard/TeamManagement';
 import ConfigurationPage from '@pages/dashboard/config/ConfigurationPage';
 import ReportsPage from '@pages/dashboard/reports/ReportsPage';
-import KitchenManagementPage from '@pages/dashboard/KitchenManagement'; // Checking if this exists
+import KitchenManagementPage from '@pages/dashboard/KitchenManagement';
+import ReviewsManagementPage from "@pages/dashboard/reviews/ReviewsManagementPage";
 
 // ✨ PÁGINAS DE INVENTARIO (Legacy/To Refactor)
-// These files are in src/pages/dashboard/inventario.
-// They were NOT moved in this refactor as per plan to focus on structure first.
-// They should be imported from their current location.
 import InventarioPage from "../../pages/dashboard/inventario/InventarioPage";
 import TiposGasto from "../../pages/dashboard/inventario/TiposGasto";
 import KardexPage from "../../pages/dashboard/inventario/KardexPage";
@@ -36,7 +34,6 @@ import NuevoCierreInventario from "../../pages/dashboard/inventario/NuevoCierreI
 import DetalleCierreInventario from "../../pages/dashboard/inventario/DetalleCierreInventario";
 
 // ✨ PÁGINAS DE FINANZAS (Legacy/To Refactor)
-// These are in src/pages/dashboard/Finanzas.
 import Gastos from "../../pages/dashboard/Finanzas/Gastos";
 import CajaPage from "../../pages/dashboard/Finanzas/CajaPage";
 import HistorialCajasPage from "../../pages/dashboard/Finanzas/HistorialCajasPage";
@@ -52,8 +49,6 @@ import ProductCatalog from "@pages/public/catalog/ProductCatalogPage";
 import Cart from "@pages/public/cart/CartPage";
 import Checkout from "@pages/public/checkout/CheckoutPage";
 import ReservationForm from "@pages/public/reservation/ReservationFormPage";
-//--Reseñas--///
-import { ReviewsList } from "@features/reviews";
 
 // --- Componentes y Gestión ---
 import ProtectedRoute from "./ProtectedRoute";
@@ -92,7 +87,6 @@ const TenantPublicRoutes = () => (
     <Route path="/cart" element={<Cart />} />
     <Route path="/checkout" element={<Checkout />} />
     <Route path="/reservar" element={<ReservationForm />} />
-    <Route path="/reviews" element={<ReviewsList />} />
     <Route path="*" element={<Navigate to="/" />} />
   </Routes>
 );
@@ -122,6 +116,7 @@ const TenantPrivateRoutes = () => (
           <Route path="reservas" element={<ReservationsManagementPage />} />
           <Route path="team" element={<TeamManagement />} />
           <Route path="configuration" element={<ConfigurationPage />} />
+          <Route path="reviews" element={<ReviewsManagementPage />} />
 
           {/* 📦 INVENTARIO */}
           <Route path="inventario" element={<InventarioPage />} />

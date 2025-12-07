@@ -3,6 +3,7 @@ import cors from 'cors';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import { tenantMiddleware } from '@shared/middleware/tenant.middleware';
+import { validateToken } from '@shared/middleware/auth.middleware';
 import { cronService } from '@core/cron/cron.service';
 
 // Modules
@@ -17,7 +18,8 @@ import { employeesRoutes } from '@modules/employees';
 import { mesasRoutes, tablesPublicRoutes } from '@modules/tables';
 import { tenantRoutes, tenantPublicConfigRoutes } from '@modules/tenant';
 import { catalogPublicRoutes, adminCatalogRoutes } from '@modules/catalog';
-import { reviewsRoutes } from '@modules/reviews'; //Reseñas
+import { clientsRoutes } from '@modules/clients';
+import { reviewsRoutes, reviewsAdminRoutes } from '@modules/reviews'; //Reseñas
 import uploadRoutes from '@shared/upload/upload.routes'; // Import the new upload route
 dotenv.config();
 
@@ -78,12 +80,15 @@ webRouter.use('/catalog', catalogPublicRoutes);
 webRouter.use('/config', tenantPublicConfigRoutes);
 webRouter.use('/mesas', tablesPublicRoutes);
 webRouter.use('/reviews', reviewsRoutes); // Reseñas
+webRouter.use('/clients', clientsRoutes);
 webRouter.use('/', ticketRoutes);
 
 app.use('/api/web', webRouter);
 
 // 3. DASHBOARD (Privado: Auth + Tenant + Access)
 const dashboardRouter = express.Router();
+dashboardRouter.use(validateToken);
+dashboardRouter.use(tenantMiddleware);
 dashboardRouter.use('/finance/tipos-gasto', tiposGastoRoutes);
 dashboardRouter.use('/orders', ordersRoutes);
 dashboardRouter.use('/web-orders', webAdminRoutes);
@@ -97,6 +102,7 @@ dashboardRouter.use('/reports', reportsRoutes);
 dashboardRouter.use('/employees', employeesRoutes);
 dashboardRouter.use('/mesas', mesasRoutes);
 dashboardRouter.use('/catalog', adminCatalogRoutes);
+dashboardRouter.use('/reviews', reviewsAdminRoutes);
 dashboardRouter.use('/', tenantRoutes);
 dashboardRouter.use('/', reportsRoutes);
 dashboardRouter.use('/', uploadRoutes); // Use the new upload route

@@ -57,5 +57,49 @@ export const reviewsController = {
           // ✅ Asegurar el return en el catch
           return res.status(500).json({ error: 'Error al obtener reseñas públicas.' });
       }
+  },
+
+  async getPendingReviews(req: AuthRequest, res: Response): Promise<any> {
+    try {
+      const tenantId = req.tenant?.id;
+      if (!tenantId) {
+        return res.status(403).json({ error: 'Tenant no identificado.' });
+      }
+      const pendingReviews = await reviewsService.getPendingReviews(tenantId);
+      return res.json({ success: true, data: pendingReviews });
+    } catch (error: any) {
+      console.error('Error en getPendingReviews:', error);
+      return res.status(500).json({ error: 'Error al obtener reseñas pendientes.' });
+    }
+  },
+
+  async approveReview(req: AuthRequest, res: Response): Promise<any> {
+    try {
+      const tenantId = req.tenant?.id;
+      const { id } = req.params;
+      if (!tenantId) {
+        return res.status(403).json({ error: 'Tenant no identificado.' });
+      }
+      const approvedReview = await reviewsService.approveReview(tenantId, parseInt(id, 10));
+      return res.json({ success: true, message: 'Reseña aprobada.', data: approvedReview });
+    } catch (error: any) {
+      console.error('Error en approveReview:', error);
+      return res.status(500).json({ error: 'Error al aprobar la reseña.' });
+    }
+  },
+
+  async rejectReview(req: AuthRequest, res: Response): Promise<any> {
+    try {
+      const tenantId = req.tenant?.id;
+      const { id } = req.params;
+      if (!tenantId) {
+        return res.status(403).json({ error: 'Tenant no identificado.' });
+      }
+      await reviewsService.rejectReview(tenantId, parseInt(id, 10));
+      return res.status(204).send(); // 204 No Content for successful deletion
+    } catch (error: any) {
+      console.error('Error en rejectReview:', error);
+      return res.status(500).json({ error: 'Error al rechazar la reseña.' });
+    }
   }
 };

@@ -1,4 +1,4 @@
-// src/pages/public/checkout/CheckoutPage.tsx - SIN BOTÓN DE TICKET PARA CLIENTE
+// src/pages/public/checkout/CheckoutPage.tsx
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Truck, Store, Clock, MapPin, CheckCircle2 } from 'lucide-react';
@@ -22,6 +22,24 @@ const validarEmail = (email: string): boolean => {
   if (!email) return true; // Email es opcional
   const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   return regex.test(email);
+};
+
+const validarDNI = (dni: string): boolean => {
+  // Validar DNI peruano: 8 dígitos
+  const regex = /^\d{8}$/;
+  return regex.test(dni);
+};
+
+const validarRUC = (ruc: string): boolean => {
+  // Validar RUC peruano: 11 dígitos
+  const regex = /^\d{11}$/;
+  return regex.test(ruc);
+};
+
+const validarPasaporte = (pasaporte: string): boolean => {
+  // Validar pasaporte: letras y números, entre 5 y 20 caracteres
+  const regex = /^[a-zA-Z0-9]{5,20}$/;
+  return regex.test(pasaporte);
 };
 
 export default function Checkout() {
@@ -67,6 +85,8 @@ export default function Checkout() {
     cliente_nombre: '',
     cliente_email: '',
     cliente_telefono: '',
+    tipo_documento: 'DNI' as 'DNI' | 'RUC' | 'PASAPORTE' | 'CARNET_EXTRA',
+    documento_identidad: '',
     tipo_pedido: 'RecogerEnTienda' as 'RecogerEnTienda' | 'EntregaDomicilio',
     direccion_entrega: '',
     instrucciones_entrega: '',
@@ -74,6 +94,14 @@ export default function Checkout() {
     customTime: '',
     notas_especiales: '',
   });
+
+  // Opciones de tipo de documento
+  const tiposDocumento = [
+    { value: 'DNI', label: 'DNI' },
+    { value: 'RUC', label: 'RUC' },
+    { value: 'PASAPORTE', label: 'Pasaporte' },
+    { value: 'CARNET_EXTRA', label: 'Carné de Extranjería' },
+  ];
 
   interface Order {
     numero_pedido: string;
@@ -93,6 +121,17 @@ export default function Checkout() {
     if (field === 'cliente_telefono') {
       processedValue = value.replace(/\D/g, '').slice(0, 9);
     }
+    // Para documento de identidad: dependiendo del tipo
+    if (field === 'documento_identidad') {
+      if (formData.tipo_documento === 'DNI') {
+        processedValue = value.replace(/\D/g, '').slice(0, 8);
+      } else if (formData.tipo_documento === 'RUC') {
+        processedValue = value.replace(/\D/g, '').slice(0, 11);
+      } else {
+        // Para pasaporte y carnet: permitir letras y números
+        processedValue = value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 20);
+      }
+    }
     
     setFormData(prev => ({ ...prev, [field]: processedValue }));
     if (formErrors[field]) {
@@ -100,10 +139,30 @@ export default function Checkout() {
     }
   };
 
+  const handleTipoDocumentoChange = (value: string) => {
+    // Limpiar documento_identidad cuando cambia el tipo
+    setFormData(prev => ({ 
+      ...prev, 
+      tipo_documento: value as 'DNI' | 'RUC' | 'PASAPORTE' | 'CARNET_EXTRA',
+      documento_identidad: ''
+    }));
+    // Limpiar errores relacionados
+    setFormErrors(prev => ({ 
+      ...prev, 
+      documento_identidad: undefined 
+    }));
+  };
+
   const validateStep = (step: number) => {
     let schema;
     if (step === 1) {
-        schema = checkoutSchema.pick({ cliente_nombre: true, cliente_telefono: true, cliente_email: true });
+        schema = checkoutSchema.pick({ 
+          cliente_nombre: true, 
+          cliente_telefono: true, 
+          cliente_email: true,
+          tipo_documento: true,
+          documento_identidad: true
+        });
     } else if (step === 2) {
         schema = checkoutSchema.pick({ tipo_pedido: true, direccion_entrega: true });
     } else {
@@ -137,6 +196,17 @@ export default function Checkout() {
       if (formData.cliente_email && !validarEmail(formData.cliente_email)) {
         erroresManuales.cliente_email = 'Por favor ingrese un correo electrónico válido';
       }
+      
+      // Validar Documento de Identidad según tipo
+      if (formData.tipo_documento === 'DNI' && !validarDNI(formData.documento_identidad)) {
+        erroresManuales.documento_identidad = 'El DNI debe tener 8 dígitos';
+      } else if (formData.tipo_documento === 'RUC' && !validarRUC(formData.documento_identidad)) {
+        erroresManuales.documento_identidad = 'El RUC debe tener 11 dígitos';
+      } else if (formData.tipo_documento === 'PASAPORTE' && !validarPasaporte(formData.documento_identidad)) {
+        erroresManuales.documento_identidad = 'Ingrese un número de pasaporte válido (5-20 caracteres alfanuméricos)';
+      } else if (formData.tipo_documento === 'CARNET_EXTRA' && !formData.documento_identidad.trim()) {
+        erroresManuales.documento_identidad = 'Ingrese el número de carné de extranjería';
+      }
     }
     
     // Si hay errores manuales, mostrarlos y detener el envío
@@ -165,6 +235,17 @@ export default function Checkout() {
       erroresManuales.cliente_email = 'Por favor ingrese un correo electrónico válido';
     }
     
+    // Validar Documento de Identidad según tipo
+    if (formData.tipo_documento === 'DNI' && !validarDNI(formData.documento_identidad)) {
+      erroresManuales.documento_identidad = 'El DNI debe tener 8 dígitos';
+    } else if (formData.tipo_documento === 'RUC' && !validarRUC(formData.documento_identidad)) {
+      erroresManuales.documento_identidad = 'El RUC debe tener 11 dígitos';
+    } else if (formData.tipo_documento === 'PASAPORTE' && !validarPasaporte(formData.documento_identidad)) {
+      erroresManuales.documento_identidad = 'Ingrese un número de pasaporte válido (5-20 caracteres alfanuméricos)';
+    } else if (formData.tipo_documento === 'CARNET_EXTRA' && !formData.documento_identidad.trim()) {
+      erroresManuales.documento_identidad = 'Ingrese el número de carné de extranjería';
+    }
+    
     // Si hay errores manuales, mostrarlos y detener el envío
     if (Object.keys(erroresManuales).length > 0) {
       setFormErrors(erroresManuales);
@@ -183,6 +264,8 @@ export default function Checkout() {
         cliente_nombre: validationResult.data.cliente_nombre,
         cliente_email: validationResult.data.cliente_email || undefined,
         cliente_telefono: validationResult.data.cliente_telefono,
+        tipo_documento: validationResult.data.tipo_documento || undefined,
+        documento_identidad: validationResult.data.documento_identidad || undefined,
         tipo_pedido: validationResult.data.tipo_pedido,
         direccion_entrega: validationResult.data.tipo_pedido === 'EntregaDomicilio' ? validationResult.data.direccion_entrega : undefined,
         instrucciones_entrega: validationResult.data.instrucciones_entrega || undefined,
@@ -210,6 +293,22 @@ export default function Checkout() {
       
     } catch (err) {
       console.error('Error creating order:', err);
+    }
+  };
+
+  // Función para obtener placeholder según tipo de documento
+  const getDocumentoPlaceholder = () => {
+    switch (formData.tipo_documento) {
+      case 'DNI':
+        return '12345678';
+      case 'RUC':
+        return '12345678901';
+      case 'PASAPORTE':
+        return 'AB123456';
+      case 'CARNET_EXTRA':
+        return 'X1234567';
+      default:
+        return 'Número de documento';
     }
   };
 
@@ -353,6 +452,48 @@ export default function Checkout() {
                   placeholder="Tu nombre completo"
                 />
                  {formErrors.cliente_nombre && <p className="text-red-500 text-xs mt-1">{formErrors.cliente_nombre}</p>}
+              </div>
+              
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-gray-700 mb-2 font-medium">
+                    Tipo de Documento <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={formData.tipo_documento}
+                    onChange={(e) => handleTipoDocumentoChange(e.target.value)}
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-blue-500"
+                  >
+                    {tiposDocumento.map((tipo) => (
+                      <option key={tipo.value} value={tipo.value}>
+                        {tipo.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-gray-700 mb-2 font-medium">
+                    Número de Documento <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.documento_identidad}
+                    onChange={(e) => handleInputChange('documento_identidad', e.target.value)}
+                    className={`w-full px-4 py-3 bg-white border rounded-lg text-gray-900 focus:outline-none focus:border-blue-500 ${formErrors.documento_identidad ? 'border-red-500' : 'border-gray-300'}`}
+                    placeholder={getDocumentoPlaceholder()}
+                    maxLength={formData.tipo_documento === 'DNI' ? 8 : formData.tipo_documento === 'RUC' ? 11 : 20}
+                  />
+                  {formErrors.documento_identidad && (
+                    <p className="text-red-500 text-xs mt-1">{formErrors.documento_identidad}</p>
+                  )}
+                  <p className="text-xs text-gray-500 mt-1">
+                    {formData.tipo_documento === 'DNI' && '8 dígitos'}
+                    {formData.tipo_documento === 'RUC' && '11 dígitos'}
+                    {formData.tipo_documento === 'PASAPORTE' && 'Letras y números'}
+                    {formData.tipo_documento === 'CARNET_EXTRA' && 'Número de carné'}
+                  </p>
+                </div>
               </div>
               
               <div>
@@ -555,6 +696,12 @@ export default function Checkout() {
                 <div className="flex justify-between">
                   <span className="text-gray-600">Nombre:</span>
                   <span className="text-gray-900 font-semibold">{formData.cliente_nombre}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Documento:</span>
+                  <span className="text-gray-900 font-semibold">
+                    {formData.tipo_documento}: {formData.documento_identidad}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Teléfono:</span>

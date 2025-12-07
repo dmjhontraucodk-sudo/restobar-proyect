@@ -3,15 +3,6 @@
 // Asegúrate de usar el path alias correcto para shared/database
 import { prisma } from '@shared/database/prisma.service'; 
 import { CreateReviewDto } from '../dto/create-review.dto';
-// Asegúrate de usar el path alias correcto para shared/constants
-import { BAD_WORDS_LIST } from '@shared/constants/app.constants'; 
-
-// Función de moderación simple
-const containsInappropriateContent = (comment: string | null | undefined): boolean => {
-  if (!comment) return false;
-  const lowerCaseComment = comment.toLowerCase();
-  return BAD_WORDS_LIST.some(word => lowerCaseComment.includes(word));
-};
 
 export const reviewsService = {
   
@@ -32,9 +23,8 @@ export const reviewsService = {
       }
     }
     
-    // Moderación: Si hay comentario y contiene palabras inapropiadas, se marca como NO APROBADA
-    const needsManualApproval = dto.comentario && containsInappropriateContent(dto.comentario);
-    const isApproved = !needsManualApproval;
+    // Moderación: Todas las reseñas nuevas requieren aprobación manual.
+    const isApproved = false;
     
     // Crear la reseña principal
     const review = await prisma.reseñas.create({
@@ -45,7 +35,7 @@ export const reviewsService = {
         empleado_id: dto.empleado_id,
         calificacion_general: dto.calificacion_general,
         comentario: dto.comentario,
-        aprobada: isApproved, 
+        aprobada: isApproved, // Siempre será 'false' en la creación
       },
     });
     
@@ -64,10 +54,8 @@ export const reviewsService = {
     
     return { 
       review, 
-      needsApproval: !isApproved,
-      message: isApproved 
-        ? 'Reseña enviada correctamente.' 
-        : 'Reseña enviada. Su comentario está bajo revisión y se publicará en breve.'
+      needsApproval: true, // Siempre es true ahora que no hay aprobación automática
+      message: 'Reseña enviada. Su comentario está bajo revisión y se publicará en breve.'
     };
   },
   
@@ -93,9 +81,54 @@ export const reviewsService = {
   },
 
   // --- Dashboard/Moderación (Lógica Pendiente) ---
-  async approveReview(_tenantId: number, _reviewId: number) {
-      // Implementación pendiente para el dashboard
-      console.log('approveReview function is pending implementation.');
+  async getPendingReviews(tenantId: number) {
+    return prisma.reseñas.findMany({
+      where: {
+        tenant_id: tenantId,
+        aprobada: false,
+      },
+      include: {
+        clientes: {
+          select: { nombre: true },
+        },
+      },
+      orderBy: {
+        fecha_reseña: 'asc',
+      },
+    });
+  },
+
+  async approveReview(tenantId: number, reviewId: number) {
+    const result = await prisma.reseñas.updateMany({
+      where: {
+        id: reviewId,
+        tenant_id: tenantId,
+      },
+      data: {
+        aprobada: true,
+      },
+    });
+
+    if (result.count === 0) {
+      throw new Error('Reseña no encontrada o no pertenece al tenant.');
+    }
+
+    return prisma.reseñas.findUnique({ where: { id: reviewId } });
+  },
+
+  async rejectReview(tenantId: number, reviewId: number) {
+    const result = await prisma.reseñas.deleteMany({
+      where: {
+        id: reviewId,
+        tenant_id: tenantId,
+      },
+    });
+
+    if (result.count === 0) {
+      throw new Error('Reseña no encontrada o no pertenece al tenant.');
+    }
+
+    return result;
   },
   
   async getAverageRating(_tenantId: number) {

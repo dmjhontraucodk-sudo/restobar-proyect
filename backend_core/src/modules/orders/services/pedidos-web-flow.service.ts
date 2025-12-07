@@ -154,6 +154,9 @@ export const pedidosWebFlowService = {
                     cliente_nombre: datos.cliente_nombre,
                     cliente_email: datos.cliente_email || null,
                     cliente_telefono: datos.cliente_telefono,
+                    cliente_id: datos.cliente_id, // Añadir cliente_id
+                    tipo_documento: datos.tipo_documento || null,
+                    documento_identidad: datos.documento_identidad || null,
                     tipo_pedido: datos.tipo_pedido,
                     direccion_entrega: datos.direccion_entrega || null,
                     instrucciones_entrega: datos.instrucciones_entrega || null,

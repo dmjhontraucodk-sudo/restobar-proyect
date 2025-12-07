@@ -236,6 +236,8 @@ CREATE TABLE `webpedidos` (
     `cliente_nombre` VARCHAR(255) NOT NULL,
     `cliente_email` VARCHAR(255) NULL,
     `cliente_telefono` VARCHAR(50) NOT NULL,
+    `tipo_documento` VARCHAR(50) NULL,
+    `documento_identidad` VARCHAR(50) NULL,
     `tipo_pedido` ENUM('RecogerEnTienda', 'EntregaDomicilio') NOT NULL,
     `estado` ENUM('Pendiente', 'Confirmado', 'EnPreparacion', 'ListoParaRecoger', 'EnCamino', 'Entregado', 'Cancelado') NOT NULL DEFAULT 'Pendiente',
     `numero_pedido` VARCHAR(50) NOT NULL,

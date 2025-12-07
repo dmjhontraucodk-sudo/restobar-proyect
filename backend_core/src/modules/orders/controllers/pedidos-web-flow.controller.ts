@@ -3,6 +3,7 @@ import { pedidosWebFlowService } from '../services/pedidos-web-flow.service';
 import { tenantConfigService } from '@modules/tenant/services/tenant-config.service';
 import { notificationService } from '@core/notifications/notification.service';
 import { emailService } from '@core/email/email.service';
+import { clientsService } from '@modules/clients';
 import { webOrdersService } from '../services/web-orders.service';
 import { Decimal } from '@prisma/client/runtime/library';
 import { RequestWithTenant } from '@shared/middleware/tenant.middleware';
@@ -28,7 +29,9 @@ export const pedidosWebFlowController = {
       const { 
         cliente_nombre, 
         cliente_email, 
-        cliente_telefono, 
+        cliente_telefono,
+        tipo_documento,
+        documento_identidad,
         tipo_pedido,
         direccion_entrega,
         instrucciones_entrega,
@@ -102,10 +105,22 @@ export const pedidosWebFlowController = {
 
       const tiempoEstimado = await tenantConfigService.calcularTiempoEstimado(tenantId, true);
 
+      // Buscar o crear el cliente y obtener su ID
+      const cliente_id = await clientsService.findOrCreateClient(tenantId, {
+        nombre: cliente_nombre,
+        cliente_email,
+        cliente_telefono,
+        tipo_documento,
+        documento_identidad,
+      });
+
       const newOrder = await pedidosWebFlowService.crearWebPedido(tenantId, {
+        cliente_id, // Pasar el ID del cliente
         cliente_nombre,
         cliente_email,
         cliente_telefono,
+        tipo_documento,
+        documento_identidad,
         tipo_pedido,
         direccion_entrega,
         instrucciones_entrega,
@@ -113,7 +128,7 @@ export const pedidosWebFlowController = {
         items,
         subtotal: subtotalNumero,
         costo_envio: costoEnvio,
-        total
+        total,
       });
 
       const configNotif = await tenantConfigService.getNotificacionesConfig(tenantId);

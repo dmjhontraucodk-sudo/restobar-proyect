@@ -119,6 +119,15 @@ export const useWebApi = () => {
   const fetchPublicReviews = (): Promise<PublicReview[]> =>
     makeRequest<{ data: PublicReview[] }>('/reviews/public').then(res => res.data);
 
+  const findClientByPhone = (telefono: string): Promise<{ success: boolean; client?: any }> =>
+    makeRequest<{ success: boolean; client?: any }>(`/clients/by-phone/${telefono}`);
+
+  const findClientByDocument = (documento_identidad: string): Promise<{ success: boolean; client?: any }> =>
+    makeRequest<{ success: boolean; client?: any }>(`/clients/by-document/${documento_identidad}`);
+
+  const findClientForReview = (documento_identidad: string): Promise<{ success: boolean; client?: any, error?: string }> =>
+    makeRequest<{ success: boolean; client?: any, error?: string }>(`/clients/for-review/${documento_identidad}`);
+
   return {
     isLoading,
     error,
@@ -131,5 +140,8 @@ export const useWebApi = () => {
     getAvailableMesas,
     createReview,
     fetchPublicReviews,
+    findClientByPhone,
+    findClientByDocument,
+    findClientForReview,
   };
 };
