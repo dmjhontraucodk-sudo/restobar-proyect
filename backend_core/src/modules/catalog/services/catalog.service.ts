@@ -158,10 +158,28 @@ export const catalogService = {
     const category = await this.getCategoryById(tenantId, data.categoria_id);
     if (!category) throw new Error('Categoría inválida o no pertenece al tenant');
 
+    const { categoria_id, producto_inventario_id, ...productData } = data;
+
     return await prisma.productos.create({
       data: {
-        ...data,
-        tenant_id: tenantId
+        ...productData,
+        tenants: {
+          connect: {
+            id: tenantId
+          }
+        },
+        categoriasmenu: {
+            connect: {
+                id: categoria_id
+            }
+        },
+        ...(producto_inventario_id && {
+          producto_inventario: {
+            connect: {
+              id: producto_inventario_id
+            }
+          }
+        })
       }
     });
   },

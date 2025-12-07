@@ -24,9 +24,9 @@ export default function RestobarLanding() {
       
       <div className="min-h-screen">
         <Hero onScrollToMenu={scrollToMenu} />
-        <ReviewsList />
         <Features />
         <MenuCatalog />
+        <ReviewsList />
       </div>
 
       <Footer />

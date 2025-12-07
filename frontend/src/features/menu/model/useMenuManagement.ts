@@ -488,7 +488,7 @@ export const useMenuManagement = (tipo: TipoCategoria = "COMIDA") => {
       const commonData = {
         nombre: itemName.trim(),
         precio: itemPrice,
-        categoriaNombre: editingCategory.name,
+        categoria_id: Number(editingCategory.id),
         descripcion: itemDescription.trim(),
         foto_url: finalImageUrl,
         producto_inventario_id: selectedInsumoId, // <--- ¡ESTO ES LO IMPORTANTE!
@@ -506,10 +506,8 @@ export const useMenuManagement = (tipo: TipoCategoria = "COMIDA") => {
         // ✅ USAMOS commonData AQUÍ TAMBIÉN PARA NO OLVIDAR EL CAMPO
         await createProductWithRecipe({
           ...commonData,
-          tipo: tipo,
           disponible: true,
           visible_en_web: true,
-          receta: [],
         });
 
         toast.success(`"${commonData.nombre}" creado con éxito`);

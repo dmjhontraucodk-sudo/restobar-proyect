@@ -10,6 +10,7 @@ export const uploadService = {
           resource_type: 'image',
           public_id: `restobar_uploads/${fileName.split('.')[0]}_${Date.now()}`,
           overwrite: true,
+          timeout: 20000, // 20 segundos de timeout
         },
         (error: Error | undefined, result: UploadApiResponse | undefined) => {
           if (result && result.secure_url) {

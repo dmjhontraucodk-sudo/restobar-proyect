@@ -75,13 +75,12 @@ export interface RecipeItem {
 export interface CreateProductData {
   nombre: string;
   precio: number;
-  categoriaNombre: string;
-  tipo: TipoCategoria;
+  categoria_id: number;
   descripcion?: string | null;
   foto_url?: string | null;
   disponible?: boolean;
   visible_en_web?: boolean;
-  receta?: RecipeItem[];
+
   producto_inventario_id?: number | null;
 }
 
@@ -147,13 +146,13 @@ export interface UpdateProductData {
 export interface UpdateProductWithRecipeData {
   nombre?: string;
   precio?: number;
-  categoriaNombre?: string;
+  categoria_id?: number;
   tipo?: TipoCategoria;
   descripcion?: string | null;
   foto_url?: string | null;
   disponible?: boolean;
   visible_en_web?: boolean;
-  receta?: RecipeItem[];
+
   producto_inventario_id?: number | null;
 }
 
