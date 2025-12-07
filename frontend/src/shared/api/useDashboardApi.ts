@@ -198,6 +198,11 @@ export const useDashboardApi = () => {
           throw new Error("No autorizado.");
         }
 
+        if (response.status === 204) {
+          // Handle "No Content" responses for successful DELETE requests
+          return {} as T;
+        }
+        
         const data = await response.json();
 
         if (!response.ok) {
@@ -822,6 +827,22 @@ export const useDashboardApi = () => {
       });
   }, [makeRequest]);
 
+  const getPendingReviews = useCallback((): Promise<{ data: any[] }> => {
+    return makeRequest<{ data: any[] }>('/reviews/pending');
+  }, [makeRequest]);
+
+  const approveReview = useCallback((id: number): Promise<{ message: string }> => {
+    return makeRequest<{ message: string }>(`/reviews/${id}/approve`, {
+      method: 'PATCH',
+    });
+  }, [makeRequest]);
+
+  const rejectReview = useCallback((id: number): Promise<{ message: string }> => {
+    return makeRequest<{ message: string }>(`/reviews/${id}`, {
+      method: 'DELETE',
+    });
+  }, [makeRequest]);
+
   return {
     isLoading,
     error,
@@ -892,6 +913,11 @@ export const useDashboardApi = () => {
     //Nomina
     calcularPagoNomina,
     pagarNomina,
+
+    // Reviews
+    getPendingReviews,
+    approveReview,
+    rejectReview,
 
     // Utilidad
     makeRequest,

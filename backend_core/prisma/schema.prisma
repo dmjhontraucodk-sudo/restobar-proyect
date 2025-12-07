@@ -286,6 +286,8 @@ model webpedidos {
   cliente_nombre        String            @db.VarChar(255)
   cliente_email         String?           @db.VarChar(255)
   cliente_telefono      String            @db.VarChar(50)
+  tipo_documento        String?           @db.VarChar(50)
+  documento_identidad   String?           @db.VarChar(50)
   tipo_pedido           webpedidos_tipo
   estado                webpedidos_estado @default(Pendiente)
   numero_pedido         String            @db.VarChar(50)

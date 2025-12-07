@@ -39,6 +39,8 @@ export interface PedidoData {
   cliente_nombre: string;
   cliente_email?: string;
   cliente_telefono: string;
+  tipo_documento?: string;
+  documento_identidad?: string;
   tipo_pedido: 'RecogerEnTienda' | 'EntregaDomicilio';
   direccion_entrega?: string;
   instrucciones_entrega?: string;

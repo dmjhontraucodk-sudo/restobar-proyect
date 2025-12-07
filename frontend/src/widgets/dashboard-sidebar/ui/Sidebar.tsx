@@ -281,6 +281,13 @@ const FlyoutNavigationContent: React.FC<{
             onClick={onLinkClick}
           />
           <SidebarLink
+              to="/dashboard/reviews"
+              icon={<Icons.MessageSquareIcon />}
+              label="Reseñas"
+              isCollapsed={false}
+              onClick={onLinkClick}
+          />          
+          <SidebarLink
             to="/dashboard/configuration"
             icon={<Icons.CogIcon />}
             label="Configuración"

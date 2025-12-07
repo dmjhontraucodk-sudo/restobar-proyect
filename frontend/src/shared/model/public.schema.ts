@@ -18,6 +18,8 @@ export const checkoutSchema = z.object({
     cliente_nombre: z.string().min(3, { message: 'El nombre es requerido' }),
     cliente_telefono: z.string().regex(telefonoPeruano, { message: 'El teléfono debe empezar con 9 y tener 9 dígitos' }),
     cliente_email: z.string().email({ message: 'Email inválido' }).optional().or(z.literal('')),
+    tipo_documento: z.string().optional(),
+    documento_identidad: z.string().optional(),
     tipo_pedido: z.enum(['RecogerEnTienda', 'EntregaDomicilio']),
     direccion_entrega: z.string().optional(),
     instrucciones_entrega: z.string().optional(),

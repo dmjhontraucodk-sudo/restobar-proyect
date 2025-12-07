@@ -264,6 +264,13 @@ export const NavigationContent: React.FC<NavigationContentProps> = ({
               onClick={onLinkClick}
             />
             <SidebarLink
+              to="/dashboard/reviews"
+              icon={<Icons.MessageSquareIcon />}
+              label="Reseñas"
+              isCollapsed={isCollapsed}
+              onClick={onLinkClick}
+            />
+            <SidebarLink
               to="/dashboard/configuration"
               icon={<Icons.CogIcon />}
               label="Configuración"

@@ -1,11 +1,11 @@
 import { useCallback } from 'react';
 import { useDashboardApi } from '@shared/api/useDashboardApi';
 import { 
-    type ApiOrden, 
-    type CreateOrdenData, 
-    type ApiMesa, 
-    type ApiOrdenDetalle,
-    type CreateOrdenItem, 
+    type ApiOrden, 
+    type CreateOrdenData, 
+    type ApiMesa, 
+    type ApiOrdenDetalle,
+    type CreateOrdenItem, 
 } from '@shared/types';
 
 // Tipos específicos para la actualización de POS (Cierre y Descuento)
@@ -19,6 +19,8 @@ export interface UpdateOrderPosData {
     
     cliente_nombre?: string;
     cliente_telefono?: string;
+    tipo_documento?: string;
+    documento_identidad?: string;
 }
 
 export interface OrdenDetalleConProducto extends ApiOrdenDetalle {
@@ -35,9 +37,27 @@ export interface AddItemsToOrderData {
     items: CreateOrdenItem[];
 }
 
+export interface Client {
+    id: number;
+    tenant_id: number;
+    nombre: string;
+    email?: string | null;
+    telefono?: string | null;
+    tipo_documento?: string | null;
+    documento_identidad?: string | null;
+}
+
 
 export const useOrdersApi = () => {
     const { makeRequest } = useDashboardApi();
+
+    const findClientByDocument = useCallback(async (documento_identidad: string): Promise<{ success: boolean; client: Client }> => {
+        return makeRequest<{ success: boolean; client: Client }>(`/clients/by-document/${documento_identidad}`);
+    }, [makeRequest]);
+
+    const findClientByPhone = useCallback(async (telefono: string): Promise<{ success: boolean; client: Client }> => {
+        return makeRequest<{ success: boolean; client: Client }>(`/clients/phone/${telefono}`);
+    }, [makeRequest]);
     
     // 1. OBTENER MESAS DISPONIBLES (FUNCIÓN ESTABLE)
     // ✅ makeRequest es una función estable de useDashboardApi, garantizando que esta función no cambie.
@@ -66,11 +86,12 @@ export const useOrdersApi = () => {
 
     // 3. ACTUALIZAR ESTADO/CERRAR CUENTA (Pago, Descuento y Cierre)
     const closeOrderPos = useCallback(
-        (ordenId: number, data: UpdateOrderPosData): Promise<ApiOrden> => {
-            return makeRequest<ApiOrden>(`/orders/${ordenId}/cierre`, {
+        async (ordenId: number, data: UpdateOrderPosData): Promise<ApiOrden> => {
+            const response = await makeRequest<{ orden: ApiOrden }>(`/orders/${ordenId}/cierre`, {
                 method: 'PATCH',
                 body: JSON.stringify(data),
             });
+            return response.orden;
         },
         [makeRequest]
     );
@@ -96,11 +117,37 @@ export const useOrdersApi = () => {
     );
 
     
+    const generateInvoice = useCallback(
+        async (orderId: number, type: 'boleta' | 'factura', tenant: string): Promise<Blob> => {
+            const token = localStorage.getItem("authToken");
+            if (!token) {
+                throw new Error("Authentication error");
+            }
+            const response = await fetch(`/api/dashboard/billing/generate-invoice/${orderId}?type=${type}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'X-Tenant-Subdomain': tenant,
+                },
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ message: 'Failed to generate invoice' }));
+                throw new Error(errorData.message);
+            }
+
+            return response.blob();
+        },
+        []
+    );
+
     return {
         getMesasDisponibles, 
         createOrderPos,
         closeOrderPos,
         getOrderPosDetails,
-        addItemsToOrder, 
+        addItemsToOrder,
+        findClientByDocument,
+        findClientByPhone,
+        generateInvoice,
     };
 };
