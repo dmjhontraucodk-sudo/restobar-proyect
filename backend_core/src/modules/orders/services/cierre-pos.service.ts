@@ -8,6 +8,8 @@ interface CierreOrdenData {
     descuento_monto?: number;
     cliente_nombre?: string;
     cliente_telefono?: string;
+    tipo_documento?: string;
+    documento_identidad?: string;
 }
 
 interface RegistrarVentaEnCajaParams {
@@ -46,6 +48,46 @@ export const cierrePosService = {
         const totalFinal = subtotal - descuento;
 
         return await prisma.$transaction(async (tx) => {
+
+            // Lógica para buscar o crear cliente y sumar puntos
+            if (data.documento_identidad && data.tipo_documento && data.cliente_nombre) {
+                let cliente = await tx.clientes.findFirst({
+                    where: {
+                        tenant_id: tenantId,
+                        tipo_documento: data.tipo_documento,
+                        documento_identidad: data.documento_identidad,
+                    },
+                });
+
+                if (cliente) {
+                    // Cliente existe, actualizar puntos y fecha de último pedido
+                    cliente = await tx.clientes.update({
+                        where: { id: cliente.id },
+                        data: {
+                            puntos_lealtad: {
+                                increment: 1,
+                            },
+                            ultimo_pedido_at: new Date(),
+                            nombre: data.cliente_nombre, // Actualizar por si cambia
+                            telefono: data.cliente_telefono, // Actualizar por si cambia
+                        },
+                    });
+                } else {
+                    // Cliente no existe, crear uno nuevo
+                    cliente = await tx.clientes.create({
+                        data: {
+                            tenant_id: tenantId,
+                            nombre: data.cliente_nombre,
+                            tipo_documento: data.tipo_documento,
+                            documento_identidad: data.documento_identidad,
+                            telefono: data.cliente_telefono,
+                            puntos_lealtad: 1,
+                            ultimo_pedido_at: new Date(),
+                        },
+                    });
+                }
+            }
+
             const ordenActualizada = await tx.ordenes.update({
                 where: { id: ordenId },
                 data: {
@@ -53,6 +95,8 @@ export const cierrePosService = {
                     descuento: descuento,
                     total: totalFinal,
                     closed_at: new Date(),
+                    cliente_documento: data.documento_identidad,
+                    cliente_razon_social: data.cliente_nombre,
                 }
             });
 

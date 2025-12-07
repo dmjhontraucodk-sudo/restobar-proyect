@@ -18,8 +18,9 @@ import { employeesRoutes } from '@modules/employees';
 import { mesasRoutes, tablesPublicRoutes } from '@modules/tables';
 import { tenantRoutes, tenantPublicConfigRoutes } from '@modules/tenant';
 import { catalogPublicRoutes, adminCatalogRoutes } from '@modules/catalog';
-import { clientsRoutes } from '@modules/clients';
+import { clientsRoutes, publicClientsRoutes } from '@modules/clients';
 import { reviewsRoutes, reviewsAdminRoutes } from '@modules/reviews'; //Reseñas
+import { billingRouter } from '@modules/billing';
 import uploadRoutes from '@shared/upload/upload.routes'; // Import the new upload route
 dotenv.config();
 
@@ -80,7 +81,7 @@ webRouter.use('/catalog', catalogPublicRoutes);
 webRouter.use('/config', tenantPublicConfigRoutes);
 webRouter.use('/mesas', tablesPublicRoutes);
 webRouter.use('/reviews', reviewsRoutes); // Reseñas
-webRouter.use('/clients', clientsRoutes);
+webRouter.use('/clients', publicClientsRoutes);
 webRouter.use('/', ticketRoutes);
 
 app.use('/api/web', webRouter);
@@ -103,6 +104,8 @@ dashboardRouter.use('/employees', employeesRoutes);
 dashboardRouter.use('/mesas', mesasRoutes);
 dashboardRouter.use('/catalog', adminCatalogRoutes);
 dashboardRouter.use('/reviews', reviewsAdminRoutes);
+dashboardRouter.use('/clients', clientsRoutes);
+dashboardRouter.use('/billing', billingRouter);
 dashboardRouter.use('/', tenantRoutes);
 dashboardRouter.use('/', reportsRoutes);
 dashboardRouter.use('/', uploadRoutes); // Use the new upload route

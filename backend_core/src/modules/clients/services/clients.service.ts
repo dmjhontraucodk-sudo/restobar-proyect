@@ -1,4 +1,5 @@
 
+import { FactilizaService } from '@shared/external-data/factiliza.service';
 import { prisma } from '@shared/database/prisma.service';
 import { ClientDataDto } from '../dto/client-data.dto';
 import { webpedidos_estado } from '@prisma/client';
@@ -82,12 +83,41 @@ export const clientsService = {
    * @returns The client object or null if not found.
    */
   async findClientByDocument(tenantId: number, documento_identidad: string) {
-    return prisma.clientes.findFirst({
+    const localClient = await prisma.clientes.findFirst({
       where: {
         tenant_id: tenantId,
         documento_identidad: documento_identidad,
       },
     });
+
+    if (localClient) {
+      return localClient;
+    }
+
+    try {
+      const factilizaService = FactilizaService.getInstance();
+      const reniecData = await factilizaService.findClientByDni(documento_identidad);
+
+      if (reniecData.success && reniecData.data) {
+        const newClient = await prisma.clientes.create({
+          data: {
+            tenant_id: tenantId,
+            nombre: reniecData.data.nombre_completo,
+            documento_identidad: documento_identidad,
+            tipo_documento: 'DNI', // Assuming DNI, might need adjustment
+            // telefono: '', // Optional
+            // email: '', // Optional
+          },
+        });
+        return newClient;
+      }
+    } catch (error) {
+      console.error('Error during Factiliza lookup or client creation:', error);
+      // Fallback to returning null if external service fails or returns no data
+      return null;
+    }
+
+    return null;
   },
 
   async findClientForReview(tenantId: number, documento_identidad: string) {

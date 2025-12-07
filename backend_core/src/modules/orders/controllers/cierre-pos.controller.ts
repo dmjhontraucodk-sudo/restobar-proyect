@@ -14,6 +14,8 @@ const closeOrderPosSchema = z.object({
     descuento_monto: z.number().min(0).default(0).optional(), 
     cliente_nombre: z.string().optional(),
     cliente_telefono: z.string().optional(),
+    tipo_documento: z.string().optional(),
+    documento_identidad: z.string().optional(),
 }).refine(data => {
     return data.estado === ordenes_estado.Pagada || data.estado === ordenes_estado.Cerrada;
 }, {
@@ -63,6 +65,8 @@ export const cierrePosController = {
                     descuento_monto: data.descuento_monto,
                     cliente_nombre: data.cliente_nombre,
                     cliente_telefono: data.cliente_telefono,
+                    tipo_documento: data.tipo_documento,
+                    documento_identidad: data.documento_identidad,
                 }
             );
 

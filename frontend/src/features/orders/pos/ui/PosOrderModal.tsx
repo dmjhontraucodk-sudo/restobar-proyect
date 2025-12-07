@@ -13,6 +13,7 @@ import {
 
 import { useOrdersApi, type UpdateOrderPosData, type AddItemsToOrderData } from '@features/orders/model/useOrdersApi'; 
 import { useMenuManagement } from '@features/menu/model/useMenuManagement'; 
+import { useAuth } from '@app/providers/AuthProvider';
 import { 
     XIcon, 
     TableIcon, 
@@ -35,6 +36,7 @@ export interface ApiOrden extends BaseApiOrden {
 }
 
 interface PosItem extends CreateOrdenItem {
+    posItemId: string; // ID único para el item en el POS
     nombre: string;
     categoria?: string;
 }
@@ -62,6 +64,8 @@ const VoucherModal: React.FC<{
     onClose: () => void; 
 }> = ({ data, onClose }) => {
     const { orden, metodo, cliente } = data;
+    const { generateInvoice } = useOrdersApi();
+    const { currentTenant } = useAuth();
     
     // ✅ VALIDACIÓN: Verificar que la orden tenga todos los datos necesarios
     if (!orden || !orden.mesas || !orden.ordendetalles) {
@@ -70,6 +74,16 @@ const VoucherModal: React.FC<{
         onClose();
         return null;
     }
+
+    const handleGenerateInvoice = async (type: 'boleta' | 'factura') => {
+        try {
+            const blob = await generateInvoice(orden.id, type, currentTenant);
+            const url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
+        } catch (error: any) {
+            toast.error(error.message || 'Error al generar el comprobante.');
+        }
+    };
     
     const formatDateTime = (dateString: string) => {
         const date = new Date(dateString);
@@ -335,11 +349,27 @@ const VoucherModal: React.FC<{
                     <div className="space-y-3">
                         <button
                             onClick={handlePrint}
-                            className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-lg"
+                            className="w-full py-3 bg-gray-700 text-white rounded-xl font-semibold hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 shadow-lg"
                         >
                             <PrinterIcon className="w-5 h-5" />
-                            Imprimir Comprobante
+                            Imprimir Ticket
                         </button>
+                        <div className="grid grid-cols-2 gap-3">
+                            <button
+                                onClick={() => handleGenerateInvoice('boleta')}
+                                className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                            >
+                                <PrinterIcon className="w-5 h-5" />
+                                Imprimir Boleta
+                            </button>
+                            <button
+                                onClick={() => handleGenerateInvoice('factura')}
+                                className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                            >
+                                <PrinterIcon className="w-5 h-5" />
+                                Imprimir Factura
+                            </button>
+                        </div>
                         <button 
                             onClick={onClose} 
                             className="w-full py-3 text-gray-600 bg-gray-200 rounded-xl font-medium hover:bg-gray-300 transition-colors"
@@ -439,7 +469,7 @@ const VoucherModal: React.FC<{
 
 const PosOrderModal: React.FC<PosOrderModalProps> = ({ isOpen, onClose, initialOrder, isEditMode = false }) => {
     
-    const { getMesasDisponibles, createOrderPos, closeOrderPos, addItemsToOrder } = useOrdersApi();
+    const { getMesasDisponibles, createOrderPos, closeOrderPos, addItemsToOrder, findClientByDocument } = useOrdersApi();
     
     const { 
         allProducts: foodProducts, 
@@ -464,13 +494,40 @@ const PosOrderModal: React.FC<PosOrderModalProps> = ({ isOpen, onClose, initialO
     const [metodoPago, setMetodoPago] = useState<'Efectivo' | 'Tarjeta' | 'Transferencia' | 'QR'>('Efectivo');
     const [cobroData, setCobroData] = useState<CobroCompletedData | null>(null);
 
-    const [wantsReceipt, setWantsReceipt] = useState(false);
     const [clienteNombre, setClienteNombre] = useState('');
     const [clienteTelefono, setClienteTelefono] = useState('');
+    const [tipoDocumento, setTipoDocumento] = useState('DNI');
+    const [documentoIdentidad, setDocumentoIdentidad] = useState('');
+    const [isSearchingClient, setIsSearchingClient] = useState(false);
 
     const isNewOrder = !initialOrder && !isEditMode;
     const isCheckoutMode = !isNewOrder && !isEditMode;
     const isAddItemsMode = isEditMode && !!initialOrder;
+    
+    const handleSearchClient = async () => {
+        if (!documentoIdentidad) {
+            toast.error('Por favor, ingrese un documento de identidad.');
+            return;
+        }
+        setIsSearchingClient(true);
+        try {
+            const result = await findClientByDocument(documentoIdentidad);
+            if (result.success && result.client) {
+                setClienteNombre(result.client.nombre);
+                setClienteTelefono(result.client.telefono || '');
+                toast.success('Cliente encontrado.');
+            } else {
+                setClienteNombre('');
+                setClienteTelefono('');
+                toast.error('Cliente no encontrado. Puede registrarlo manualmente.');
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error('Error al buscar el cliente.');
+        } finally {
+            setIsSearchingClient(false);
+        }
+    };
     
     const existingDetails = useMemo(() => 
         isCheckoutMode || isAddItemsMode ? initialOrder?.ordendetalles || [] : [], 
@@ -529,9 +586,10 @@ const PosOrderModal: React.FC<PosOrderModalProps> = ({ isOpen, onClose, initialO
         setDescuentoMonto(0);
         setDescuentoPorcentaje(0);
         setMetodoPago('Efectivo');
-        setWantsReceipt(false);
         setClienteNombre('');
         setClienteTelefono('');
+        setDocumentoIdentidad('');
+        setTipoDocumento('DNI');
         setMenuType('COMIDA');
         setActiveCategory('TODAS');
         
@@ -563,24 +621,24 @@ const PosOrderModal: React.FC<PosOrderModalProps> = ({ isOpen, onClose, initialO
     const handleCloseOrder = async () => {
         if (!initialOrder) return;
 
-        if (wantsReceipt && (!clienteNombre.trim() || !clienteTelefono.trim())) {
-            toast.error("Por favor, ingresa el nombre y teléfono del cliente para registrar la venta.");
+        if (!clienteNombre.trim() || !documentoIdentidad.trim()) {
+            toast.error("Por favor, busque o ingrese la información del cliente, incluyendo DNI/RUC.");
             return;
         }
 
         setIsSubmitting(true);
         try {
             const metodoPagoDB = (metodoPago === 'QR' ? 'Otro' : metodoPago);
-            const nombreClienteFinal = wantsReceipt ? clienteNombre.trim() : undefined;
-            const telefonoClienteFinal = wantsReceipt ? clienteTelefono.trim() : undefined;
             
             const finalData: UpdateOrderPosData = {
                 estado: 'Pagada',
                 monto_pago: totalConDescuento,
                 metodo_pago: metodoPagoDB as 'Efectivo' | 'Tarjeta' | 'Transferencia' | 'Otro',
                 descuento_monto: descuentoMonto,
-                cliente_nombre: nombreClienteFinal,
-                cliente_telefono: telefonoClienteFinal,
+                cliente_nombre: clienteNombre.trim(),
+                cliente_telefono: clienteTelefono.trim(),
+                tipo_documento: tipoDocumento,
+                documento_identidad: documentoIdentidad.trim(),
             };
 
             const ordenCerrada = await closeOrderPos(initialOrder.id, finalData);
@@ -614,10 +672,10 @@ const PosOrderModal: React.FC<PosOrderModalProps> = ({ isOpen, onClose, initialO
                     ordendetalles: initialOrder.ordendetalles,
                 },
                 metodo: metodoPago,
-                cliente: nombreClienteFinal ? { 
-                    nombre: nombreClienteFinal, 
-                    telefono: telefonoClienteFinal! 
-                } : null,
+                cliente: { 
+                    nombre: clienteNombre.trim(), 
+                    telefono: documentoIdentidad.trim() // Mostrar DNI/RUC en el voucher
+                },
             });
 
         } catch (error: any) {
@@ -638,6 +696,7 @@ const PosOrderModal: React.FC<PosOrderModalProps> = ({ isOpen, onClose, initialO
                 );
             }
             const newItem: PosItem = {
+                posItemId: `${numericId}-${Date.now()}`, // ID único
                 producto_id: numericId,
                 nombre: product.name,
                 cantidad: 1,
@@ -943,7 +1002,7 @@ const PosOrderModal: React.FC<PosOrderModalProps> = ({ isOpen, onClose, initialO
                             
                             <div className="space-y-2 max-h-60 overflow-y-auto">
                                 {posItems.map(item => (
-                                    <div key={item.producto_id} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                                    <div key={item.posItemId} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                                         <div className="flex-1 min-w-0">
                                             <div className="font-medium text-gray-800 text-sm truncate">
                                                 {item.nombre}
@@ -1052,53 +1111,63 @@ const PosOrderModal: React.FC<PosOrderModalProps> = ({ isOpen, onClose, initialO
                                     <div className="mt-6 border-t border-gray-100 pt-4">
                                         <h5 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
                                             <UserIcon className="w-4 h-4 text-gray-600" />
-                                            Registro de Cliente
+                                            Buscar Cliente
                                         </h5>
                                         
-                                        <div className="flex items-center space-x-2 mb-3">
+                                        <div className="grid grid-cols-3 gap-2 mb-3">
+                                            <select
+                                                value={tipoDocumento}
+                                                onChange={(e) => setTipoDocumento(e.target.value)}
+                                                className="col-span-1 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
+                                            >
+                                                <option value="DNI">DNI</option>
+                                                <option value="RUC">RUC</option>
+                                                <option value="Pasaporte">Pasaporte</option>
+                                            </select>
                                             <input
-                                                id="wants-receipt"
-                                                type="checkbox"
-                                                checked={wantsReceipt}
-                                                onChange={(e) => setWantsReceipt(e.target.checked)}
-                                                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                type="text"
+                                                value={documentoIdentidad}
+                                                onChange={(e) => setDocumentoIdentidad(e.target.value)}
+                                                className="col-span-2 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
+                                                placeholder={`Número de ${tipoDocumento}`}
                                             />
-                                            <label htmlFor="wants-receipt" className="text-sm font-medium text-gray-700">
-                                                ¿Desea registrar la venta?
-                                            </label>
                                         </div>
+                                        <button 
+                                            onClick={handleSearchClient}
+                                            disabled={isSearchingClient || !documentoIdentidad}
+                                            className="w-full mb-3 py-2 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 disabled:bg-gray-400 transition-colors flex items-center justify-center"
+                                        >
+                                            {isSearchingClient ? 'Buscando...' : 'Buscar'}
+                                        </button>
 
-                                        {wantsReceipt && (
-                                            <div className="space-y-3 mt-3">
-                                                <div>
-                                                    <label className="block text-xs font-medium text-gray-700 mb-1">Nombre Completo</label>
-                                                    <input
-                                                        type="text"
-                                                        value={clienteNombre}
-                                                        onChange={(e) => setClienteNombre(e.target.value)}
-                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
-                                                        placeholder="Nombre o Razón Social"
-                                                        required
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="block text-xs font-medium text-gray-700 mb-1">Teléfono / DNI/RUC</label>
-                                                    <input
-                                                        type="text"
-                                                        value={clienteTelefono}
-                                                        onChange={(e) => setClienteTelefono(e.target.value)}
-                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
-                                                        placeholder="Teléfono o DNI/RUC"
-                                                        required
-                                                    />
-                                                </div>
+                                        <div className="space-y-3 mt-3">
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-700 mb-1">Nombre Completo</label>
+                                                <input
+                                                    type="text"
+                                                    value={clienteNombre}
+                                                    onChange={(e) => setClienteNombre(e.target.value)}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
+                                                    placeholder="Nombre o Razón Social"
+                                                    required
+                                                />
                                             </div>
-                                        )}
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-700 mb-1">Teléfono</label>
+                                                <input
+                                                    type="text"
+                                                    value={clienteTelefono}
+                                                    onChange={(e) => setClienteTelefono(e.target.value)}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
+                                                    placeholder="Teléfono"
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         )}
-
                         {(isCheckoutMode || (isAddItemsMode && posItems.length > 0) || isNewOrder) && (
                             <div className="mb-6 p-4 bg-gradient-to-r from-gray-900 to-gray-800 rounded-xl text-white">
                                 <h5 className="font-semibold mb-3 text-gray-200">Resumen Total</h5>
@@ -1141,12 +1210,11 @@ const PosOrderModal: React.FC<PosOrderModalProps> = ({ isOpen, onClose, initialO
                                             ? 'REALIZAR PEDIDO'
                                             : isCheckoutMode 
                                                 ? `COBRAR S/ ${totalConDescuento.toFixed(2)}`
-                                                : 'ACTUALIZAR COMANDA'
+                                                : 'ACTUALIZAR PEDIDO'
                                         }
                                     </>
                                 )}
                             </button>
-
                             <button 
                                 onClick={onClose} 
                                 className="w-full py-3 text-gray-600 bg-gray-200 rounded-xl font-medium hover:bg-gray-300 transition-colors"
