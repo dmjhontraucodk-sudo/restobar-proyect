@@ -49,12 +49,9 @@ import ProductCatalog from "@pages/public/catalog/ProductCatalogPage";
 import Cart from "@pages/public/cart/CartPage";
 import Checkout from "@pages/public/checkout/CheckoutPage";
 import ReservationForm from "@pages/public/reservation/ReservationFormPage";
-<<<<<<< HEAD
 import VirtualMenuPage from "@pages/public/virtual-menu/VirtualMenuPage"; // ✅ NUEVO
 //--Reseñas--///
 import { ReviewsList } from "@features/reviews";
-=======
->>>>>>> 956fe6590cd44f19c546a6af92614849fbbbf78e
 
 // --- Componentes y Gestión ---
 import ProtectedRoute from "./ProtectedRoute";
@@ -93,11 +90,8 @@ const TenantPublicRoutes = () => (
     <Route path="/cart" element={<Cart />} />
     <Route path="/checkout" element={<Checkout />} />
     <Route path="/reservar" element={<ReservationForm />} />
-<<<<<<< HEAD
     <Route path="/carta" element={<VirtualMenuPage />} /> {/* ✅ NUEVA RUTA */}
     <Route path="/reviews" element={<ReviewsList />} />
-=======
->>>>>>> 956fe6590cd44f19c546a6af92614849fbbbf78e
     <Route path="*" element={<Navigate to="/" />} />
   </Routes>
 );
