@@ -41,7 +41,8 @@ export default function Cart() {
     metodosPago, 
     pedidosWeb, 
     isLoading: configLoading,
-    validaciones 
+    validaciones,
+    formatCurrency // ✅ IMPORTAR FUNCIÓN
   } = useGlobalConfig();
 
   // Estado para método de pago seleccionado
@@ -308,7 +309,7 @@ export default function Cart() {
                           {item.nombre}
                         </h3>
                         <p className="text-lg font-bold text-blue-600 whitespace-nowrap">
-                          S/ {Number(item.precio).toFixed(2)}
+                          {formatCurrency(Number(item.precio))}
                         </p>
                       </div>
 
@@ -340,8 +341,7 @@ export default function Cart() {
 
                         <div className="text-right">
                           <p className="text-base font-bold text-gray-900">
-                            S/{" "}
-                            {(Number(item.precio) * item.cantidad).toFixed(2)}
+                            {formatCurrency(Number(item.precio) * item.cantidad)}
                           </p>
                           <button
                             onClick={() => handleRemoveItem(item.id)}
@@ -368,7 +368,7 @@ export default function Cart() {
                   <div className="flex justify-between text-sm text-gray-700">
                     <span>Subtotal ({getTotalItems()})</span>
                     <span className="font-semibold">
-                      S/ {totalPrice.toFixed(2)}
+                      {formatCurrency(totalPrice)}
                     </span>
                   </div>
 
@@ -377,7 +377,7 @@ export default function Cart() {
                     <span>Envío</span>
                     {deliveryCost > 0 ? (
                       <span className="font-semibold">
-                        S/ {deliveryCost.toFixed(2)}
+                        {formatCurrency(deliveryCost)}
                       </span>
                     ) : (
                       <span className="text-green-600 font-semibold">
@@ -390,7 +390,7 @@ export default function Cart() {
                     <div className="flex justify-between text-gray-900">
                       <span className="font-bold">Total</span>
                       <span className="font-bold text-blue-600 text-lg">
-                        S/ {finalTotal.toFixed(2)}
+                        {formatCurrency(finalTotal)}
                       </span>
                     </div>
                   </div>
@@ -401,7 +401,7 @@ export default function Cart() {
                       <div className="flex items-center gap-2">
                         <AlertCircle size={14} />
                         <span>
-                          Monto mínimo: S/ {Number(pedidosWeb.montoMinimo).toFixed(2)}
+                          Monto mínimo: {formatCurrency(Number(pedidosWeb.montoMinimo))}
                         </span>
                       </div>
                     </div>

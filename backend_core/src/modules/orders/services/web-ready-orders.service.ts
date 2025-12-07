@@ -83,12 +83,23 @@ export const webReadyOrdersService = {
         newStatus: 'Entregado' | 'Cancelado' | 'EnCamino'
     ): Promise<WebPedidoOutput> {
         
+        const dataToUpdate: any = {
+            estado: newStatus,
+            updated_at: new Date(),
+        };
+
+        // Lógica de Tiempos de Delivery para la vista de Despacho
+        if (newStatus === 'EnCamino') {
+            dataToUpdate.hora_salida_delivery = new Date();
+        }
+
+        if (newStatus === 'Entregado') {
+            dataToUpdate.hora_entrega_delivery = new Date();
+        }
+
         const updatedOrder = await prisma.webpedidos.update({
             where: { id: orderId, tenant_id: tenantId },
-            data: {
-                estado: newStatus,
-                updated_at: new Date(),
-            },
+            data: dataToUpdate,
             include: { 
                 webpedidos_detalles: {
                     include: {

@@ -51,6 +51,9 @@ export const webOrdersService = {
           }
         },
         clientes: true,
+        motorizado: { // ✅ Incluir datos del motorizado
+            select: { id: true, nombre: true }
+        },
         ordenes: {
           include: {
             pagos: true
@@ -287,6 +290,29 @@ export const webOrdersService = {
     });
   },
 
+  async assignMotorized(tenantId: number, orderId: number, motorizedId: number) {
+    const order = await prisma.webpedidos.findFirst({
+      where: { id: orderId, tenant_id: tenantId }
+    });
+
+    if (!order) throw new Error('Pedido no encontrado');
+
+    // Verificar que el empleado exista y sea válido (opcional: verificar si tiene rol de motorizado)
+    const employee = await prisma.empleados.findFirst({
+      where: { id: motorizedId, tenant_id: tenantId }
+    });
+
+    if (!employee) throw new Error('Empleado no encontrado');
+
+    return await prisma.webpedidos.update({
+      where: { id: orderId },
+      data: {
+        motorizado_id: motorizedId,
+        updated_at: new Date()
+      }
+    });
+  },
+
   async updateOrderStatus(
     tenantId: number, 
     orderId: number, 
@@ -307,14 +333,27 @@ export const webOrdersService = {
       throw new Error('Pedido no encontrado');
     }
 
+    // Lógica de Tiempos de Delivery
+    const dataToUpdate: any = {
+      estado: newStatus,
+      updated_at: new Date()
+    };
+
+    // Si sale a ruta -> Marca hora de salida
+    if (newStatus === webpedidos_estado.EnCamino) {
+        dataToUpdate.hora_salida_delivery = new Date();
+    }
+
+    // Si se entrega -> Marca hora de entrega
+    if (newStatus === webpedidos_estado.Entregado) {
+        dataToUpdate.hora_entrega_delivery = new Date();
+    }
+
     return await prisma.webpedidos.update({
       where: {
         id: orderId
       },
-      data: {
-        estado: newStatus,
-        updated_at: new Date()
-      },
+      data: dataToUpdate,
       include: {
         webpedidos_detalles: {
           include: {

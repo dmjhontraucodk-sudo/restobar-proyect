@@ -109,6 +109,16 @@ export const useWebApi = () => {
   const getAvailableMesas = (): Promise<ApiMesa[]> => 
     makeRequest<ApiMesa[]>(`/mesas/disponibles`);
 
+  // ✅ NUEVO: Obtener detalles de una mesa específica (para carta virtual)
+  const getTableDetails = (id: number): Promise<ApiMesa> => 
+    makeRequest<ApiMesa>(`/mesas/${id}`);
+
+  // ✅ NUEVO: Llamar al mozo
+  const callWaiter = (id: number): Promise<{ success: boolean; message: string }> => 
+    makeRequest<{ success: boolean; message: string }>(`/mesas/${id}/call`, {
+      method: 'POST'
+    });
+
   // Reviews
   const createReview = (data: CreateReviewData): Promise<ApiResponse<{ needsApproval: boolean }>> =>
     makeRequest<ApiResponse<{ needsApproval: boolean }>>('/reviews', {
@@ -129,6 +139,8 @@ export const useWebApi = () => {
     createOrder,
     createReservation,
     getAvailableMesas,
+    getTableDetails,
+    callWaiter,
     createReview,
     fetchPublicReviews,
   };

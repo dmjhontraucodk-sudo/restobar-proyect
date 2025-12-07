@@ -3,6 +3,7 @@ import {
     type FinanceReport, 
 } from '@shared/types';
 import { useReportsApi } from '@features/reports/model/useReportsApi';
+import { useGlobalConfig } from '@shared/hooks/useGlobalConfig'; // ✅ IMPORTAR
 // Importamos todos los íconos de la librería local
 import { 
     RefreshIcon, 
@@ -11,8 +12,6 @@ import {
     AlertOctagonIcon, 
     BarChart3Icon 
 } from '@shared/ui/Icons';
-// Helper para formato de moneda
-const formatCurrency = (value: number) => `$${value.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
 
 // Componente de Tarjeta KPI
 interface KpiCardProps {
@@ -39,6 +38,7 @@ const KpiCard: React.FC<KpiCardProps> = ({ title, value, icon, colorClasses }) =
 // Componente principal de Finanzas
 const ReportsFinance: React.FC = () => {
     const { getFinanceSummary } = useReportsApi();
+    const { formatCurrency } = useGlobalConfig(); // ✅ USAR HOOK
     const [report, setReport] = useState<FinanceReport | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);

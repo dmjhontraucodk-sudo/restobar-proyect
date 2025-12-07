@@ -52,6 +52,7 @@ import ProductCatalog from "@pages/public/catalog/ProductCatalogPage";
 import Cart from "@pages/public/cart/CartPage";
 import Checkout from "@pages/public/checkout/CheckoutPage";
 import ReservationForm from "@pages/public/reservation/ReservationFormPage";
+import VirtualMenuPage from "@pages/public/virtual-menu/VirtualMenuPage"; // ✅ NUEVO
 //--Reseñas--///
 import { ReviewsList } from "@features/reviews";
 
@@ -92,6 +93,7 @@ const TenantPublicRoutes = () => (
     <Route path="/cart" element={<Cart />} />
     <Route path="/checkout" element={<Checkout />} />
     <Route path="/reservar" element={<ReservationForm />} />
+    <Route path="/carta" element={<VirtualMenuPage />} /> {/* ✅ NUEVA RUTA */}
     <Route path="/reviews" element={<ReviewsList />} />
     <Route path="*" element={<Navigate to="/" />} />
   </Routes>

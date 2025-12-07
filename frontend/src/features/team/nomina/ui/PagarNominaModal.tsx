@@ -1,6 +1,7 @@
 // frontend/src/features/team/nomina/ui/PagarNominaModal.tsx
 import React, { useState, useEffect } from 'react';
 import { Modal } from '@shared/ui';
+import { useGlobalConfig } from '@shared/hooks/useGlobalConfig'; // ✅ IMPORTAR
 import {
   DollarSignIcon,
   CheckCircleIcon,
@@ -25,6 +26,7 @@ interface Props {
 
 const PagarNominaModal: React.FC<Props> = ({ isOpen, onClose, empleadoId, onPaymentSuccess }) => {
   const { getDetallePagoEmpleado, pagarNomina } = useTeamManagement();
+  const { formatCurrency } = useGlobalConfig(); // ✅ USAR HOOK
 
   const [calculo, setCalculo] = useState<CalcularPagoResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -69,7 +71,9 @@ const PagarNominaModal: React.FC<Props> = ({ isOpen, onClose, empleadoId, onPaym
 
     if (calculo.ya_pagado_mes_actual && !forzar) {
         if(!window.confirm("⚠️ ADVERTENCIA CRÍTICA ⚠️\n\nEste empleado YA RECIBIÓ un pago este mes.\n\n¿Estás 100% seguro de que quieres pagarle de nuevo (ej. un bono extra)?")) return;
-    } else if (!forzar && !window.confirm(`¿Confirmar pago de S/ ${calculo.total_pagar.toFixed(2)} a ${calculo.empleado_nombre} por ${metodoPago}?`)) {
+    }
+
+    if (!forzar && !window.confirm(`¿Confirmar pago de ${formatCurrency(calculo.total_pagar)} a ${calculo.empleado_nombre} por ${metodoPago}?`)) {
         return;
     }
 
@@ -129,20 +133,20 @@ const PagarNominaModal: React.FC<Props> = ({ isOpen, onClose, empleadoId, onPaym
            <div className="space-y-3">
               <div className="flex justify-between items-center text-gray-600">
                  <span>Sueldo Base</span>
-                 <span className="font-medium">S/ {calculo.sueldo_base.toFixed(2)}</span>
+                 <span className="font-medium">{formatCurrency(calculo.sueldo_base)}</span>
               </div>
               
               {calculo.total_descuentos > 0 && (
                  <div className="bg-red-50 p-3 rounded-lg border border-red-100">
                     <div className="flex justify-between items-center text-red-700 font-medium mb-2 border-b border-red-200 pb-2">
                         <span className="flex items-center gap-2"><TrendingDownIcon className="w-4 h-4"/> Descuentos</span>
-                        <span>- S/ {calculo.total_descuentos.toFixed(2)}</span>
+                        <span>- {formatCurrency(calculo.total_descuentos)}</span>
                     </div>
                     <ul className="space-y-1">
                         {calculo.descuentos_detalle.map((d: any) => (
                             <li key={d.id} className="flex justify-between text-xs text-red-600">
                                 <span>• {d.motivo}</span>
-                                <span>- S/ {Number(d.monto).toFixed(2)}</span>
+                                <span>- {formatCurrency(Number(d.monto))}</span>
                             </li>
                         ))}
                     </ul>
@@ -151,7 +155,7 @@ const PagarNominaModal: React.FC<Props> = ({ isOpen, onClose, empleadoId, onPaym
               
               <div className="border-t border-gray-200 pt-3 flex justify-between items-center text-lg font-bold text-gray-900">
                  <span>Total a Pagar (Neto)</span>
-                 <span>S/ {calculo.total_pagar.toFixed(2)}</span>
+                 <span>{formatCurrency(calculo.total_pagar)}</span>
               </div>
            </div>
 

@@ -1,45 +1,27 @@
-// src/features/menu/products/ui/MenuCatalog.tsx
-import { Search, Filter, ShoppingBag, ChevronDown, X } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+// src/features/menu/products/ui/VirtualMenuCatalog.tsx
+import { useState } from 'react';
+import { Search, Filter, ChevronDown, X } from 'lucide-react';
 import { useRestobarCatalog } from '@features/menu/model/useRestobarCatalog';
-import { useCart } from '@app/providers/CartProvider';
-import { useGlobalConfig } from '@shared/hooks/useGlobalConfig'; // ✅ IMPORTAR
+import { useGlobalConfig } from '@shared/hooks/useGlobalConfig';
 import type { Producto } from '@shared/types';
 
-// Elimina la prop onAddToCart ya que usaremos useCart directamente
-export function MenuCatalog() {
+export function VirtualMenuCatalog() {
   const {
     categories,
     tenantInfo,
     searchTerm,
     selectedCategory,
     filters,
-    sortBy,
     showFilters,
     loading,
     filteredProducts,
     setSearchTerm,
     setSelectedCategory,
     setFilters,
-    setSortBy,
     setShowFilters,
   } = useRestobarCatalog();
 
-  const { addToCart, getTotalItems } = useCart();
-  const { formatCurrency } = useGlobalConfig(); // ✅ USAR HOOK
-  const cartItemCount = getTotalItems();
-  const navigate = useNavigate();
-
-  // Función para agregar al carrito
-  const handleAddToCart = (product: Producto) => {
-    addToCart({
-      id: product.id,
-      nombre: product.nombre,
-      precio: Number(product.precio),
-      foto_url: product.foto_url,
-      disponible: product.disponible
-    });
-  };
+  const { formatCurrency } = useGlobalConfig();
 
   // Lógica para detectar si hay filtros activos
   const hasActiveFilters = 
@@ -64,7 +46,7 @@ export function MenuCatalog() {
   }
 
   return (
-    <div id="menu" className="min-h-screen bg-gray-50/50 font-sans text-slate-800 pb-24">
+    <div id="menu" className="min-h-screen bg-gray-50 font-sans text-slate-800 pb-24">
       
       {/* --- HEADER COMPACTO --- */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
@@ -77,7 +59,7 @@ export function MenuCatalog() {
                     {tenantInfo?.nombre_empresa || 'Carta'}
                     </h2>
                     <p className="text-slate-400 text-xs mt-1 font-medium">
-                    Elige tus favoritos
+                    Explora nuestros platos
                     </p>
                 </div>
 
@@ -188,16 +170,6 @@ export function MenuCatalog() {
                             </label>
                             ))}
                         </div>
-                        
-                        <select
-                            value={sortBy}
-                            onChange={(e) => setSortBy(e.target.value as any)}
-                            className="bg-gray-50 text-slate-700 text-xs font-semibold px-3 py-1.5 rounded border border-gray-200 focus:outline-none cursor-pointer"
-                        >
-                            <option value="popular">Populares</option>
-                            <option value="price-asc">Precio: Menor</option>
-                            <option value="name">Nombre (A-Z)</option>
-                        </select>
                     </div>
                     
                     {/* Botón Limpiar Móvil */}
@@ -224,7 +196,6 @@ export function MenuCatalog() {
               <ProductTile 
                 key={product.id} 
                 product={product} 
-                onAddToCart={handleAddToCart}
               />
             ))}
           </div>
@@ -243,37 +214,14 @@ export function MenuCatalog() {
           </div>
         )}
       </div>
-
-      {/* Botón Carrito */}
-      <div className="fixed bottom-6 right-6 z-50">
-        <button
-          onClick={() => navigate('/cart')}
-          className="bg-slate-900 hover:bg-black text-white w-14 h-14 rounded-full shadow-xl transition-transform hover:scale-105 active:scale-95 flex items-center justify-center relative"
-        >
-          <ShoppingBag size={20} />
-          {cartItemCount > 0 && (
-            <span className="absolute top-0 right-0 bg-red-600 text-white text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center border-2 border-white">
-              {cartItemCount}
-            </span>
-          )}
-        </button>
-      </div>
     </div>
   );
 }
 
-// Componente ProductTile
-function ProductTile({ 
-  product, 
-  onAddToCart,
-  isReadOnly 
-}: { 
-  product: Producto; 
-  onAddToCart: (product: Producto) => void;
-  isReadOnly: boolean;
-}) {
-  const { formatCurrency } = useGlobalConfig(); // ✅ USAR HOOK AQUÍ TAMBIÉN
-
+// Componente ProductTile para Virtual Menu (Solo lectura)
+function ProductTile({ product }: { product: Producto }) {
+  const { formatCurrency } = useGlobalConfig();
+  
   return (
     <div className="group flex flex-col bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-slate-400 hover:shadow-lg transition-all duration-300 h-full">
       
@@ -312,24 +260,11 @@ function ProductTile({
             <span className="text-sm font-extrabold text-slate-900">
                {formatCurrency(Number(product.precio))}
             </span>
-
-            {!isReadOnly && (
-              <button
-                onClick={(e) => {
-                  e.preventDefault(); 
-                  onAddToCart(product);
-                }}
-                disabled={!product.disponible}
-                className={`
-                  h-8 px-3 rounded-md flex items-center justify-center transition-all text-xs font-bold
-                  ${product.disponible 
-                    ? 'bg-slate-100 text-slate-900 hover:bg-slate-900 hover:text-white' 
-                    : 'bg-gray-50 text-gray-300 cursor-not-allowed'
-                  }
-                `}
-              >
-                {product.disponible ? 'Agregar' : 'Agotado'}
-              </button>
+            
+            {!product.disponible && (
+                <span className="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-1 rounded">
+                    Agotado
+                </span>
             )}
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useDashboardApi } from '@shared/api/useDashboardApi';
+import { useGlobalConfig } from '@shared/hooks/useGlobalConfig'; // ✅ IMPORTAR
 import { 
   CurrencyDollarIcon, 
   TrendingDownIcon, 
@@ -9,6 +10,7 @@ import {
 
 const FinancialPage = () => {
   const { getResumenFinanciero } = useDashboardApi();
+  const { formatCurrency } = useGlobalConfig(); // ✅ USAR HOOK
   
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -97,7 +99,7 @@ const FinancialPage = () => {
           <div className="flex justify-between items-start mb-6">
             <div>
                <p className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Ingresos Totales</p>
-               <h3 className="text-4xl font-bold text-slate-900 tracking-tight">S/ {resumen.ingresos.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</h3>
+               <h3 className="text-4xl font-bold text-slate-900 tracking-tight">{formatCurrency(resumen.ingresos)}</h3>
             </div>
             <div className="p-3 bg-blue-50 rounded-2xl text-blue-600">
               <CurrencyDollarIcon className="w-6 h-6" />
@@ -117,7 +119,7 @@ const FinancialPage = () => {
           <div className="flex justify-between items-start mb-6">
             <div>
                <p className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Egresos Totales</p>
-               <h3 className="text-4xl font-bold text-slate-900 tracking-tight">S/ {resumen.egresos.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</h3>
+               <h3 className="text-4xl font-bold text-slate-900 tracking-tight">{formatCurrency(resumen.egresos)}</h3>
             </div>
             <div className="p-3 bg-rose-50 rounded-2xl text-rose-500">
               <TrendingDownIcon className="w-6 h-6" />
@@ -144,7 +146,7 @@ const FinancialPage = () => {
               <div className="flex justify-between items-start mb-6">
                 <div>
                    <p className="text-sm font-bold text-white/80 uppercase tracking-wider mb-1">Utilidad Neta</p>
-                   <h3 className="text-4xl font-bold text-white tracking-tight">S/ {resumen.utilidad.toLocaleString('es-PE', { minimumFractionDigits: 2 })}</h3>
+                   <h3 className="text-4xl font-bold text-white tracking-tight">{formatCurrency(resumen.utilidad)}</h3>
                 </div>
                 <div className="p-3 bg-white/20 backdrop-blur-sm rounded-2xl text-white">
                   <ChartBarIcon className="w-6 h-6" />
@@ -175,7 +177,7 @@ const FinancialPage = () => {
            <div className="mb-6 group">
               <div className="flex justify-between mb-2">
                  <span className="text-sm font-medium text-slate-600">Compras de Inventario</span>
-                 <span className="text-sm font-bold text-slate-800">S/ {detalles.total_compras_insumos.toFixed(2)}</span>
+                 <span className="text-sm font-bold text-slate-800">{formatCurrency(detalles.total_compras_insumos)}</span>
               </div>
               <div className="w-full bg-slate-50 rounded-full h-3 overflow-hidden">
                  <div className="bg-purple-500 h-3 rounded-full transition-all duration-1000 group-hover:bg-purple-600" style={{ width: `${pctCompras}%` }}></div>
@@ -187,7 +189,7 @@ const FinancialPage = () => {
            <div className="group">
               <div className="flex justify-between mb-2">
                  <span className="text-sm font-medium text-slate-600">Gastos Operativos</span>
-                 <span className="text-sm font-bold text-slate-800">S/ {detalles.total_gastos_operativos.toFixed(2)}</span>
+                 <span className="text-sm font-bold text-slate-800">{formatCurrency(detalles.total_gastos_operativos)}</span>
               </div>
               <div className="w-full bg-slate-50 rounded-full h-3 overflow-hidden">
                  <div className="bg-orange-400 h-3 rounded-full transition-all duration-1000 group-hover:bg-orange-500" style={{ width: `${pctOperativos}%` }}></div>
@@ -204,7 +206,7 @@ const FinancialPage = () => {
            <h3 className="text-xl font-bold mb-2">Análisis del Periodo</h3>
            <p className="text-slate-300 text-sm leading-relaxed mb-6">
              {isProfitable 
-               ? `Tu negocio está generando valor. Por cada S/ 100.00 que vendes, te estás quedando con una ganancia neta de S/ ${((resumen.utilidad / (resumen.ingresos || 1)) * 100).toFixed(2)} después de cubrir todos tus costos.`
+               ? `Tu negocio está generando valor. Por cada ${formatCurrency(100)} que vendes, te estás quedando con una ganancia neta de ${formatCurrency((resumen.utilidad / (resumen.ingresos || 1)) * 100)} después de cubrir todos tus costos.`
                : `Alerta: Tus costos superan tus ingresos. Se recomienda revisar los gastos operativos o ajustar precios de venta para mejorar el margen.`}
            </p>
            <div className="mt-auto pt-6 border-t border-white/10 flex justify-between items-center">

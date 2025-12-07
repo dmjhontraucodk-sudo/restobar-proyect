@@ -5,6 +5,7 @@ import type { MenuItem } from '@shared/types';
 
 interface ProductsTableProps {
   items: MenuItem[];
+  formatCurrency: (amount: number) => string; // ✅ Nueva prop
   onToggleItemStatus: (itemId: string) => void;
   onToggleWebVisibility: (itemId: string) => void;
   onEditItem: (item: MenuItem) => void;
@@ -13,6 +14,7 @@ interface ProductsTableProps {
 
 const ProductsTable: React.FC<ProductsTableProps> = ({
   items,
+  formatCurrency, // ✅ Recibir
   onToggleItemStatus,
   onToggleWebVisibility,
   onEditItem,
@@ -83,7 +85,7 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
                         <span className={`font-semibold text-gray-900 text-sm ${
                           !item.disponible ? 'text-gray-400' : ''
                         }`}>
-                          ${item.price.toFixed(2)}
+                          {formatCurrency(item.price)}
                         </span>
                       </div>
                     </div>
@@ -104,7 +106,7 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
                   <span className={`font-semibold text-gray-900 ${
                     !item.disponible ? 'text-gray-400' : ''
                   }`}>
-                    ${item.price.toFixed(2)}
+                    {formatCurrency(item.price)}
                   </span>
                 </td>
                 

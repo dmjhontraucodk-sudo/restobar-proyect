@@ -6,6 +6,8 @@ import { type Category, type MenuItem } from '@shared/types';
 
 interface CategorySectionProps {
   category: Category;
+  moneda: { codigo: string; simbolo: string }; // ✅ Nueva prop
+  formatCurrency: (amount: number) => string; // ✅ Nueva prop
   onAddItem: (category: Category) => void;
   onToggleItemStatus: (itemId: string) => void;
   onToggleWebVisibility: (itemId: string) => void;
@@ -15,6 +17,8 @@ interface CategorySectionProps {
 
 const CategorySection: React.FC<CategorySectionProps> = ({ 
   category, 
+  moneda, // ✅ Recibir
+  formatCurrency, // ✅ Recibir
   onAddItem,
   onToggleItemStatus,
   onToggleWebVisibility,
@@ -81,6 +85,7 @@ const CategorySection: React.FC<CategorySectionProps> = ({
         <div className="overflow-x-auto">
           <ProductsTable 
             items={items}
+            formatCurrency={formatCurrency} // ✅ Pasar
             onToggleItemStatus={onToggleItemStatus}
             onToggleWebVisibility={onToggleWebVisibility}
             onEditItem={onEditItem}

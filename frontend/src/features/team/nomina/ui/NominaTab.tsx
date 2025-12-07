@@ -16,12 +16,14 @@ interface NominaTabProps {
     nomina: NominaResponse | null;
     puedeVerSalarios: boolean;
     isLoading: boolean;
+    formatCurrency: (amount: number) => string; // ✅ Aceptar prop
 }
 
 export const NominaTab: React.FC<NominaTabProps> = ({
     nomina,
     puedeVerSalarios,
-    isLoading
+    isLoading,
+    formatCurrency // ✅ Recibir como prop
 }) => {
     const { reloadNomina } = useTeamManagement(); // Obtener reloadNomina del hook
     const [pagarEmpleadoId, setPagarEmpleadoId] = useState<number | null>(null);
@@ -36,12 +38,13 @@ export const NominaTab: React.FC<NominaTabProps> = ({
         );
     }, [nomina, searchTerm]);
 
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('es-PE', {
-            style: 'currency',
-            currency: 'PEN'
-        }).format(amount);
-    };
+    // Eliminar la función formatCurrency local
+    // const formatCurrency = (amount: number) => {
+    //     return new Intl.NumberFormat('es-PE', {
+    //         style: 'currency',
+    //         currency: 'PEN'
+    //     }).format(amount);
+    // };
 
     // --- ESTADOS DE CARGA Y ERROR ---
     if (!puedeVerSalarios) {

@@ -243,6 +243,16 @@ export interface ApiWebPedido {
   notas: string | null;
   created_at: string;
   updated_at: string | null;
+  
+  // ✅ Campos para Delivery
+  motorizado_id?: number | null;
+  hora_salida_delivery?: string | null;
+  hora_entrega_delivery?: string | null;
+  motorizado?: {
+      id: number;
+      nombre: string | null;
+  } | null;
+
   webpedidos_detalles: ApiWebPedidoDetalle[];
 }
 

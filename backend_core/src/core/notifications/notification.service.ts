@@ -297,5 +297,52 @@ export const notificationService = {
       console.error('❌ [NOTIF] Error al enviar resumen diario:', error);
       throw error;
     }
+  },
+
+  /**
+   * Notificar solicitud de mozo (Llamar al personal)
+   */
+  async notificarLlamadoMozo(
+    tenantId: number,
+    mesaNombre: string
+  ) {
+    try {
+      const config = await tenantConfigService.getConfig(tenantId);
+      
+      // Usamos el email de nuevos pedidos o el del negocio como destino
+      const emailDestino = this.obtenerEmailDestino(config, 'pedidos');
+      
+      if (!emailDestino) {
+        console.log('ℹ️ [NOTIF] Email para alertas no configurado');
+        return;
+      }
+
+      const horaActual = new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
+
+      await resend.emails.send({
+        from: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev',
+        to: emailDestino,
+        subject: `🔔 Mesa ${mesaNombre} solicita atención`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+            <div style="background-color: #f59e0b; padding: 20px; text-align: center;">
+              <h2 style="color: white; margin: 0;">🔔 Solicitud de Atención</h2>
+            </div>
+            <div style="padding: 30px; background-color: white; text-align: center;">
+              <p style="font-size: 18px; color: #374151; margin-bottom: 10px;">La <strong>Mesa ${mesaNombre}</strong> requiere asistencia.</p>
+              <p style="font-size: 24px; font-weight: bold; color: #1f2937; margin: 20px 0;">${horaActual}</p>
+              <div style="background-color: #fff7ed; border: 1px solid #ffedd5; color: #9a3412; padding: 15px; border-radius: 6px; margin-top: 20px;">
+                Por favor, acérquese a la mesa lo antes posible.
+              </div>
+            </div>
+          </div>
+        `
+      });
+
+      console.log(`✅ [NOTIF] Alerta de mozo enviada para Mesa ${mesaNombre}`);
+    } catch (error) {
+      console.error('❌ [NOTIF] Error al enviar alerta de mozo:', error);
+      throw error;
+    }
   }
 };

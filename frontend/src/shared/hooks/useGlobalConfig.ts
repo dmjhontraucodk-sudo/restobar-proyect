@@ -347,6 +347,18 @@ export const useGlobalConfig = () => {
       },
     },
 
+    // 💰 Moneda
+    moneda: {
+      codigo: config?.moneda_base_codigo || 'PEN',
+      simbolo: config?.moneda_base_simbolo || 'S/',
+    },
+
+    // 🛠️ Utilidades
+    formatCurrency: (amount: number) => {
+      const simbolo = config?.moneda_base_simbolo || 'S/';
+      return `${simbolo} ${amount.toFixed(2)}`;
+    },
+
     // ✅ VALIDACIONES COMPLETAS
     validaciones: {
       // Validación completa de disponibilidad

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useDashboardApi } from '@shared/api/useDashboardApi';
+import { useGlobalConfig } from '@shared/hooks/useGlobalConfig'; // ✅ IMPORTAR
 import { type CajaHistorialItem } from '@shared/types';
 import { 
   CalendarIcon, 
@@ -17,6 +18,7 @@ const ArrowLeftIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 const HistorialCajasPage = () => {
   const { makeRequest } = useDashboardApi();
+  const { formatCurrency } = useGlobalConfig(); // ✅ USAR HOOK
   const [historial, setHistorial] = useState<CajaHistorialItem[]>([]);
   const [loading, setLoading] = useState(false);
   
@@ -195,13 +197,13 @@ const HistorialCajasPage = () => {
 
                         {/* Montos */}
                         <td className="px-6 py-4 text-right text-gray-500">
-                          S/ {Number(caja.monto_inicial).toFixed(2)}
+                          {formatCurrency(Number(caja.monto_inicial))}
                         </td>
                         <td className="px-6 py-4 text-right font-medium text-gray-700">
-                          S/ {Number(caja.monto_esperado).toFixed(2)}
+                          {formatCurrency(Number(caja.monto_esperado))}
                         </td>
                         <td className="px-6 py-4 text-right font-bold text-blue-600 bg-blue-50/30">
-                          S/ {caja.monto_real ? Number(caja.monto_real).toFixed(2) : '-'}
+                          {caja.monto_real ? formatCurrency(Number(caja.monto_real)) : '-'}
                         </td>
 
                         {/* Diferencia (Semáforo) */}
@@ -229,7 +231,7 @@ const HistorialCajasPage = () => {
       </div>
       
       <div className="text-center text-xs text-gray-400 mt-6">
-        Mostrando cierres del periodo seleccionado. Los montos están en Soles (S/).
+        Mostrando cierres del periodo seleccionado. Los montos están en la moneda principal.
       </div>
     </div>
   );

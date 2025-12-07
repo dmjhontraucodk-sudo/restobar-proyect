@@ -225,6 +225,31 @@ export const webOrdersController = {
     }
   },
 
+  async assignMotorized(req: OrderRequest, res: Response): Promise<any> {
+    try {
+      const tenantId = req.user?.tenant_id;
+      const orderId = parseInt(req.params.id);
+      const { motorizado_id } = req.body;
+
+      if (!tenantId) return res.status(403).json({ error: 'Acceso no autorizado' });
+      if (!motorizado_id) return res.status(400).json({ error: 'ID de motorizado requerido' });
+
+      const order = await webOrdersService.assignMotorized(tenantId, orderId, parseInt(motorizado_id));
+
+      return res.json({
+        success: true,
+        message: 'Motorizado asignado correctamente',
+        order
+      });
+    } catch (error: any) {
+      console.error('Error en assignMotorized:', error);
+      return res.status(500).json({ 
+        success: false,
+        error: error.message || 'Error al asignar motorizado' 
+      });
+    }
+  },
+
   async getOrderConfig(req: OrderRequest, res: Response): Promise<any> {
     try {
       const tenantId = req.user?.tenant_id;

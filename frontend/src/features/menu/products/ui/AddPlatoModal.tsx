@@ -31,6 +31,9 @@ interface AddPlatoModalProps {
   itemDescription: string;
   onItemDescriptionChange: (value: string) => void;
 
+  // ✅ NUEVOS PROPS PARA MONEDA
+  monedaSimbolo?: string; // Opcional, default "S/"
+
   // ✅ NUEVOS PROPS PARA VINCULACIÓN DE INVENTARIO
   insumos: InsumoOption[];
   selectedInsumoId: number | null;
@@ -58,6 +61,7 @@ const AddPlatoModal: React.FC<AddPlatoModalProps> = ({
   onItemDescriptionChange,
   
   // ✅ DESESTRUCTURAMOS LOS NUEVOS PROPS
+  monedaSimbolo = "S/", // Default
   insumos,
   selectedInsumoId,
   onInsumoChange,
@@ -210,7 +214,7 @@ const AddPlatoModal: React.FC<AddPlatoModalProps> = ({
             </label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">
-                S/
+                {monedaSimbolo}
               </span>
               <input 
                 type="text" 

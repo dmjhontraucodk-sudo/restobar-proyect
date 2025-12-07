@@ -1,14 +1,14 @@
 import { useEffect } from 'react';
 import { useTeamManagement } from '@features/team/model/useTeamManagement';
+import { useGlobalConfig } from '@shared/hooks/useGlobalConfig'; // ✅ IMPORTAR
 import { NominaTab } from '@features/team';
-import { 
+import {
   DollarSignIcon 
 } from '@shared/ui/Icons';
 
 const NominaPage = () => {
-  // Reutilizamos el hook de equipo que ya trae la lógica de nómina
-  const { 
-    nomina, 
+  const { formatCurrency } = useGlobalConfig(); // ✅ USAR HOOK
+  const {     nomina, 
     isLoading, 
     error, 
     puedeVerSalarios,
@@ -47,6 +47,7 @@ const NominaPage = () => {
           nomina={nomina} 
           puedeVerSalarios={puedeVerSalarios} 
           isLoading={isLoading} 
+          formatCurrency={formatCurrency} // ✅ Pasar formatCurrency
         />
       )}
     </div>

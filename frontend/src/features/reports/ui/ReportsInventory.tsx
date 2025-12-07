@@ -3,6 +3,7 @@ import {
     type InventoryReport 
 } from '@shared/types';
 import { useReportsApi } from '@features/reports/model/useReportsApi';
+import { useGlobalConfig } from '@shared/hooks/useGlobalConfig'; // ✅ IMPORTAR
 import { RefreshIcon } from '@shared/ui/Icons';
 import { 
     PackageIcon, 
@@ -15,9 +16,6 @@ import {
     ArrowUpIcon,
     ArrowDownIcon
 } from 'lucide-react';
-
-// Helper para formato de moneda
-const formatCurrency = (value: number) => `$${value.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
 
 // Helper para formato de fecha
 const formatDate = (dateString: string) => {
@@ -116,6 +114,7 @@ const ProgressBar: React.FC<{ value: number; max: number; color: string; label: 
 // Componente principal de Inventario Mejorado
 const ReportsInventory: React.FC = () => {
     const { getInventorySummary } = useReportsApi();
+    const { formatCurrency } = useGlobalConfig(); // ✅ USAR HOOK
     const [report, setReport] = useState<InventoryReport | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);

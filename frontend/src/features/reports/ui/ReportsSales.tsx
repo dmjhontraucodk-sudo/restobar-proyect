@@ -4,11 +4,9 @@ import {
     type SalesTrendData
  } from '@shared/types';
 import { useReportsApi } from '@features/reports/model/useReportsApi';
+import { useGlobalConfig } from '@shared/hooks/useGlobalConfig'; // ✅ IMPORTAR
 import { RefreshIcon, DollarSignIcon, ShoppingBagIcon, TrendingUpIcon, CalendarIcon } from '@shared/ui/Icons';
 import { VentasPorTendenciaChart } from '@features/reports';
-
-// Helper para formato de moneda
-const formatCurrency = (value: number) => `$${value.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
 
 // Helper para formato de fecha
 const formatDate = (dateString: string) => {
@@ -79,6 +77,7 @@ const MetricCard: React.FC<{ title: string; value: string | number; description:
 // Componente principal de Ventas Mejorado
 const ReportsSales: React.FC = () => {
     const { getSalesSummary } = useReportsApi();
+    const { formatCurrency } = useGlobalConfig(); // ✅ USAR HOOK
     const [report, setReport] = useState<SalesReport | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -383,7 +382,7 @@ const ReportsSales: React.FC = () => {
                         <div className="w-px h-12 bg-blue-400"></div>
                         <div className="text-center">
                             <p className="text-2xl font-bold">
-                                {report?.totalVentas ? formatCurrency(report.totalVentas) : '$0.00'}
+                                {report?.totalVentas ? formatCurrency(report.totalVentas) : formatCurrency(0)}
                             </p>
                             <p className="text-blue-200 text-sm">Ingresos Generados</p>
                         </div>

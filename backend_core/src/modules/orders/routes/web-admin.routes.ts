@@ -13,6 +13,7 @@ router.get('/list', webOrdersController.getWebOrders);
 router.get('/:id', webOrdersController.getWebOrderDetail);
 router.patch('/:id/status', webOrdersController.updateOrderStatus);
 router.post('/:id/convert-to-pos', webOrdersController.convertToPosOrder);
+router.post('/:id/assign-motorized', webOrdersController.assignMotorized); // ✅ NUEVA RUTA
 
 // Configuración de pedidos (ADMIN)
 router.get('/config', webOrdersController.getOrderConfig);

@@ -1,6 +1,7 @@
 // src/pages/MenuManagementPage.tsx - VERSIÓN MEJORADA
 import React from "react";
 import { useMenuManagement } from "@features/menu/model/useMenuManagement";
+import { useGlobalConfig } from "@shared/hooks/useGlobalConfig"; // ✅ IMPORTAR
 import { 
   MenuHeader, 
   CategorySection, 
@@ -16,6 +17,7 @@ interface MenuManagementPageProps {
 }
 
 const MenuManagementPage: React.FC<MenuManagementPageProps> = ({ tipo }) => {
+  const { formatCurrency, moneda } = useGlobalConfig(); // ✅ USAR HOOK
   const {
     // Estados
     isLoading,
@@ -170,6 +172,8 @@ const MenuManagementPage: React.FC<MenuManagementPageProps> = ({ tipo }) => {
               <CategorySection
                 key={category.id}
                 category={category}
+                moneda={moneda} // ✅ Pasar moneda
+                formatCurrency={formatCurrency} // ✅ Pasar función
                 onAddItem={handleAddItem}
                 onToggleItemStatus={handleToggleItemStatus}
                 onToggleWebVisibility={handleToggleWebVisibility}
@@ -237,6 +241,7 @@ const MenuManagementPage: React.FC<MenuManagementPageProps> = ({ tipo }) => {
       <AddPlatoModal
         isOpen={showItemModal}
         onClose={handleCloseModal}
+        monedaSimbolo={moneda.simbolo} // ✅ Pasar símbolo
         editingCategory={editingCategory}
         isEditing={!!editingItem}
         isUploading={isUploading}

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useDashboardApi } from '@shared/api/useDashboardApi';
 import toast from "react-hot-toast";
 import Modal from "@shared/ui/Modal/Modal";
+import { useGlobalConfig } from '@shared/hooks/useGlobalConfig'; // ✅ IMPORTAR
 import { type GastoOperativo, type TipoGasto } from '@shared/types';
 import { 
   TrendingDownIcon, 
@@ -15,6 +16,7 @@ import {
 
 const Gastos: React.FC = () => {
   const { getGastosOperativos, createGastoOperativo, deleteGastoOperativo, getTiposGasto, isLoading } = useDashboardApi();
+  const { formatCurrency, moneda } = useGlobalConfig(); // ✅ USAR HOOK
 
   const [gastos, setGastos] = useState<GastoOperativo[]>([]);
   const [tiposGasto, setTiposGasto] = useState<TipoGasto[]>([]);
@@ -157,7 +159,7 @@ const Gastos: React.FC = () => {
             <div className="flex justify-between items-start">
                <div>
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Egresos</p>
-                  <h3 className="text-3xl font-bold text-slate-900 mt-1">S/ {totalGastos.toFixed(2)}</h3>
+                  <h3 className="text-3xl font-bold text-slate-900 mt-1">{formatCurrency(totalGastos)}</h3>
                </div>
                <div className="p-2 bg-rose-50 rounded-lg text-rose-500">
                   <CurrencyDollarIcon className="w-6 h-6" />
@@ -188,7 +190,7 @@ const Gastos: React.FC = () => {
                <div>
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Gasto Promedio</p>
                   <h3 className="text-3xl font-bold text-slate-900 mt-1">
-                     S/ {gastosFiltrados.length > 0 ? (totalGastos / gastosFiltrados.length).toFixed(2) : "0.00"}
+                     {gastosFiltrados.length > 0 ? formatCurrency(totalGastos / gastosFiltrados.length) : formatCurrency(0)}
                   </h3>
                </div>
                <div className="p-2 bg-purple-50 rounded-lg text-purple-500">
@@ -301,7 +303,7 @@ const Gastos: React.FC = () => {
                               </td>
                               <td className="px-6 py-4 text-right">
                                  <span className="font-bold text-rose-600 text-base">
-                                    - S/ {Number(gasto.monto).toFixed(2)}
+                                    - {formatCurrency(Number(gasto.monto))}
                                  </span>
                               </td>
                               <td className="px-6 py-4 text-center">
@@ -368,7 +370,7 @@ const Gastos: React.FC = () => {
                   />
                </div>
                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Monto (S/)</label>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Monto ({moneda.simbolo})</label>
                   <div className="relative">
                      <input 
                        type="number" 
@@ -379,7 +381,7 @@ const Gastos: React.FC = () => {
                        value={formData.monto}
                        onChange={e => setFormData({...formData, monto: e.target.value})}
                      />
-                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">S/</span>
+                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">{moneda.simbolo}</span>
                   </div>
                </div>
             </div>

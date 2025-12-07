@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCaja } from '@features/finance/model/useCaja';
+import { useGlobalConfig } from '@shared/hooks/useGlobalConfig'; // ✅ IMPORTAR
 import Modal from '@shared/ui/Modal/Modal';
 
 // Importamos TUS iconos existentes
@@ -32,6 +33,7 @@ const ChartBarIcon = (props: React.SVGProps<SVGSVGElement>) => (
 // Componente Principal
 const CajaPage = () => {
   const { cajaData, isLoading, estadisticasExtendidas, actions } = useCaja();
+  const { formatCurrency, moneda } = useGlobalConfig(); // ✅ USAR HOOK
   
   // Estados para Modales
   const [showAbrirModal, setShowAbrirModal] = useState(false);
@@ -94,7 +96,7 @@ const CajaPage = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Monto Inicial (Fondo)</label>
                   <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">S/</span>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">{moneda.simbolo}</span>
                       <input 
                         type="number" 
                         step="0.01"
@@ -182,7 +184,7 @@ const CajaPage = () => {
                     {stat.porcentaje.toFixed(1)}%
                   </span>
                 </div>
-                <p className="text-2xl font-bold text-gray-900">S/ {stat.total.toFixed(2)}</p>
+                <p className="text-2xl font-bold text-gray-900">{formatCurrency(stat.total)}</p>
                 <p className="text-xs text-gray-500 mt-1">{stat.cantidad} transacciones</p>
               </div>
             ))}
@@ -195,7 +197,7 @@ const CajaPage = () => {
             </div>
             <div className="flex-1">
               <p className="text-sm text-gray-500">Ticket Promedio</p>
-              <p className="text-xl font-bold text-gray-900">S/ {estadisticasExtendidas.ticket_promedio.toFixed(2)}</p>
+              <p className="text-xl font-bold text-gray-900">{formatCurrency(estadisticasExtendidas.ticket_promedio)}</p>
             </div>
           </div>
         </div>
@@ -246,7 +248,7 @@ const CajaPage = () => {
                     <td className="px-4 py-3 font-medium text-gray-800">{mov.concepto}</td>
                     <td className="px-4 py-3 text-gray-500">{mov.metodo_pago}</td>
                     <td className={`px-4 py-3 text-right font-bold ${mov.tipo === 'INGRESO' ? 'text-green-600' : 'text-red-600'}`}>
-                      {mov.tipo === 'INGRESO' ? '+' : '-'} S/ {Number(mov.monto).toFixed(2)}
+                      {mov.tipo === 'INGRESO' ? '+' : '-'} {formatCurrency(Number(mov.monto))}
                     </td>
                   </tr>
                 ))
@@ -303,7 +305,7 @@ const CajaPage = () => {
             <div className="space-y-4">
               <div className="bg-blue-50 p-4 rounded-lg">
                 <p className="text-sm text-blue-800">Saldo esperado en sistema:</p>
-                <p className="text-2xl font-bold text-blue-900">S/ {resumen.saldo_teorico.toFixed(2)}</p>
+                <p className="text-2xl font-bold text-blue-900">{formatCurrency(resumen.saldo_teorico)}</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Conteo Físico (¿Cuánto dinero hay realmente?)</label>
@@ -339,14 +341,17 @@ const CajaPage = () => {
 };
 
 // Componente auxiliar para las tarjetas
-const StatCard = ({ title, amount, color, big = false }: any) => (
-  <div className={`bg-white p-4 rounded-xl shadow-sm border-l-4 ${big ? 'border-l-8' : ''}`} 
-       style={{ borderColor: color === 'gray' ? '#9CA3AF' : color === 'green' ? '#22C55E' : color === 'red' ? '#EF4444' : '#3B82F6' }}>
-    <p className="text-sm text-gray-500 mb-1">{title}</p>
-    <p className={`font-bold text-gray-900 ${big ? 'text-3xl' : 'text-xl'}`}>
-      S/ {Number(amount).toFixed(2)}
-    </p>
-  </div>
-);
+const StatCard = ({ title, amount, color, big = false }: any) => {
+  const { formatCurrency } = useGlobalConfig(); // ✅ USAR HOOK
+  return (
+    <div className={`bg-white p-4 rounded-xl shadow-sm border-l-4 ${big ? 'border-l-8' : ''}`} 
+         style={{ borderColor: color === 'gray' ? '#9CA3AF' : color === 'green' ? '#22C55E' : color === 'red' ? '#EF4444' : '#3B82F6' }}>
+      <p className="text-sm text-gray-500 mb-1">{title}</p>
+      <p className={`font-bold text-gray-900 ${big ? 'text-3xl' : 'text-xl'}`}>
+        {formatCurrency(Number(amount))}
+      </p>
+    </div>
+  );
+};
 
 export default CajaPage;
