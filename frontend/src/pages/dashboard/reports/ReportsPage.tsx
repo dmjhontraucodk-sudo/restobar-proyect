@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { ReportsSales, ReportsInventory, ReportsFinance } from '@features/reports';
+import { RolePerformanceReport as ReportsByRole } from '@features/reports/ui/RolePerformanceReport';
 import { RefreshIcon } from '@shared/ui/Icons';
-import { DollarSignIcon, PackageIcon, PiggyBankIcon, ChevronRightIcon } from 'lucide-react';
+import { DollarSignIcon, PackageIcon, PiggyBankIcon, UsersIcon, ChevronRightIcon } from 'lucide-react';
 
 // Definición de las pestañas con tipos más específicos
 interface Tab {
@@ -16,6 +17,7 @@ const tabs: Tab[] = [
     { id: 'sales', label: 'Ventas y Órdenes', icon: DollarSignIcon, component: ReportsSales, color: 'blue' },
     { id: 'inventory', label: 'Inventario y Costos', icon: PackageIcon, component: ReportsInventory, color: 'green' },
     { id: 'finance', label: 'Finanzas, Gastos y Caja', icon: PiggyBankIcon, component: ReportsFinance, color: 'purple' },
+    { id: 'role', label: 'Desempeño por Rol', icon: UsersIcon, component: ReportsByRole, color: 'red' },
 ];
 
 const ReportsPage: React.FC = () => {
@@ -43,6 +45,10 @@ const ReportsPage: React.FC = () => {
             purple: {
                 active: 'bg-purple-600 text-white shadow-md shadow-purple-200',
                 inactive: 'text-gray-700 hover:bg-purple-50 hover:text-purple-700'
+            },
+            red: {
+                active: 'bg-red-600 text-white shadow-md shadow-red-200',
+                inactive: 'text-gray-700 hover:bg-red-50 hover:text-red-700'
             }
         };
 
@@ -55,7 +61,8 @@ const ReportsPage: React.FC = () => {
         const colorMap: Record<string, string> = {
             blue: 'text-blue-600',
             green: 'text-green-600',
-            purple: 'text-purple-600'
+            purple: 'text-purple-600',
+            red: 'text-red-600'
         };
         return colorMap[color] || 'text-blue-600';
     };
@@ -65,7 +72,8 @@ const ReportsPage: React.FC = () => {
         const colorMap: Record<string, string> = {
             blue: 'bg-blue-100',
             green: 'bg-green-100',
-            purple: 'bg-purple-100'
+            purple: 'bg-purple-100',
+            red: 'bg-red-100'
         };
         return colorMap[color] || 'bg-blue-100';
     };
@@ -138,6 +146,7 @@ const ReportsPage: React.FC = () => {
                                         {activeTab === 'sales' && 'Resumen de ventas, órdenes y tendencias de consumo'}
                                         {activeTab === 'inventory' && 'Estado del inventario, costos y niveles de stock'}
                                         {activeTab === 'finance' && 'Balance financiero, gastos y estado de caja'}
+                                        {activeTab === 'role' && 'Desempeño de empleados agrupado por su rol en el sistema'}
                                     </p>
                                 </div>
                             </div>

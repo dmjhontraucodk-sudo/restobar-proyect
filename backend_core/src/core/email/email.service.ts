@@ -328,6 +328,200 @@ export const sendReservationCancellation = async (reservation: any): Promise<any
     }
 };
 
+
+export const sendOrderAssignedToDriver = async (order: any, tenantConfig: any): Promise<any> => {
+  const { cliente_email, cliente_nombre, id, motorizado } = order;
+  
+  if (!cliente_email) {
+    console.log('No se puede enviar email: cliente_email no proporcionado');
+    return { success: false, message: 'No email provided' };
+  }
+
+  const subject = tenantConfig?.email_asunto_asignado || '¡Tu pedido tiene un repartidor asignado!';
+  const driverName = motorizado?.nombre || 'uno de nuestros repartidores';
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #F59E0B; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px; }
+        .driver-info { background: #FEF3C7; padding: 15px; border-radius: 5px; margin: 15px 0; text-align: center; }
+        .footer { text-align: center; padding: 20px; font-size: 12px; color: #666; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>¡Tu Pedido está en buenas manos!</h1>
+      </div>
+      <div class="content">
+        <p>Hola <strong>${cliente_nombre}</strong>,</p>
+        <p>Tu pedido <strong>#${id}</strong> ha sido preparado y asignado a <strong>${driverName}</strong>.</p>
+        
+        <div class="driver-info">
+          <p>Pronto saldrá a reparto. Te notificaremos en cuanto esté en camino.</p>
+        </div>
+        
+        <p>¡Gracias por tu paciencia!</p>
+      </div>
+      <div class="footer">
+        <p>Si tienes alguna pregunta, contáctanos.</p>
+      </div>
+    </body>
+    </html>
+  `;
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: 'Tu Minimarket <onboarding@resend.dev>',
+      to: [cliente_email],
+      subject,
+      html
+    });
+
+    if (error) {
+      console.error('Error al enviar email de asignación:', error);
+      return { success: false, error: error.message };
+    }
+
+    console.log(`✅ Email de asignación enviado a ${cliente_email} - ID:`, data?.id);
+    return { success: true, data };
+  } catch (error: any) {
+    console.error('Excepción en sendOrderAssignedToDriver:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const sendOrderInTransit = async (order: any, tenantConfig: any): Promise<any> => {
+  const { cliente_email, cliente_nombre, id } = order;
+  
+  if (!cliente_email) {
+    return { success: false, message: 'No email provided' };
+  }
+
+  const subject = tenantConfig?.email_asunto_en_camino || '¡Tu pedido está en camino!';
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #3B82F6; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px; }
+        .status-box { background: #DBEAFE; padding: 15px; border-radius: 5px; margin: 15px 0; text-align: center; }
+        .footer { text-align: center; padding: 20px; font-size: 12px; color: #666; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>¡Tu Pedido va en Camino!</h1>
+      </div>
+      <div class="content">
+        <p>Hola <strong>${cliente_nombre}</strong>,</p>
+        <p>¡Buenas noticias! Tu pedido <strong>#${id}</strong> ha salido para entrega y llegará pronto.</p>
+        
+        <div class="status-box">
+          <p>🚚 <strong>En ruta hacia tu domicilio.</strong></p>
+        </div>
+        
+        <p>Por favor, asegúrate de que haya alguien disponible para recibirlo.</p>
+        <p>¡Que lo disfrutes!</p>
+      </div>
+      <div class="footer">
+        <p>Gracias por tu compra.</p>
+      </div>
+    </body>
+    </html>
+  `;
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: 'Tu Minimarket <onboarding@resend.dev>',
+      to: [cliente_email],
+      subject,
+      html
+    });
+
+    if (error) {
+      console.error('Error al enviar email de "en camino":', error);
+      return { success: false, error: error.message };
+    }
+
+    console.log(`✅ Email de "en camino" enviado a ${cliente_email} - ID:`, data?.id);
+    return { success: true, data };
+  } catch (error: any) {
+    console.error('Excepción en sendOrderInTransit:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const sendOrderDelivered = async (order: any, tenantConfig: any): Promise<any> => {
+  const { cliente_email, cliente_nombre, id } = order;
+  
+  if (!cliente_email) {
+    return { success: false, message: 'No email provided' };
+  }
+
+  const subject = tenantConfig?.email_asunto_entregado || '¡Tu pedido ha sido entregado!';
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #16A34A; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px; }
+        .feedback-box { background: #DCFCE7; padding: 15px; border-radius: 5px; margin: 15px 0; text-align: center; }
+        .footer { text-align: center; padding: 20px; font-size: 12px; color: #666; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>¡Pedido Entregado!</h1>
+      </div>
+      <div class="content">
+        <p>Hola <strong>${cliente_nombre}</strong>,</p>
+        <p>Confirmamos que tu pedido <strong>#${id}</strong> ha sido entregado con éxito.</p>
+        
+        <div class="feedback-box">
+          <p><strong>¡Gracias por tu compra!</strong></p>
+          <p>Esperamos que disfrutes de tu pedido. ¡Nos encantaría saber tu opinión!</p>
+        </div>
+        
+        <p>¡Hasta la próxima!</p>
+      </div>
+      <div class="footer">
+        <p>El equipo de tu minimarket.</p>
+      </div>
+    </body>
+    </html>
+  `;
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: 'Tu Minimarket <onboarding@resend.dev>',
+      to: [cliente_email],
+      subject,
+      html
+    });
+
+    if (error) {
+      console.error('Error al enviar email de entrega:', error);
+      return { success: false, error: error.message };
+    }
+
+    console.log(`✅ Email de entrega enviado a ${cliente_email} - ID:`, data?.id);
+    return { success: true, data };
+  } catch (error: any) {
+    console.error('Excepción en sendOrderDelivered:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 // 3. Exportar el servicio COMPLETO 
 export const emailService = {
  sendRegistrationEmail,
@@ -336,4 +530,7 @@ export const emailService = {
  sendOrderReady,
  sendReservationConfirmation, 
  sendReservationCancellation, 
+ sendOrderAssignedToDriver,
+ sendOrderInTransit,
+ sendOrderDelivered
 };
