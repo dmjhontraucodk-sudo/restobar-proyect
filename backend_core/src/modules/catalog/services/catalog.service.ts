@@ -22,6 +22,7 @@ export interface CreateProductData {
   nombre: string;
   categoria_id: number;
   precio: number;
+  precio_oferta?: number; // ✅ NUEVO
   descripcion?: string;
   foto_url?: string;
   disponible?: boolean;
@@ -40,6 +41,7 @@ export interface UpdateProductData {
   nombre?: string;
   categoria_id?: number;
   precio?: number;
+  precio_oferta?: number; // ✅ NUEVO
   descripcion?: string;
   foto_url?: string;
   disponible?: boolean;

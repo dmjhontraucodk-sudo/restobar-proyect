@@ -7,7 +7,6 @@ import { type Category } from '@shared/types';
 import { addPlatoSchema } from '../../model/schemas';
 import type { ZodIssue } from 'zod';
 
-// ✅ DEFINIMOS EL TIPO DE DATO PARA EL INSUMO AQUÍ (Para evitar errores si no está en types)
 export interface InsumoOption {
   id: number;
   nombre: string;
@@ -27,14 +26,16 @@ interface AddPlatoModalProps {
   
   itemPrice: number;
   onItemPriceChange: (value: number) => void;
+
+  // ✅ NUEVOS PROPS PARA PRECIO OFERTA
+  itemPromoPrice?: number;
+  onItemPromoPriceChange?: (value: number) => void;
   
   itemDescription: string;
   onItemDescriptionChange: (value: string) => void;
 
-  // ✅ NUEVOS PROPS PARA MONEDA
-  monedaSimbolo?: string; // Opcional, default "S/"
+  monedaSimbolo?: string; // Default "S/"
 
-  // ✅ NUEVOS PROPS PARA VINCULACIÓN DE INVENTARIO
   insumos: InsumoOption[];
   selectedInsumoId: number | null;
   onInsumoChange: (id: number | null) => void;
@@ -57,11 +58,12 @@ const AddPlatoModal: React.FC<AddPlatoModalProps> = ({
   onItemNameChange,
   itemPrice,
   onItemPriceChange,
+  itemPromoPrice = 0, // Default 0
+  onItemPromoPriceChange = () => {}, // Default no-op
   itemDescription,
   onItemDescriptionChange,
   
-  // ✅ DESESTRUCTURAMOS LOS NUEVOS PROPS
-  monedaSimbolo = "S/", // Default
+  monedaSimbolo = "S/", 
   insumos,
   selectedInsumoId,
   onInsumoChange,
@@ -91,6 +93,7 @@ const AddPlatoModal: React.FC<AddPlatoModalProps> = ({
 
   const handleLocalSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // Validamos esquema básico (nombre, precio regular)
     const validationResult = addPlatoSchema.safeParse({
         itemName,
         itemPrice,
@@ -111,6 +114,12 @@ const AddPlatoModal: React.FC<AddPlatoModalProps> = ({
         return;
     }
 
+    // Validación adicional para oferta
+    if (itemPromoPrice > 0 && itemPromoPrice >= itemPrice) {
+        setFormErrors(prev => ({ ...prev, itemPromoPrice: "La oferta debe ser menor al precio regular" }));
+        return;
+    }
+
     setFormErrors({});
     onSubmit(e);
   };
@@ -120,10 +129,10 @@ const AddPlatoModal: React.FC<AddPlatoModalProps> = ({
     return price % 1 === 0 ? price.toString() : price.toFixed(2);
   };
   
-  const handlePriceChange = (value: string) => {
-    if (formErrors.itemPrice) setFormErrors(prev => ({ ...prev, itemPrice: undefined }));
+  const handlePriceChange = (value: string, setter: (v: number) => void, fieldError: string) => {
+    if (formErrors[fieldError]) setFormErrors(prev => ({ ...prev, [fieldError]: undefined }));
     if (value === '') {
-      onItemPriceChange(0);
+      setter(0);
       return;
     }
     const cleanValue = value.replace(/[^\d.]/g, '');
@@ -132,19 +141,11 @@ const AddPlatoModal: React.FC<AddPlatoModalProps> = ({
     if (parts[1] && parts[1].length > 2) return;
     const numericValue = parseFloat(cleanValue);
     if (!isNaN(numericValue) && numericValue >= 0) {
-      onItemPriceChange(numericValue);
-    }
-  };
-  
-  const handlePriceBlur = () => {
-    if (itemPrice > 0) {
-      const formattedPrice = parseFloat(itemPrice.toFixed(2));
-      onItemPriceChange(formattedPrice);
+      setter(numericValue);
     }
   };
   
   const handleImageError = () => {
-    console.warn('Error cargando imagen preview:', itemImagePreview);
     setImageError(true);
     setImageLoaded(false);
   };
@@ -173,12 +174,8 @@ const AddPlatoModal: React.FC<AddPlatoModalProps> = ({
     : `Añadir Plato a: ${editingCategory.name}`;
   
   let submitButtonText = isEditing ? "Actualizar Plato" : "Guardar Plato";
-  
-  if (isUploading) {
-    submitButtonText = "Subiendo imagen...";
-  } else if (isSubmitting) {
-    submitButtonText = isEditing ? "Actualizando..." : "Guardando...";
-  }
+  if (isUploading) submitButtonText = "Subiendo imagen...";
+  else if (isSubmitting) submitButtonText = isEditing ? "Actualizando..." : "Guardando...";
 
   const showPreview = !!(itemImagePreview && !imageError);
 
@@ -186,9 +183,8 @@ const AddPlatoModal: React.FC<AddPlatoModalProps> = ({
     <Modal title={modalTitle} onClose={onClose}>
       <form onSubmit={handleLocalSubmit} className="space-y-6">
         
-        {/* Nombre y Precio */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
+        {/* Nombre */}
+        <div>
             <label htmlFor="itemName" className="block text-sm font-medium text-gray-700 mb-2">
               Nombre del Plato <span className="text-red-500">*</span>
             </label>
@@ -206,11 +202,14 @@ const AddPlatoModal: React.FC<AddPlatoModalProps> = ({
               required 
             />
             {formErrors.itemName && <p className="text-red-500 text-xs mt-1">{formErrors.itemName}</p>}
-          </div>
+        </div>
 
+        {/* Precios (Grid) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Precio Regular */}
           <div>
             <label htmlFor="itemPrice" className="block text-sm font-medium text-gray-700 mb-2">
-              Precio <span className="text-red-500">*</span>
+              Precio Regular <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">
@@ -220,8 +219,7 @@ const AddPlatoModal: React.FC<AddPlatoModalProps> = ({
                 type="text" 
                 id="itemPrice" 
                 value={formatPriceForInput(itemPrice)} 
-                onChange={(e) => handlePriceChange(e.target.value)}
-                onBlur={handlePriceBlur}
+                onChange={(e) => handlePriceChange(e.target.value, onItemPriceChange, 'itemPrice')}
                 className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${formErrors.itemPrice ? 'border-red-500' : 'border-gray-300'}`} 
                 placeholder="0.00"
                 disabled={isUploading || isSubmitting}
@@ -229,6 +227,28 @@ const AddPlatoModal: React.FC<AddPlatoModalProps> = ({
               />
             </div>
             {formErrors.itemPrice && <p className="text-red-500 text-xs mt-1">{formErrors.itemPrice}</p>}
+          </div>
+
+          {/* Precio Oferta */}
+          <div>
+            <label htmlFor="itemPromoPrice" className="block text-sm font-medium text-gray-700 mb-2">
+              Precio Oferta <span className="text-xs text-gray-400 font-normal">(Opcional)</span>
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">
+                {monedaSimbolo}
+              </span>
+              <input 
+                type="text" 
+                id="itemPromoPrice" 
+                value={formatPriceForInput(itemPromoPrice)} 
+                onChange={(e) => handlePriceChange(e.target.value, onItemPromoPriceChange, 'itemPromoPrice')}
+                className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 ${formErrors.itemPromoPrice ? 'border-red-500' : 'border-purple-200 bg-purple-50/30'}`} 
+                placeholder="0.00"
+                disabled={isUploading || isSubmitting}
+              />
+            </div>
+            {formErrors.itemPromoPrice && <p className="text-red-500 text-xs mt-1">{formErrors.itemPromoPrice}</p>}
           </div>
         </div>
         
@@ -253,7 +273,7 @@ const AddPlatoModal: React.FC<AddPlatoModalProps> = ({
           {formErrors.itemDescription && <p className="text-red-500 text-xs mt-1">{formErrors.itemDescription}</p>}
         </div>
 
-        {/* ✅ SECCIÓN DE VINCULACIÓN CON INVENTARIO (NUEVO) */}
+        {/* Vinculación con Inventario */}
         <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
           <label htmlFor="inventoryLink" className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
             Vincular con Inventario 
@@ -280,7 +300,7 @@ const AddPlatoModal: React.FC<AddPlatoModalProps> = ({
           </select>
         </div>
 
-        {/* Sección de Imagen */}
+        {/* Imagen */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Imagen del Plato
@@ -343,18 +363,7 @@ const AddPlatoModal: React.FC<AddPlatoModalProps> = ({
           )}
         </div>
 
-        {/* Información Adicional */}
-        <div className="bg-blue-50 rounded-xl p-4">
-          <h3 className="text-sm font-medium text-blue-800 mb-2">
-            {isEditing ? "Actualizando Plato" : "Información del Plato"}
-          </h3>
-          <p className="text-xs text-blue-600">
-            • La categoría <strong>"{editingCategory.name}"</strong> se usará para este plato.<br/>
-            • Completa todos los campos obligatorios (*) para guardar el plato.
-          </p>
-        </div>
-
-        {/* Botones de Guardar */}
+        {/* Botones */}
         <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
           <button 
             type="button" 

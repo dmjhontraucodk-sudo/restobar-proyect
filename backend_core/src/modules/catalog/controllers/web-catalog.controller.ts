@@ -33,6 +33,7 @@ export const webCatalogController = {
               nombre: true,
               descripcion: true,
               precio: true,
+              precio_oferta: true, // ✅ NUEVO
               foto_url: true,
               categoria_id: true,
               es_vegetariano: true,

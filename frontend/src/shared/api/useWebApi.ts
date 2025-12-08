@@ -75,68 +75,72 @@ export const useWebApi = () => {
   }, []);
 
   // Catálogo
-  const getCatalog = (): Promise<CatalogResponse> => 
-    makeRequest<CatalogResponse>('/catalog');
+  const getCatalog = useCallback((): Promise<CatalogResponse> => 
+    makeRequest<CatalogResponse>('/catalog'), [makeRequest]);
   
-  const searchProducts = (query: string): Promise<{results: Producto[]}> => 
-    makeRequest<{results: Producto[]}>(`/products/search?q=${encodeURIComponent(query)}`);
+  const searchProducts = useCallback((query: string): Promise<{results: Producto[]}> => 
+    makeRequest<{results: Producto[]}>(`/products/search?q=${encodeURIComponent(query)}`), [makeRequest]);
   
-  const getProduct = (id: number): Promise<Producto> => 
-    makeRequest<Producto>(`/products/${id}`);
+  const getProduct = useCallback((id: number): Promise<Producto> => 
+    makeRequest<Producto>(`/products/${id}`), [makeRequest]);
   
-  const checkAvailability = (items: Array<{id: number, cantidad: number}>): Promise<{available: boolean}> => 
+  const checkAvailability = useCallback((items: Array<{id: number, cantidad: number}>): Promise<{available: boolean}> => 
     makeRequest<{available: boolean}>('/check-availability', {
       method: 'POST',
       body: JSON.stringify({ items }),
-    });
+    }), [makeRequest]);
 
   // Pedidos
-  const createOrder = (orderData: PedidoData): Promise<OrderResponse> =>
+  const createOrder = useCallback((orderData: PedidoData): Promise<OrderResponse> =>
     makeRequest<OrderResponse>('/orders', {
       method: 'POST',
       body: JSON.stringify(orderData),
-    });
+    }), [makeRequest]);
 
-  // Reservas - CORREGIDO
   // Reservas
-  const createReservation = (reservationData: CreateReservationData): Promise<{ message: string, reservationId: number }> =>
+  const createReservation = useCallback((reservationData: CreateReservationData): Promise<{ message: string, reservationId: number }> =>
     makeRequest<{ message: string, reservationId: number }>('/reservations', {
       method: 'POST',
       body: JSON.stringify(reservationData),
-    });
+    }), [makeRequest]);
 
   // ✅ NUEVO: Obtener mesas disponibles (estado "Libre")
-  const getAvailableMesas = (): Promise<ApiMesa[]> => 
-    makeRequest<ApiMesa[]>(`/mesas/disponibles`);
+  const getAvailableMesas = useCallback((): Promise<ApiMesa[]> => 
+    makeRequest<ApiMesa[]>(`/mesas/disponibles`), [makeRequest]);
 
   // ✅ NUEVO: Obtener detalles de una mesa específica (para carta virtual)
-  const getTableDetails = (id: number): Promise<ApiMesa> => 
-    makeRequest<ApiMesa>(`/mesas/${id}`);
+  const getTableDetails = useCallback((id: number): Promise<ApiMesa> => 
+    makeRequest<ApiMesa>(`/mesas/${id}`), [makeRequest]);
 
   // ✅ NUEVO: Llamar al mozo
-  const callWaiter = (id: number): Promise<{ success: boolean; message: string }> => 
+  const callWaiter = useCallback((id: number): Promise<{ success: boolean; message: string }> => 
     makeRequest<{ success: boolean; message: string }>(`/mesas/${id}/call`, {
       method: 'POST'
-    });
+    }), [makeRequest]);
 
   // Reviews
-  const createReview = (data: CreateReviewData): Promise<ApiResponse<{ needsApproval: boolean }>> =>
+  const createReview = useCallback((data: CreateReviewData): Promise<ApiResponse<{ needsApproval: boolean }>> =>
     makeRequest<ApiResponse<{ needsApproval: boolean }>>('/reviews', {
       method: 'POST',
       body: JSON.stringify(data),
-    });
+    }), [makeRequest]);
 
-  const fetchPublicReviews = (): Promise<PublicReview[]> =>
-    makeRequest<{ data: PublicReview[] }>('/reviews/public').then(res => res.data);
+  const fetchPublicReviews = useCallback((): Promise<PublicReview[]> =>
+    makeRequest<{ data: PublicReview[] }>('/reviews/public').then(res => res.data), [makeRequest]);
 
-  const findClientByPhone = (telefono: string): Promise<{ success: boolean; client?: any }> =>
-    makeRequest<{ success: boolean; client?: any }>(`/clients/by-phone/${telefono}`);
+  // ✅ NUEVO: Obtener estadísticas de reseñas (promedio y total)
+  const getReviewsStats = useCallback((): Promise<{ success: boolean; data: { averageRating: number; totalReviews: number; } }> =>
+    makeRequest<{ success: boolean; data: { averageRating: number; totalReviews: number; } }>('/reviews/stats'), [makeRequest]);
 
-  const findClientByDocument = (documento_identidad: string): Promise<{ success: boolean; client?: any }> =>
-    makeRequest<{ success: boolean; client?: any }>(`/clients/by-document/${documento_identidad}`);
+  // ✅ CORREGIDO: Completar la función findClientByPhone
+  const findClientByPhone = useCallback((telefono: string): Promise<{ success: boolean; client?: any }> =>
+    makeRequest<{ success: boolean; client?: any }>(`/clients/by-phone/${telefono}`), [makeRequest]);
 
-  const findClientForReview = (documento_identidad: string): Promise<{ success: boolean; client?: any, error?: string }> =>
-    makeRequest<{ success: boolean; client?: any, error?: string }>(`/clients/for-review/${documento_identidad}`);
+  const findClientByDocument = useCallback((documento_identidad: string): Promise<{ success: boolean; client?: any }> =>
+    makeRequest<{ success: boolean; client?: any }>(`/clients/by-document/${documento_identidad}`), [makeRequest]);
+
+  const findClientForReview = useCallback((documento_identidad: string): Promise<{ success: boolean; client?: any, error?: string }> =>
+    makeRequest<{ success: boolean; client?: any, error?: string }>(`/clients/for-review/${documento_identidad}`), [makeRequest]);
 
   return {
     isLoading,
@@ -152,8 +156,9 @@ export const useWebApi = () => {
     callWaiter,
     createReview,
     fetchPublicReviews,
+    getReviewsStats,
     findClientByPhone,
     findClientByDocument,
     findClientForReview,
   };
-};
+}; // ← Solo UN cierre aquí (eliminar el } extra)

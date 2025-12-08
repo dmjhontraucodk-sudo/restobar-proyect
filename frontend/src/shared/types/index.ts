@@ -81,6 +81,7 @@ export interface MenuItem {
   name: string;
   description: string;
   price: number;
+  precio_oferta?: number | null; // ✅ NUEVO
   disponible: boolean;
   visible_en_web: boolean;
   foto_url: string | null;

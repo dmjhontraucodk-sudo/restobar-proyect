@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useWebApi } from '@shared/api/useWebApi'; // ✅ IMPORTAR
 
 export function Features() {
   const features = [
@@ -39,6 +41,27 @@ export function Features() {
       description: 'Servicio eficiente respetando tu tiempo y experiencia.',
     },
   ];
+
+  const { getReviewsStats } = useWebApi(); // ✅ USAR HOOK
+  const [stats, setStats] = useState({ averageRating: 0, totalReviews: 0 });
+  const [loadingStats, setLoadingStats] = useState(true);
+
+  useEffect(() => {
+    const loadStats = async () => {
+      setLoadingStats(true);
+      try {
+        const response = await getReviewsStats();
+        if (response.success) {
+          setStats(response.data);
+        }
+      } catch (error) {
+        console.error("Error cargando estadísticas de reseñas:", error);
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+    loadStats();
+  }, [getReviewsStats]);
 
   return (
     <section className="py-20 bg-white">
@@ -88,13 +111,17 @@ export function Features() {
         {/* Footer / Stats Sutiles */}
         <div className="mt-8 flex justify-center gap-8 text-center">
            <div className="px-4">
-             <p className="text-2xl font-bold text-slate-900">4.9</p>
+             <p className="text-2xl font-bold text-slate-900">
+               {loadingStats ? '...' : stats.averageRating.toFixed(1)}
+             </p>
              <p className="text-xs text-slate-500 uppercase tracking-wider">Calificación</p>
            </div>
            <div className="w-px h-10 bg-slate-200"></div>
            <div className="px-4">
-             <p className="text-2xl font-bold text-slate-900">15k+</p>
-             <p className="text-xs text-slate-500 uppercase tracking-wider">Clientes Felices</p>
+             <p className="text-2xl font-bold text-slate-900">
+               {loadingStats ? '...' : `${stats.totalReviews}+`}
+             </p>
+             <p className="text-xs text-slate-500 uppercase tracking-wider">Reseñas</p>
            </div>
            <div className="w-px h-10 bg-slate-200"></div>
            <div className="px-4">

@@ -38,6 +38,7 @@ const MenuManagementPage: React.FC<MenuManagementPageProps> = ({ tipo }) => {
     editingItem,
     itemName,
     itemPrice,
+    itemPromoPrice, // ✅ NUEVO
     itemDescription,
     itemImagePreview,
     inactiveItemsCount,
@@ -48,6 +49,7 @@ const MenuManagementPage: React.FC<MenuManagementPageProps> = ({ tipo }) => {
     setShowCategoryModal,
     setItemName,
     setItemPrice,
+    setItemPromoPrice, // ✅ NUEVO
     setItemDescription,
 
     // Handlers de Filtros
@@ -249,6 +251,8 @@ const MenuManagementPage: React.FC<MenuManagementPageProps> = ({ tipo }) => {
         onItemNameChange={setItemName}
         itemPrice={itemPrice}
         onItemPriceChange={setItemPrice}
+        itemPromoPrice={itemPromoPrice} // ✅ NUEVO
+        onItemPromoPriceChange={setItemPromoPrice} // ✅ NUEVO
         itemDescription={itemDescription}
         onItemDescriptionChange={setItemDescription}
         insumos={insumosDisponibles}

@@ -244,6 +244,13 @@ function ProductTile({ product }: { product: Producto }) {
               Top
            </div>
         )}
+
+        {/* ✅ BADGE DE OFERTA */}
+        {product.precio_oferta && Number(product.precio_oferta) > 0 && (
+           <div className="absolute top-2 left-2 bg-red-600 text-white px-2 py-0.5 rounded text-[10px] font-bold shadow-md uppercase tracking-wide animate-pulse">
+              ¡Oferta!
+           </div>
+        )}
       </div>
 
       <div className="p-3 flex flex-col flex-grow">
@@ -257,9 +264,22 @@ function ProductTile({ product }: { product: Producto }) {
         </div>
 
         <div className="mt-auto flex items-center justify-between pt-2 border-t border-gray-50">
-            <span className="text-sm font-extrabold text-slate-900">
-               {formatCurrency(Number(product.precio))}
-            </span>
+            <div className="flex flex-col">
+                {product.precio_oferta && Number(product.precio_oferta) > 0 ? (
+                    <>
+                        <span className="text-[10px] text-gray-400 line-through">
+                            {formatCurrency(Number(product.precio))}
+                        </span>
+                        <span className="text-sm font-extrabold text-red-600">
+                            {formatCurrency(Number(product.precio_oferta))}
+                        </span>
+                    </>
+                ) : (
+                    <span className="text-sm font-extrabold text-slate-900">
+                        {formatCurrency(Number(product.precio))}
+                    </span>
+                )}
+            </div>
             
             {!product.disponible && (
                 <span className="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-1 rounded">

@@ -36,6 +36,7 @@ const buildCategoryTree = (
       name: product.nombre,
       description: product.descripcion || "",
       price: Number(product.precio),
+      precio_oferta: product.precio_oferta ? Number(product.precio_oferta) : null, // ✅ NUEVO
       disponible: !!product.disponible,
       visible_en_web: !!product.visible_en_web,
       foto_url: product.foto_url,
@@ -104,6 +105,7 @@ export const useMenuManagement = (tipo: TipoCategoria = "COMIDA") => {
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [itemName, setItemName] = useState("");
   const [itemPrice, setItemPrice] = useState(0);
+  const [itemPromoPrice, setItemPromoPrice] = useState(0); // ✅ NUEVO
   const [itemDescription, setItemDescription] = useState("");
   const [itemImagePreview, setItemImagePreview] = useState<string | null>(null);
   const [itemImageFile, setItemImageFile] = useState<File | null>(null);
@@ -389,6 +391,7 @@ export const useMenuManagement = (tipo: TipoCategoria = "COMIDA") => {
     setEditingCategory(category);
     setItemName("");
     setItemPrice(0);
+    setItemPromoPrice(0); // ✅ NUEVO
     setItemDescription("");
     setItemImagePreview(null);
     setItemImageFile(null);
@@ -410,6 +413,7 @@ export const useMenuManagement = (tipo: TipoCategoria = "COMIDA") => {
     setEditingCategory(parentCategory);
     setItemName(itemToEdit.name);
     setItemPrice(itemToEdit.price);
+    setItemPromoPrice(itemToEdit.precio_oferta || 0); // ✅ NUEVO
     setItemDescription(itemToEdit.description);
     setItemImagePreview(itemToEdit.foto_url);
     setItemImageFile(null);
@@ -488,6 +492,7 @@ export const useMenuManagement = (tipo: TipoCategoria = "COMIDA") => {
       const commonData = {
         nombre: itemName.trim(),
         precio: itemPrice,
+        precio_oferta: itemPromoPrice > 0 ? itemPromoPrice : undefined, // ✅ NUEVO
         categoria_id: Number(editingCategory.id),
         descripcion: itemDescription.trim(),
         foto_url: finalImageUrl,
@@ -536,6 +541,7 @@ export const useMenuManagement = (tipo: TipoCategoria = "COMIDA") => {
     setEditingCategory(null);
     setItemName("");
     setItemPrice(0);
+    setItemPromoPrice(0); // ✅ NUEVO
     setItemDescription("");
     setItemImagePreview(null);
     setItemImageFile(null);
@@ -561,6 +567,7 @@ export const useMenuManagement = (tipo: TipoCategoria = "COMIDA") => {
     editingItem,
     itemName,
     itemPrice,
+    itemPromoPrice, // ✅ NUEVO
     itemDescription,
     itemImagePreview,
     inactiveItemsCount,
@@ -575,6 +582,7 @@ export const useMenuManagement = (tipo: TipoCategoria = "COMIDA") => {
     setShowItemModal,
     setItemName,
     setItemPrice,
+    setItemPromoPrice, // ✅ NUEVO
     setItemDescription,
     setItemImagePreview,
     insumosDisponibles,

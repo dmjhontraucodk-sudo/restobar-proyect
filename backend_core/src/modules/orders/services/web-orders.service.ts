@@ -319,120 +319,100 @@ export const webOrdersService = {
         newStatus: webpedidos_estado,
         reason?: string // ✅ NUEVO: Motivo de cancelación
     ): Promise<any> {
-    if (!this.isValidOrderStatus(newStatus)) {
-      throw new Error(`Estado inválido: ${newStatus}`);
-    }
-
-    const existingOrder = await prisma.webpedidos.findFirst({
-      where: {
-        id: orderId,
-        tenant_id: tenantId
-      },
-      include: {
-        webpedidos_detalles: {
-          include: {
-            productos: true
-          }
+        if (!this.isValidOrderStatus(newStatus)) {
+            throw new Error(`Estado inválido: ${newStatus}`);
         }
-      }
-    });
 
-    if (!existingOrder) {
-      throw new Error('Pedido no encontrado');
-    }
+        const existingOrder = await prisma.webpedidos.findFirst({
+            where: {
+                id: orderId,
+                tenant_id: tenantId
+            },
+            include: {
+                webpedidos_detalles: {
+                    include: {
+                        productos: true
+                    }
+                }
+            }
+        });
 
-            // Lógica de Tiempos de Delivery
-            const dataToUpdate: any = {
-                estado: newStatus,
-                updated_at: new Date()
-            };
-    
-            // Si sale a ruta -> Marca hora de salida
-            if (newStatus === webpedidos_estado.EnCamino) {
-                dataToUpdate.hora_salida_delivery = new Date();
-            }
-    
-            // Si se entrega -> Marca hora de entrega
-            if (newStatus === webpedidos_estado.Entregado) {
-                dataToUpdate.hora_entrega_delivery = new Date();
-            }
-    
-            // Lógica de Reversión de Stock al Cancelar
-            if (newStatus === webpedidos_estado.Cancelado && existingOrder.estado !== webpedidos_estado.Cancelado) {
-                await prisma.$transaction(async (tx) => {
-                    for (const detalle of existingOrder.webpedidos_detalles) {
-                        if (detalle.productos.producto_inventario_id) {
-                            // Solo revertir si está vinculado a un producto de inventario
-                            await tx.productos_inventario.update({
-                                where: { id: detalle.productos.producto_inventario_id },
-                                data: {
-                                    stock_actual: {
-                                        increment: detalle.cantidad // Sumar la cantidad de nuevo al stock
-                                    }
+        if (!existingOrder) {
+            throw new Error('Pedido no encontrado');
+        }
+
+        // Preparar datos a actualizar
+        const dataToUpdate: any = {
+            estado: newStatus,
+            updated_at: new Date()
+        };
+
+        // Lógica de Tiempos de Delivery
+        if (newStatus === webpedidos_estado.EnCamino) {
+            dataToUpdate.hora_salida_delivery = new Date();
+        }
+
+        if (newStatus === webpedidos_estado.Entregado) {
+            dataToUpdate.hora_entrega_delivery = new Date();
+        }
+
+        // Guardar motivo si existe (para cualquier estado, pero principalmente cancelación)
+        if (reason) {
+            dataToUpdate.notas = reason; 
+        }
+
+        // CASO 1: CANCELACIÓN CON REVERSIÓN DE STOCK
+        if (newStatus === webpedidos_estado.Cancelado && existingOrder.estado !== webpedidos_estado.Cancelado) {
+            await prisma.$transaction(async (tx) => {
+                // Revertir stock de productos inventariables
+                for (const detalle of existingOrder.webpedidos_detalles) {
+                    if (detalle.productos.producto_inventario_id) {
+                        await tx.productos_inventario.update({
+                            where: { id: detalle.productos.producto_inventario_id },
+                            data: {
+                                stock_actual: {
+                                    increment: detalle.cantidad
                                 }
-                            });
+                            }
+                        });
+                        // Opcional: Registrar movimiento en Kardex de tipo 'Entrada' por cancelación
+                    }
+                }
+                
+                // Actualizar estado del pedido
+                await tx.webpedidos.update({
+                    where: { id: orderId },
+                    data: dataToUpdate,
+                });
+            });
+
+            // Retornar objeto actualizado (simulado para evitar otra consulta)
+            return { ...existingOrder, ...dataToUpdate };
+        }
+
+        // CASO 2: ACTUALIZACIÓN NORMAL (Sin reversión de stock)
+        return await prisma.webpedidos.update({
+            where: {
+                id: orderId
+            },
+            data: dataToUpdate,
+            include: {
+                webpedidos_detalles: {
+                    include: {
+                        productos: {
+                            select: {
+                                id: true,
+                                nombre: true,
+                                precio: true,
+                                foto_url: true,
+                                producto_inventario_id: true
+                            }
                         }
                     }
-                                    // Actualizar el estado del pedido después de la reversión de stock
-                                    await tx.webpedidos.update({
-                                        where: { id: orderId },
-                                        data: {
-                                            ...dataToUpdate,
-                                            // ✅ Guardar motivo de cancelación si existe
-                                            notas: reason || dataToUpdate.notas // Asumiendo que `notas` puede usarse para el motivo
-                                        },
-                                    });                });
-                // Si la transacción fue exitosa, retornar el pedido actualizado
-                return { ...existingOrder, estado: newStatus, updated_at: dataToUpdate.updated_at };
+                }
             }
-    
-    
-                    return await prisma.webpedidos.update({
-    
-    
-                        where: {
-    
-    
-                            id: orderId
-    
-    
-                        },
-    
-    
-                        data: {
-    
-    
-                            ...dataToUpdate,
-    
-    
-                            // ✅ Guardar motivo de cancelación si existe
-    
-    
-                            notas: reason || dataToUpdate.notas // Asumiendo que `notas` puede usarse para el motivo
-    
-    
-                        },
-    
-    
-                        include: {
-    
-    
-                            webpedidos_detalles: {
-          include: {
-            productos: {
-              select: {
-                id: true,
-                nombre: true,
-                precio: true,
-                foto_url: true,
-                producto_inventario_id: true
-              }
-            }
-          }
-        }
-      }
-    });
-  },
+        });
+    },
 
   async convertToPosOrder(
     tenantId: number, 

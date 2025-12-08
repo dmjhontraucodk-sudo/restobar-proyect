@@ -13,4 +13,7 @@ router.post('/', [tenantMiddleware], reviewsController.createReview);
 // 2. Ruta pública de lectura (GET /api/reviews) - Para la Home Page
 router.get('/public', [tenantMiddleware], reviewsController.getPublicReviews); 
 
+// ✅ NUEVO: Ruta pública para estadísticas de reseñas
+router.get('/stats', [tenantMiddleware], reviewsController.getReviewsStats);
+
 export default router;

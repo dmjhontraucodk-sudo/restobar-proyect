@@ -59,6 +59,22 @@ export const reviewsController = {
       }
   },
 
+  // ✅ NUEVO: Obtener estadísticas de reseñas (promedio y total)
+  async getReviewsStats(req: AuthRequest, res: Response) : Promise<any> {
+      try {
+          const tenantId = req.tenant?.id;
+          if (!tenantId) {
+              return res.status(403).json({ error: 'Tenant no identificado.' });
+          }
+
+          const stats = await reviewsService.getReviewsStats(tenantId);
+          return res.json({ success: true, data: stats });
+      } catch (error: any) {
+          console.error('Error en getReviewsStats:', error);
+          return res.status(500).json({ error: 'Error al obtener estadísticas de reseñas.' });
+      }
+  },
+
   async getPendingReviews(req: AuthRequest, res: Response): Promise<any> {
     try {
       const tenantId = req.tenant?.id;

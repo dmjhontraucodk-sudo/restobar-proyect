@@ -134,5 +134,33 @@ export const reviewsService = {
   async getAverageRating(_tenantId: number) {
       // Implementación pendiente para la Home Page
       console.log('getAverageRating function is pending implementation.');
-  }
+  },
+
+  // ✅ NUEVO: Obtener estadísticas agregadas de reseñas (promedio y total)
+  async getReviewsStats(tenantId: number) {
+      const stats = await prisma.reseñas.aggregate({
+          where: {
+              tenant_id: tenantId,
+              aprobada: true, // Solo reseñas aprobadas
+          },
+          _avg: {
+              calificacion_general: true,
+          },
+          _count: {
+              id: true,
+          },
+      });
+
+      // Calcular el promedio redondeado a un decimal
+      const averageRating = stats._avg.calificacion_general 
+          ? parseFloat(stats._avg.calificacion_general.toFixed(1)) 
+          : 0;
+
+      const totalReviews = stats._count.id;
+
+      return {
+          averageRating: averageRating,
+          totalReviews: totalReviews,
+      };
+  },
 };
