@@ -554,6 +554,8 @@ export interface CierreEstadisticas {
   }>;
 }
 
+export * from './report-types';
+
 // ========== TIPOS DE PRISMA (EXTENDIDOS) ==========
 
 export interface WebPedido {

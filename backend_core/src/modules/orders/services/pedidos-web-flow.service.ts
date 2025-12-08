@@ -1,3 +1,4 @@
+import { emailService } from '@core/email/email.service';
 import { prisma } from '@shared/database/prisma.service';
 import { webpedidos_estado, webpedidos as WebPedidoPrisma } from '@prisma/client';
 import { ordenesPosService } from './ordenes-pos.service'; // Eliminado: OrdenesQuery
@@ -116,7 +117,8 @@ export const pedidosWebFlowService = {
                     include: {
                         productos: true
                     }
-                }
+                },
+                motorizado: true
             }
         });
 
@@ -135,9 +137,46 @@ export const pedidosWebFlowService = {
                     include: {
                         productos: true
                     }
-                }
+                },
+                motorizado: true
             }
         });
+
+        const tenantConfig = await prisma.tenant_config_pedidos.findUnique({
+            where: { tenant_id: tenantId }
+        });
+
+        if (pedidoActualizado && tenantConfig) {
+            switch (nuevoEstado) {
+                case webpedidos_estado.Confirmado:
+                    if (tenantConfig.notif_pedido_confirmado) {
+                        await emailService.sendOrderConfirmation(pedidoActualizado, tenantConfig);
+                    }
+                    break;
+                case webpedidos_estado.ListoParaRecoger:
+                    if (tenantConfig.notif_pedido_listo && pedidoActualizado.tipo_pedido === 'RecogerEnTienda') {
+                        await emailService.sendOrderReady(pedidoActualizado, tenantConfig);
+                    }
+                    break;
+                case webpedidos_estado.EnCamino:
+                    if (tenantConfig.notif_pedido_listo && pedidoActualizado.tipo_pedido === 'EntregaDomicilio') {
+                        await emailService.sendOrderAssignedToDriver(pedidoActualizado, tenantConfig);
+                        await emailService.sendOrderInTransit(pedidoActualizado, tenantConfig);
+                    }
+                    break;
+                case webpedidos_estado.Entregado:
+                    // Assuming there will be a config for delivered notification
+                    await emailService.sendOrderDelivered(pedidoActualizado, tenantConfig);
+                    break;
+                case webpedidos_estado.Cancelado:
+                    if (tenantConfig.notif_pedido_cancelado) {
+                        await emailService.sendOrderCancellation(pedidoActualizado, tenantConfig, 'El restaurante canceló el pedido.');
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
 
         return pedidoActualizado;
     },

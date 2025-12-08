@@ -45,6 +45,9 @@ import {
   type PagarNominaResponse, // Importado
   // ⭐ IMPORTACIÓN NECESARIA ⭐
   type DashboardOverview,
+  type Role,
+  type EmployeeSimple,
+  type EmployeePerformanceReport,
 } from '@shared/types';
 
 const API_BASE = "/api/dashboard";
@@ -827,6 +830,23 @@ export const useDashboardApi = () => {
       });
   }, [makeRequest]);
 
+  // ========== REPORTES DE DESEMPEÑO POR ROL ==========
+
+  const getRoles = useCallback((): Promise<Role[]> => {
+    return makeRequest<Role[]>('/reports/performance/roles');
+  }, [makeRequest]);
+
+  const getEmployeesByRole = useCallback((roleId: number): Promise<EmployeeSimple[]> => {
+    return makeRequest<EmployeeSimple[]>(`/reports/performance/employees-by-role/${roleId}`);
+  }, [makeRequest]);
+
+  const getEmployeePerformanceReport = useCallback((employeeId: number, fechaInicio: string, fechaFin: string): Promise<EmployeePerformanceReport> => {
+      const params = new URLSearchParams();
+      params.append('fechaInicio', fechaInicio);
+      params.append('fechaFin', fechaFin);
+      return makeRequest<EmployeePerformanceReport>(`/reports/performance/employee/${employeeId}?${params.toString()}`);
+  }, [makeRequest]);
+
   const getPendingReviews = useCallback((): Promise<{ data: any[] }> => {
     return makeRequest<{ data: any[] }>('/reviews/pending');
   }, [makeRequest]);
@@ -918,6 +938,11 @@ export const useDashboardApi = () => {
     getPendingReviews,
     approveReview,
     rejectReview,
+
+    // Reports
+    getRoles,
+    getEmployeesByRole,
+    getEmployeePerformanceReport,
 
     // Utilidad
     makeRequest,
