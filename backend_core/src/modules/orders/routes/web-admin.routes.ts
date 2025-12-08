@@ -14,6 +14,8 @@ router.get('/:id', webOrdersController.getWebOrderDetail);
 router.patch('/:id/status', webOrdersController.updateOrderStatus);
 router.post('/:id/convert-to-pos', webOrdersController.convertToPosOrder);
 router.post('/:id/assign-motorized', webOrdersController.assignMotorized); // ✅ NUEVA RUTA
+router.post('/:id/print/:type', webOrdersController.printOrder);
+router.post('/print-range', webOrdersController.printOrdersByDateRange);
 
 // Configuración de pedidos (ADMIN)
 router.get('/config', webOrdersController.getOrderConfig);
