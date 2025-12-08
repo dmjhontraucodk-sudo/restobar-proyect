@@ -44,6 +44,7 @@ export class FactilizaService {
         return FactilizaService.instance;
     }
 
+// ... (código existente)
     public async findClientByDni(dni: string): Promise<ReniecClientData> {
         try {
             const response = await this.api.get<ReniecClientData>(`/dni/info/${dni}`);

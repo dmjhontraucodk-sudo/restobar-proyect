@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import { webOrdersService, webpedidos_estado } from '../services/web-orders.service';
+import { webOrdersPrintService } from '../services/web-orders-print.service';
 import { emailService } from '@core/email/email.service';
 import { cierrePosService } from '../../orders/services/cierre-pos.service';
 // Comenta o elimina esta línea:
@@ -318,6 +319,67 @@ export const webOrdersController = {
       return res.status(500).json({ 
         success: false,
         error: 'Error interno del servidor al obtener estadísticas' 
+      });
+    }
+  },
+
+  async printOrdersByDateRange(req: OrderRequest, res: Response): Promise<any> {
+    try {
+      const tenantId = req.user?.tenant_id;
+      const { startDate, endDate, type } = req.body;
+
+      if (!tenantId) {
+        return res.status(403).json({ error: 'Acceso no autorizado' });
+      }
+
+      if (!startDate || !endDate || !type) {
+        return res.status(400).json({ error: 'Faltan parámetros: startDate, endDate y type son requeridos.' });
+      }
+
+      if (!['boleta', 'factura'].includes(type)) {
+        return res.status(400).json({ error: 'Tipo de documento no válido. Use "boleta" o "factura".' });
+      }
+      
+      const pdfBuffer = await webOrdersPrintService.generatePdfsForDateRange(tenantId, new Date(startDate), new Date(endDate), type);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename=${type}_${startDate}_${endDate}.pdf`);
+      res.send(pdfBuffer);
+
+    } catch (error: any) {
+      console.error(`Error en printOrdersByDateRange (${req.body.type}):`, error);
+      return res.status(500).json({
+        success: false,
+        error: error.message || `Error al generar los documentos`
+      });
+    }
+  },
+
+  async printOrder(req: OrderRequest, res: Response): Promise<any> {
+    try {
+      const tenantId = req.user?.tenant_id;
+      const orderId = parseInt(req.params.id);
+      const type = req.params.type as 'boleta' | 'factura' | 'contra-entrega';
+
+      if (!tenantId) {
+        return res.status(403).json({ error: 'Acceso no autorizado' });
+      }
+
+      if (!['boleta', 'factura', 'contra-entrega'].includes(type)) {
+        return res.status(400).json({ error: 'Tipo de documento no válido' });
+      }
+
+      const pdfBuffer = await webOrdersPrintService.generatePdf(tenantId, orderId, type);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename=${type}-${orderId}.pdf`);
+      res.send(pdfBuffer);
+      
+    } catch (error: any) {
+      console.error(`Error en printOrder (${req.params.type}):`, error);
+      return res.status(500).json({
+        success: false,
+        error: error.message || `Error al generar el documento`
       });
     }
   }

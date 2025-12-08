@@ -1,20 +1,27 @@
 // frontend/src/pages/dashboard/orders/WebOrdersManagementPage.tsx
 import React, { useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
+import DatePicker from 'react-datepicker';
 import { useWebOrders } from '@features/orders/model/useWebOrders';
 import { useGlobalConfig } from '@shared/hooks/useGlobalConfig';
+import { PrintButtons } from '@features/orders/web/ui/PrintButtons';
+import { useAuth } from '@app/providers/AuthProvider';
 import { 
     RefreshIcon, GlobeIcon, TruckIcon, ClockIcon, MapPinIcon,
-    UserIcon, ChevronDownIcon, ChevronUpIcon, PhoneIcon, CheckIcon, ShoppingBagIcon, ExclamationCircleIcon
+    UserIcon, ChevronDownIcon, ChevronUpIcon, PhoneIcon, CheckIcon, ShoppingBagIcon, ExclamationCircleIcon, PrinterIcon
 } from '@shared/ui/Icons';
 import CancelOrderModal from './CancelOrderModal'; // ✅ IMPORTAR MODAL
 import { 
-    type ApiWebPedido, 
-    type ApiWebPedidoDetalle,
-    type webpedidos_estado, 
     WEBPEDIDOS_ESTADO,
     WEBPEDIDOS_TIPO
 } from '@shared/types';
+import type { 
+    ApiWebPedido, 
+    ApiWebPedidoDetalle,
+    webpedidos_estado
+} from '@shared/types';
+
+const API_BASE = "/api/dashboard";
 
 // --- UTILIDADES ---
 const formatTime = (dateString: string) => {
@@ -271,6 +278,7 @@ const WebOrderDetailCard: React.FC<OrderCardProps> = ({
             <DeliveryInfo order={order} employees={employees} onAssign={(id) => onAssignMotorizado(order.id, id)} />
             
             {renderActions()}
+            <PrintButtons order={order} />
         </div>
     );
 
@@ -397,8 +405,72 @@ const WebOrderDetailCard: React.FC<OrderCardProps> = ({
 
 export default function WebOrdersManagementPage() {
     const { orders, employees, reloadOrders, updateOrderStatus, assignMotorized, isLoading } = useWebOrders();
+    const { currentTenant } = useAuth();
     const [filter, setFilter] = useState<string>('all');
     const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
+    const [startDate, setStartDate] = useState<Date | null>(new Date());
+    const [endDate, setEndDate] = useState<Date | null>(new Date());
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [printType, setPrintType] = useState<'boleta' | 'factura' | null>(null);
+
+    const handlePrintRange = () => {
+        if (!startDate || !endDate) {
+            toast.error("Por favor, seleccione un rango de fechas.");
+            return;
+        }
+        setIsModalOpen(true);
+    };
+
+    const handleConfirmPrint = async () => {
+        if (!printType || !startDate || !endDate) {
+            toast.error("Por favor, seleccione un tipo de documento y un rango de fechas.");
+            return;
+        }
+        
+        const toastId = toast.loading(`Generando ${printType}s...`);
+
+        try {
+            const token = localStorage.getItem("authToken");
+            if (!token) {
+                toast.error("Error de autenticación.", { id: toastId });
+                return;
+            }
+
+            const headers = new Headers();
+            headers.append("Authorization", `Bearer ${token}`);
+            headers.append("Content-Type", "application/json");
+            if (currentTenant) {
+                headers.append("X-Tenant-Subdomain", currentTenant);
+            }
+
+            const response = await fetch(`${API_BASE}/web-orders/print-range`, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({
+                    startDate: startDate.toISOString(),
+                    endDate: endDate.toISOString(),
+                    type: printType
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: `Error del servidor: ${response.statusText}` }));
+                throw new Error(errorData.error);
+            }
+
+            const blob = await response.blob();
+            const pdfUrl = URL.createObjectURL(blob);
+            
+            toast.success('Documentos generados. Abriendo...', { id: toastId });
+            window.open(pdfUrl, '_blank');
+
+        } catch (err: any) {
+            toast.error(err.message || `Error al generar ${printType}s`, { id: toastId });
+        } finally {
+            setIsModalOpen(false);
+            setPrintType(null);
+        }
+    };
 
     const [showCancelModal, setShowCancelModal] = useState(false);
     const [orderToCancel, setOrderToCancel] = useState<ApiWebPedido | null>(null);
@@ -486,8 +558,87 @@ export default function WebOrdersManagementPage() {
                         </button>
                     ))}
                 </div>
-            </div>
 
+                {/* Filtro de Impresión por Rango */}
+                <div className="mt-4 p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
+                    <h2 className="text-sm font-bold text-gray-800 mb-2">Impresión por Rango</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                        <div className="col-span-1">
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Fecha de Inicio</label>
+                            <DatePicker
+                                selected={startDate}
+                                onChange={(date) => setStartDate(date)}
+                                selectsStart
+                                startDate={startDate}
+                                endDate={endDate}
+                                className="w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 p-2 bg-white"
+                                dateFormat="dd/MM/yyyy"
+                            />
+                        </div>
+                        <div className="col-span-1">
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Fecha de Fin</label>
+                            <DatePicker
+                                selected={endDate}
+                                onChange={(date) => setEndDate(date)}
+                                selectsEnd
+                                startDate={startDate}
+                                endDate={endDate}
+                                minDate={startDate || undefined}
+                                className="w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 p-2 bg-white"
+                                dateFormat="dd/MM/yyyy"
+                            />
+                        </div>
+                        <div className="col-span-1 self-end">
+                            <button
+                                onClick={handlePrintRange}
+                                className="w-full flex items-center justify-center gap-2 py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-bold shadow-sm transition-all"
+                            >
+                                <PrinterIcon className="w-4 h-4" />
+                                Imprimir por Rango
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            {/* Modal de confirmación de impresión */}
+            {isModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full">
+                        <h3 className="text-lg font-bold mb-4">Seleccionar Documento</h3>
+                        <div className="space-y-3 mb-6">
+                            <button
+                                onClick={() => setPrintType('boleta')}
+                                className={`w-full py-3 text-sm font-bold rounded-lg border-2 ${printType === 'boleta' ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'}`}
+                            >
+                                Boleta
+                            </button>
+                            <button
+                                onClick={() => setPrintType('factura')}
+                                className={`w-full py-3 text-sm font-bold rounded-lg border-2 ${printType === 'factura' ? 'bg-green-500 text-white border-green-500' : 'bg-white text-gray-700 border-gray-300 hover:border-green-400'}`}
+                            >
+                                Factura
+                            </button>
+                        </div>
+                        <div className="flex justify-end gap-3">
+                            <button
+                                onClick={() => setIsModalOpen(false)}
+                                className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleConfirmPrint}
+                                disabled={!printType}
+                                className="px-4 py-2 text-sm font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
+                            >
+                                Imprimir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            
             {/* Grid de Pedidos */}
             {filteredOrders.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-10 bg-white rounded border border-dashed border-gray-300">
