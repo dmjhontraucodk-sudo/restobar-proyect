@@ -17,6 +17,7 @@ import {
   CheckIcon,
   AlertIcon,
   ResetIcon,
+  StarIcon,
 } from "@shared/ui/Icons/ConfigIcons";
 
 // Funciones de validación específicas para Perú
@@ -74,6 +75,7 @@ const ConfigurationPage: React.FC = () => {
     { id: "web", label: "Web", icon: GlobeIcon },
     { id: "inventario", label: "Inventario", icon: PackageIcon },
     { id: "caja", label: "Caja", icon: WalletIcon },
+    { id: "fidelizacion", label: "Fidelización", icon: StarIcon }, // ✅ NUEVO TAB
     { id: "notificaciones", label: "Notificaciones", icon: BellIcon },
   ];
 
@@ -1730,6 +1732,122 @@ const ConfigurationPage: React.FC = () => {
                 </p>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* ========== TAB: FIDELIZACIÓN ========== */}
+        {activeTab === "fidelizacion" && (
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              Programa de Puntos y Lealtad
+            </h2>
+
+            {/* Activar Programa */}
+            <div className="flex items-start space-x-3 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <input
+                type="checkbox"
+                checked={formData.programa_lealtad?.activo || false}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    programa_lealtad: {
+                      ...formData.programa_lealtad,
+                      activo: e.target.checked
+                    }
+                  })
+                }
+                className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <div className="flex-1">
+                <label className="text-sm font-medium text-gray-900">
+                  Activar Programa de Puntos
+                </label>
+                <p className="text-sm text-gray-600">
+                  Permitir que los clientes acumulen puntos por sus compras.
+                </p>
+              </div>
+            </div>
+
+            {formData.programa_lealtad?.activo && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Tasa de Acumulación */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tasa de Acumulación (Puntos por Sol)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    value={formData.programa_lealtad?.puntos_por_sol || 0.1}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        programa_lealtad: {
+                          ...formData.programa_lealtad,
+                          puntos_por_sol: parseFloat(e.target.value)
+                        }
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Ejemplo: 0.1 significa 1 punto por cada S/ 10.00 de compra.
+                  </p>
+                </div>
+
+                {/* Valor del Punto */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Valor del Punto (En Soles)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    value={formData.programa_lealtad?.equivalencia_sol_por_punto || 0.05}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        programa_lealtad: {
+                          ...formData.programa_lealtad,
+                          equivalencia_sol_por_punto: parseFloat(e.target.value)
+                        }
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Ejemplo: 0.05 significa que cada punto vale S/ 0.05 de descuento.
+                  </p>
+                </div>
+
+                {/* Monto Mínimo Canje */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Mínimo de Puntos para Canjear
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={formData.programa_lealtad?.monto_minimo_canje || 50}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        programa_lealtad: {
+                          ...formData.programa_lealtad,
+                          monto_minimo_canje: parseInt(e.target.value)
+                        }
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    El cliente debe tener al menos esta cantidad de puntos para usarlos.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

@@ -144,7 +144,27 @@ export const tenantConfigService = {
       config = await this.createDefaultConfig(tenantId);
     }
 
-    return config;
+    // Obtener configuración de lealtad
+    let lealtad = await prisma.programa_lealtad.findUnique({
+      where: { tenant_id: tenantId }
+    });
+
+    if (!lealtad) {
+        lealtad = await prisma.programa_lealtad.create({
+            data: {
+                tenant_id: tenantId,
+                activo: false,
+                puntos_por_sol: 0.1, // 1 punto por cada 10 soles
+                monto_minimo_canje: 50, // Mínimo 50 puntos para canjear
+                equivalencia_sol_por_punto: 0.05 // 1 punto = 0.05 soles
+            }
+        });
+    }
+
+    return {
+        ...config,
+        programa_lealtad: lealtad
+    };
   },
 
   /**
@@ -184,26 +204,41 @@ export const tenantConfigService = {
   /**
    * 🆕 Actualizar configuración (parcial)
    */
-  async updateConfig(tenantId: number, data: UpdateTenantConfigData) {
+  async updateConfig(tenantId: number, data: any) { // Cambiado tipo a any para flexibilidad
+    const { programa_lealtad, ...configData } = data;
+
+    // Actualizar configuración principal
     const existingConfig = await prisma.tenant_config.findUnique({
       where: { tenant_id: tenantId }
     });
 
     if (!existingConfig) {
-      // Si no existe, crear con los datos proporcionados
-      return await prisma.tenant_config.create({
+      await prisma.tenant_config.create({
         data: {
           tenant_id: tenantId,
-          ...data
+          ...configData
         }
+      });
+    } else {
+      await prisma.tenant_config.update({
+        where: { tenant_id: tenantId },
+        data: configData
       });
     }
 
-    // Actualizar solo los campos proporcionados
-    return await prisma.tenant_config.update({
-      where: { tenant_id: tenantId },
-      data
-    });
+    // Actualizar programa de lealtad si viene en los datos
+    if (programa_lealtad) {
+        await prisma.programa_lealtad.upsert({
+            where: { tenant_id: tenantId },
+            update: programa_lealtad,
+            create: {
+                tenant_id: tenantId,
+                ...programa_lealtad
+            }
+        });
+    }
+
+    return this.getConfig(tenantId);
   },
 
   /**

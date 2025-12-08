@@ -10,6 +10,7 @@ interface CierreOrdenData {
     cliente_telefono?: string;
     tipo_documento?: string;
     documento_identidad?: string;
+    puntos_canjeados?: number; // ✅ NUEVO: Puntos a restar
 }
 
 interface RegistrarVentaEnCajaParams {
@@ -19,6 +20,7 @@ interface RegistrarVentaEnCajaParams {
     monto: number;
     metodoPago: pagos_metodo_pago;
     tipoDocumento: 'Orden' | 'WebPedido';
+    puntosCanjeados?: number; // ✅ NUEVO: Puntos a restar
 }
 
 export const cierrePosService = {
@@ -49,7 +51,7 @@ export const cierrePosService = {
 
         return await prisma.$transaction(async (tx) => {
 
-            // Lógica para buscar o crear cliente y sumar puntos
+            // Lógica para buscar o crear cliente y sumar/restar puntos
             if (data.documento_identidad && data.tipo_documento && data.cliente_nombre) {
                 let cliente = await tx.clientes.findFirst({
                     where: {
@@ -59,17 +61,31 @@ export const cierrePosService = {
                     },
                 });
 
+                // Calcular puntos ganados (si aplica)
+                // Por defecto 1 punto por compra si no hay configuración (mantener lógica anterior o mejorar)
+                // MEJORA: Consultar configuración
+                const lealtadConfig = await tx.programa_lealtad.findUnique({ where: { tenant_id: tenantId } });
+                let puntosGanados = 0;
+                if (lealtadConfig && lealtadConfig.activo) {
+                    puntosGanados = Math.floor(data.monto_pago * Number(lealtadConfig.puntos_por_sol));
+                } else if (!lealtadConfig) {
+                     puntosGanados = 1; // Default antiguo
+                }
+
+                const puntosRestar = data.puntos_canjeados || 0;
+                const cambioNetoPuntos = puntosGanados - puntosRestar;
+
                 if (cliente) {
                     // Cliente existe, actualizar puntos y fecha de último pedido
                     cliente = await tx.clientes.update({
                         where: { id: cliente.id },
                         data: {
                             puntos_lealtad: {
-                                increment: 1,
+                                increment: cambioNetoPuntos,
                             },
                             ultimo_pedido_at: new Date(),
-                            nombre: data.cliente_nombre, // Actualizar por si cambia
-                            telefono: data.cliente_telefono, // Actualizar por si cambia
+                            nombre: data.cliente_nombre, 
+                            telefono: data.cliente_telefono, 
                         },
                     });
                 } else {
@@ -81,7 +97,7 @@ export const cierrePosService = {
                             tipo_documento: data.tipo_documento,
                             documento_identidad: data.documento_identidad,
                             telefono: data.cliente_telefono,
-                            puntos_lealtad: 1,
+                            puntos_lealtad: Math.max(0, puntosGanados), // No puede empezar con negativo
                             ultimo_pedido_at: new Date(),
                         },
                     });

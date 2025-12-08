@@ -5,8 +5,9 @@ import { useWebOrders } from '@features/orders/model/useWebOrders';
 import { useGlobalConfig } from '@shared/hooks/useGlobalConfig';
 import { 
     RefreshIcon, GlobeIcon, TruckIcon, ClockIcon, MapPinIcon,
-    UserIcon, ChevronDownIcon, ChevronUpIcon, PhoneIcon, CheckIcon, ShoppingBagIcon
+    UserIcon, ChevronDownIcon, ChevronUpIcon, PhoneIcon, CheckIcon, ShoppingBagIcon, ExclamationCircleIcon
 } from '@shared/ui/Icons';
+import CancelOrderModal from './CancelOrderModal'; // ✅ IMPORTAR MODAL
 import { 
     type ApiWebPedido, 
     type ApiWebPedidoDetalle,
@@ -145,6 +146,7 @@ interface OrderCardProps {
     onAssignMotorizado: (orderId: number, empId: number) => void;
     isExpanded: boolean;
     onToggle: () => void;
+    onCancelOrder: (order: ApiWebPedido) => void; // ✅ NUEVA PROP
 }
 
 const WebOrderDetailCard: React.FC<OrderCardProps> = ({ 
@@ -153,7 +155,8 @@ const WebOrderDetailCard: React.FC<OrderCardProps> = ({
     onUpdateStatus, 
     onAssignMotorizado,
     isExpanded,
-    onToggle
+    onToggle,
+    onCancelOrder // ✅ NUEVA PROP
 }) => {
     
     const { formatCurrency } = useGlobalConfig();
@@ -220,7 +223,13 @@ const WebOrderDetailCard: React.FC<OrderCardProps> = ({
                     </button>
                 )}
 
-                <button onClick={() => onUpdateStatus(order.id, WEBPEDIDOS_ESTADO.Cancelado)} className="w-full py-1.5 text-red-500 hover:bg-red-50 rounded text-xs font-medium transition-colors">
+                <button 
+                    onClick={(e) => {
+                        e.stopPropagation(); // Evitar que la tarjeta se cierre
+                        onCancelOrder(order); // ✅ LLAMAR A LA NUEVA PROP
+                    }}
+                    className="w-full py-1.5 text-red-500 hover:bg-red-50 rounded text-xs font-medium transition-colors"
+                >
                     Cancelar Pedido
                 </button>
             </div>
@@ -391,6 +400,10 @@ export default function WebOrdersManagementPage() {
     const [filter, setFilter] = useState<string>('all');
     const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
 
+    const [showCancelModal, setShowCancelModal] = useState(false);
+    const [orderToCancel, setOrderToCancel] = useState<ApiWebPedido | null>(null);
+    const [isCancelling, setIsCancelling] = useState(false);
+
     const filteredOrders = useMemo(() => {
         if (filter === 'all') return orders;
         return orders.filter(o => o.estado === filter);
@@ -410,10 +423,8 @@ export default function WebOrdersManagementPage() {
     // Función para manejar el toggle de expansión
     const handleToggleOrder = (orderId: number) => {
         if (expandedOrderId === orderId) {
-            // Si ya está expandido, lo cerramos
             setExpandedOrderId(null);
         } else {
-            // Si no está expandido, lo expandimos (y cerramos cualquier otro)
             setExpandedOrderId(orderId);
         }
     };
@@ -499,6 +510,10 @@ export default function WebOrdersManagementPage() {
                                 onAssignMotorizado={assignMotorized}
                                 isExpanded={expandedOrderId === order.id}
                                 onToggle={() => handleToggleOrder(order.id)}
+                                onCancelOrder={(orderToCancel) => { // ✅ NUEVA PROP
+                                    setOrderToCancel(orderToCancel);
+                                    setShowCancelModal(true);
+                                }}
                             />
                         ))}
                 </div>
@@ -522,6 +537,35 @@ export default function WebOrdersManagementPage() {
                     )}
                 </div>
             </div>
+
+            {/* Modal de Cancelación */}
+            {showCancelModal && orderToCancel && (
+                <CancelOrderModal
+                    isOpen={showCancelModal}
+                    onClose={() => {
+                        setShowCancelModal(false);
+                        setOrderToCancel(null);
+                    }}
+                    onConfirm={async (reason) => {
+                        if (orderToCancel) {
+                            setIsCancelling(true);
+                            try {
+                                // Usar updateOrderStatus con motivo de cancelación
+                                await updateOrderStatus(orderToCancel.id, WEBPEDIDOS_ESTADO.Cancelado, reason);
+                                toast.success('Pedido cancelado y stock revertido.');
+                                setShowCancelModal(false);
+                                setOrderToCancel(null);
+                            } catch (error) {
+                                console.error('Error al cancelar pedido:', error);
+                                toast.error('Error al cancelar el pedido.');
+                            } finally {
+                                setIsCancelling(false);
+                            }
+                        }
+                    }}
+                    isProcessing={isCancelling}
+                />
+            )}
         </div>
     );
 }

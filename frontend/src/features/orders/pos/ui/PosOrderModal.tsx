@@ -8,12 +8,14 @@ import {
     type CreateOrdenData,
     type MenuItem as MenuProduct,
     type ApiOrdenDetalle,
-    type TipoCategoria
+    type TipoCategoria,
+    type UpdateOrderPosData
 } from '@shared/types'; 
 
-import { useOrdersApi, type UpdateOrderPosData, type AddItemsToOrderData } from '@features/orders/model/useOrdersApi'; 
+import { useOrdersApi, type AddItemsToOrderData } from '@features/orders/model/useOrdersApi'; 
 import { useMenuManagement } from '@features/menu/model/useMenuManagement'; 
 import { useAuth } from '@app/providers/AuthProvider';
+import { useGlobalConfig } from '@shared/hooks/useGlobalConfig'; // ✅ IMPORTAR
 import { 
     XIcon, 
     TableIcon, 
@@ -24,7 +26,9 @@ import {
     CheckIcon,
     UserIcon,
     SendIcon,
-    PrinterIcon
+    PrinterIcon,
+    StarIcon,
+    GiftIcon
 } from '@shared/ui/Icons'; 
 
 // ====================================================================
@@ -57,8 +61,7 @@ interface CobroCompletedData {
     } | null;
 }
 
-// --- COMPONENTE AUXILIAR VOUCHER (CORREGIDO) ---
-// --- COMPONENTE AUXILIAR VOUCHER (ACTUALIZADO CON DISEÑO DE LA IMAGEN) ---
+// --- COMPONENTE AUXILIAR VOUCHER ---
 const VoucherModal: React.FC<{ 
     data: CobroCompletedData; 
     onClose: () => void; 
@@ -67,7 +70,6 @@ const VoucherModal: React.FC<{
     const { generateInvoice } = useOrdersApi();
     const { currentTenant } = useAuth();
     
-    // ✅ VALIDACIÓN: Verificar que la orden tenga todos los datos necesarios
     if (!orden || !orden.mesas || !orden.ordendetalles) {
         console.error('❌ Error: Datos de orden incompletos', orden);
         toast.error('Error al mostrar el comprobante. Datos incompletos.');
@@ -99,10 +101,8 @@ const VoucherModal: React.FC<{
 
     const descuentoMonto = Number(orden.descuento || '0');
     
-    // ✅ CORRECCIÓN: Calcular el total correctamente desde los datos disponibles
     let totalNeto = Number(orden.total);
     
-    // Si el total es NaN o 0, lo calculamos desde el subtotal
     if (isNaN(totalNeto) || totalNeto === 0) {
         const subtotalOriginal = Number(orden.subtotal || '0');
         totalNeto = subtotalOriginal - descuentoMonto;
@@ -115,7 +115,6 @@ const VoucherModal: React.FC<{
         totalCalculado: totalNeto
     });
 
-    // ✅ CORRECCIÓN: Función de impresión sin useCallback para evitar problemas de dependencias
     const handlePrint = () => {
         const printContent = document.getElementById('print-voucher');
         if (!printContent) {
@@ -286,13 +285,10 @@ const VoucherModal: React.FC<{
         printWindow.document.write(htmlContent);
         printWindow.document.close();
         
-        // ✅ Esperar a que se cargue completamente antes de imprimir
         setTimeout(() => {
             try {
                 printWindow.focus();
                 printWindow.print();
-                // No cerrar automáticamente para permitir al usuario ver el resultado
-                // printWindow.close();
             } catch (error) {
                 console.error('Error al imprimir:', error);
                 toast.error('Error al imprimir el comprobante.');
@@ -333,7 +329,6 @@ const VoucherModal: React.FC<{
                     {/* Vista previa del voucher */}
                     <div className="mb-6 p-4 border border-gray-300 rounded-lg bg-white">
                         <div className="text-center text-sm font-mono">
-                            {/* Contenido de vista previa */}
                             <div className="font-bold text-lg">RESTAURANTE DELICIAS</div>
                             <div className="font-semibold">COMPROBANTE DE VENTA</div>
                             <div className="text-xs">
@@ -379,17 +374,15 @@ const VoucherModal: React.FC<{
                     </div>
                 </div>
                 
-                {/* ✅ CONTENIDO DEL VOUCHER PARA IMPRESIÓN (ACTUALIZADO CON EL DISEÑO DE LA IMAGEN) */}
+                {/* CONTENIDO DEL VOUCHER PARA IMPRESIÓN */}
                 <div id="print-voucher" style={{ display: 'none' }}>
                     <div className="comprobante">
-                        {/* Encabezado */}
                         <div className="header">
                             <div className="empresa">RESTAURANTE DELICIAS</div>
                             <div className="titulo">COMPROBANTE DE VENTA</div>
                             <div className="fecha">{formatDateTime(orden.created_at)}</div>
                         </div>
 
-                        {/* Información de Mesa y Orden */}
                         <div className="mesa-info">
                             <div>Mesa: {orden.mesas?.nombre_o_numero || 'N/A'}</div>
                             <div>Orden: #{orden.id}</div>
@@ -397,7 +390,6 @@ const VoucherModal: React.FC<{
 
                         <div className="separator"></div>
 
-                        {/* Información del Cliente */}
                         {cliente && (
                             <div className="cliente-info">
                                 <div><span className="cliente-label">Cliente:</span> {cliente.nombre}</div>
@@ -407,7 +399,6 @@ const VoucherModal: React.FC<{
 
                         <div className="separator"></div>
 
-                        {/* Tabla de Items */}
                         <table className="items-table">
                             <thead>
                                 <tr>
@@ -429,7 +420,6 @@ const VoucherModal: React.FC<{
 
                         <div className="separator"></div>
 
-                        {/* Totales */}
                         <div className="totales">
                             <div className="total-row">
                                 <div>Subtotal:</div>
@@ -447,12 +437,10 @@ const VoucherModal: React.FC<{
                             </div>
                         </div>
 
-                        {/* Método de Pago */}
                         <div className="metodo-pago">
                             <strong>Método de Pago:</strong> {metodo}
                         </div>
 
-                        {/* Footer */}
                         <div className="footer">
                             ¡Gracias por su visita!
                         </div>
@@ -470,6 +458,7 @@ const VoucherModal: React.FC<{
 const PosOrderModal: React.FC<PosOrderModalProps> = ({ isOpen, onClose, initialOrder, isEditMode = false }) => {
     
     const { getMesasDisponibles, createOrderPos, closeOrderPos, addItemsToOrder, findClientByDocument } = useOrdersApi();
+    const { formatCurrency, moneda } = useGlobalConfig(); // ✅ USAR HOOK
     
     const { 
         allProducts: foodProducts, 
@@ -499,6 +488,10 @@ const PosOrderModal: React.FC<PosOrderModalProps> = ({ isOpen, onClose, initialO
     const [tipoDocumento, setTipoDocumento] = useState('DNI');
     const [documentoIdentidad, setDocumentoIdentidad] = useState('');
     const [isSearchingClient, setIsSearchingClient] = useState(false);
+    
+    // ✅ ESTADOS DE LEALTAD
+    const [loyaltyData, setLoyaltyData] = useState<any>(null);
+    const [usarPuntos, setUsarPuntos] = useState(false);
 
     const isNewOrder = !initialOrder && !isEditMode;
     const isCheckoutMode = !isNewOrder && !isEditMode;
@@ -515,10 +508,19 @@ const PosOrderModal: React.FC<PosOrderModalProps> = ({ isOpen, onClose, initialO
             if (result.success && result.client) {
                 setClienteNombre(result.client.nombre);
                 setClienteTelefono(result.client.telefono || '');
+                
+                if (result.client.loyalty) {
+                    setLoyaltyData(result.client.loyalty);
+                    setUsarPuntos(false);
+                } else {
+                    setLoyaltyData(null);
+                }
+
                 toast.success('Cliente encontrado.');
             } else {
                 setClienteNombre('');
                 setClienteTelefono('');
+                setLoyaltyData(null);
                 toast.error('Cliente no encontrado. Puede registrarlo manualmente.');
             }
         } catch (error) {
@@ -546,9 +548,17 @@ const PosOrderModal: React.FC<PosOrderModalProps> = ({ isOpen, onClose, initialO
         return posItems.reduce((sum, item) => sum + (item.precio_unitario * item.cantidad), 0);
     }, [isCheckoutMode, initialOrder, posItems]);
 
+    // ✅ CALCULAR DESCUENTO DE PUNTOS
+    const descuentoPuntosMonto = useMemo(() => {
+        if (usarPuntos && loyaltyData) {
+            return loyaltyData.valor_en_soles || 0;
+        }
+        return 0;
+    }, [usarPuntos, loyaltyData]);
+
     const totalConDescuento = useMemo(() => 
-        Math.max(0, subtotal - descuentoMonto), 
-        [subtotal, descuentoMonto]
+        Math.max(0, subtotal - descuentoMonto - descuentoPuntosMonto), 
+        [subtotal, descuentoMonto, descuentoPuntosMonto]
     );
 
     const currentProducts = menuType === 'COMIDA' ? foodProducts : drinkProducts;
@@ -592,6 +602,8 @@ const PosOrderModal: React.FC<PosOrderModalProps> = ({ isOpen, onClose, initialO
         setTipoDocumento('DNI');
         setMenuType('COMIDA');
         setActiveCategory('TODAS');
+        setUsarPuntos(false);
+        setLoyaltyData(null);
         
         if (isNewOrder) {
             loadMesas();
@@ -617,7 +629,6 @@ const PosOrderModal: React.FC<PosOrderModalProps> = ({ isOpen, onClose, initialO
         }
     }, [descuentoPorcentaje, subtotal]);
 
-    // ✅ CORRECCIÓN: Lógica de cierre mejorada
     const handleCloseOrder = async () => {
         if (!initialOrder) return;
 
@@ -634,39 +645,26 @@ const PosOrderModal: React.FC<PosOrderModalProps> = ({ isOpen, onClose, initialO
                 estado: 'Pagada',
                 monto_pago: totalConDescuento,
                 metodo_pago: metodoPagoDB as 'Efectivo' | 'Tarjeta' | 'Transferencia' | 'Otro',
-                descuento_monto: descuentoMonto,
+                descuento_monto: descuentoMonto + descuentoPuntosMonto,
                 cliente_nombre: clienteNombre.trim(),
                 cliente_telefono: clienteTelefono.trim(),
                 tipo_documento: tipoDocumento,
                 documento_identidad: documentoIdentidad.trim(),
+                puntos_canjeados: usarPuntos && loyaltyData ? loyaltyData.puntos : 0
             };
 
             const ordenCerrada = await closeOrderPos(initialOrder.id, finalData);
             
             toast.success(`Cuenta de ${initialOrder.mesas.nombre_o_numero} cobrada exitosamente.`);
             
-            // ✅ DEBUG: Ver qué valores tenemos
-            console.log('🔍 handleCloseOrder - Debug:', {
-                subtotal,
-                descuentoMonto,
-                totalConDescuento,
-                'ordenCerrada.total': ordenCerrada.total,
-                'ordenCerrada.subtotal': ordenCerrada.subtotal,
-                'initialOrder.subtotal': initialOrder.subtotal,
-            });
+            const totalFinal = totalConDescuento;
             
-            // ✅ CORRECCIÓN: Calcular el total neto correctamente
-            const totalFinal = totalConDescuento; // Usar el total calculado localmente
-            
-            // ✅ Aseguramos que cobroData tenga todos los datos necesarios
             setCobroData({
                 orden: {
                     ...ordenCerrada,
-                    // ✅ CRÍTICO: Preservar/actualizar los valores correctos
                     subtotal: initialOrder.subtotal,
-                    descuento: descuentoMonto.toString(),
-                    total: totalFinal.toString(), // Total después del descuento
-                    // ✅ Preservar las relaciones de la orden inicial
+                    descuento: (descuentoMonto + descuentoPuntosMonto).toString(),
+                    total: totalFinal.toString(),
                     mesas: initialOrder.mesas,
                     empleados: initialOrder.empleados,
                     ordendetalles: initialOrder.ordendetalles,
@@ -674,7 +672,7 @@ const PosOrderModal: React.FC<PosOrderModalProps> = ({ isOpen, onClose, initialO
                 metodo: metodoPago,
                 cliente: { 
                     nombre: clienteNombre.trim(), 
-                    telefono: documentoIdentidad.trim() // Mostrar DNI/RUC en el voucher
+                    telefono: documentoIdentidad.trim()
                 },
             });
 
@@ -696,7 +694,7 @@ const PosOrderModal: React.FC<PosOrderModalProps> = ({ isOpen, onClose, initialO
                 );
             }
             const newItem: PosItem = {
-                posItemId: `${numericId}-${Date.now()}`, // ID único
+                posItemId: `${numericId}-${Date.now()}`,
                 producto_id: numericId,
                 nombre: product.name,
                 cantidad: 1,
@@ -784,7 +782,6 @@ const PosOrderModal: React.FC<PosOrderModalProps> = ({ isOpen, onClose, initialO
 
     if (!isOpen) return null;
 
-    // ✅ CORRECCIÓN: Mostramos el VoucherModal sin la prop onPrint
     if (cobroData) {
         return <VoucherModal data={cobroData} onClose={onClose} />;
     }
@@ -796,7 +793,6 @@ const PosOrderModal: React.FC<PosOrderModalProps> = ({ isOpen, onClose, initialO
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[95vh] flex flex-col overflow-hidden">
                 
-                {/* Resto del modal sin cambios... */}
                 <div className="flex justify-between items-center p-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-2xl">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-white/20 rounded-lg">
@@ -819,10 +815,8 @@ const PosOrderModal: React.FC<PosOrderModalProps> = ({ isOpen, onClose, initialO
                     </button>
                 </div>
                 
-                {/* Contenido Principal */}
                 <div className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-3">
                     
-                    {/* Columna Izquierda: Productos o Resumen */}
                     <div className="lg:col-span-2 p-6 border-r border-gray-200 overflow-y-auto">
                         
                         {isNewOrAddMode && (
@@ -863,10 +857,10 @@ const PosOrderModal: React.FC<PosOrderModalProps> = ({ isOpen, onClose, initialO
                                             </div>
                                             <div className="text-right">
                                                 <div className="font-medium text-gray-900">
-                                                    S/ {(Number(detalle.precio_unitario) * detalle.cantidad).toFixed(2)}
+                                                    {formatCurrency(Number(detalle.precio_unitario) * detalle.cantidad)}
                                                 </div>
                                                 <div className="text-sm text-gray-500">
-                                                    {detalle.cantidad} x S/ {Number(detalle.precio_unitario).toFixed(2)}
+                                                    {detalle.cantidad} x {formatCurrency(Number(detalle.precio_unitario))}
                                                 </div>
                                             </div>
                                         </div>
@@ -936,7 +930,7 @@ const PosOrderModal: React.FC<PosOrderModalProps> = ({ isOpen, onClose, initialO
                                                     {product.description}
                                                 </div>
                                                 <div className="font-bold text-green-600">
-                                                    S/ {Number(product.price).toFixed(2)}
+                                                    {formatCurrency(Number(product.price))}
                                                 </div>
                                             </button>
                                         ))}
@@ -946,7 +940,6 @@ const PosOrderModal: React.FC<PosOrderModalProps> = ({ isOpen, onClose, initialO
                         )}
                     </div>
                     
-                    {/* Columna Derecha: Panel de Control */}
                     <div className="lg:col-span-1 p-6 bg-gradient-to-b from-gray-50 to-white overflow-y-auto">
                         
                         {isNewOrder && (
@@ -1008,7 +1001,7 @@ const PosOrderModal: React.FC<PosOrderModalProps> = ({ isOpen, onClose, initialO
                                                 {item.nombre}
                                             </div>
                                             <div className="text-xs text-gray-500">
-                                                S/ {item.precio_unitario.toFixed(2)} c/u
+                                                {formatCurrency(item.precio_unitario)} c/u
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2">
@@ -1063,7 +1056,7 @@ const PosOrderModal: React.FC<PosOrderModalProps> = ({ isOpen, onClose, initialO
                                 
                                 <div className="space-y-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Descuento (S/)</label>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Descuento ({moneda.simbolo})</label>
                                         <input
                                             type="number"
                                             value={descuentoMonto}
@@ -1165,27 +1158,79 @@ const PosOrderModal: React.FC<PosOrderModalProps> = ({ isOpen, onClose, initialO
                                             </div>
                                         </div>
                                     </div>
+
+                                    {/* SECCIÓN DE LEALTAD */}
+                                    {loyaltyData && (
+                                        <div className="mt-4 bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-xl p-4">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="p-1.5 bg-white rounded-lg shadow-sm text-indigo-600">
+                                                        <StarIcon className="w-5 h-5" />
+                                                    </div>
+                                                    <div>
+                                                        <h6 className="text-sm font-bold text-indigo-900">Programa de Lealtad</h6>
+                                                        <p className="text-xs text-indigo-600">Puntos disponibles: <span className="font-bold">{loyaltyData.puntos}</span></p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-xs text-indigo-500 uppercase font-bold tracking-wider">Valor</p>
+                                                    <p className="text-lg font-bold text-indigo-700">{formatCurrency(loyaltyData.valor_en_soles)}</p>
+                                                </div>
+                                            </div>
+
+                                            {loyaltyData.puede_canjear ? (
+                                                <div className="mt-3 flex items-center justify-between bg-white p-3 rounded-lg border border-indigo-100 shadow-sm">
+                                                    <div className="flex items-center gap-2">
+                                                        <GiftIcon className={`w-5 h-5 ${usarPuntos ? 'text-green-500' : 'text-gray-400'}`} />
+                                                        <span className="text-sm font-medium text-gray-700">Canjear puntos</span>
+                                                    </div>
+                                                    <label className="relative inline-flex items-center cursor-pointer">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            className="sr-only peer"
+                                                            checked={usarPuntos}
+                                                            onChange={(e) => setUsarPuntos(e.target.checked)}
+                                                        />
+                                                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                                                    </label>
+                                                </div>
+                                            ) : (
+                                                <div className="mt-2 text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-lg border border-amber-100 flex items-center gap-2">
+                                                    <span>⚠️</span>
+                                                    Mínimo para canjear: {loyaltyData.config.minimo_canje} puntos
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         )}
+
                         {(isCheckoutMode || (isAddItemsMode && posItems.length > 0) || isNewOrder) && (
                             <div className="mb-6 p-4 bg-gradient-to-r from-gray-900 to-gray-800 rounded-xl text-white">
                                 <h5 className="font-semibold mb-3 text-gray-200">Resumen Total</h5>
                                 <div className="space-y-2">
                                     <div className="flex justify-between text-sm">
                                         <span>Subtotal</span>
-                                        <span>S/ {subtotal.toFixed(2)}</span>
+                                        <span>{formatCurrency(subtotal)}</span>
                                     </div>
                                     {descuentoMonto > 0 && (
                                         <div className="flex justify-between text-sm text-red-300">
-                                            <span>Descuento</span>
-                                            <span>- S/ {descuentoMonto.toFixed(2)}</span>
+                                            <span>Descuento Manual</span>
+                                            <span>- {formatCurrency(descuentoMonto)}</span>
+                                        </div>
+                                    )}
+                                    {/* ✅ MOSTRAR DESCUENTO POR PUNTOS */}
+                                    {descuentoPuntosMonto > 0 && (
+                                        <div className="flex justify-between text-sm text-indigo-300 font-medium">
+                                            <span className="flex items-center gap-1"><StarIcon className="w-3 h-3" /> Descuento Puntos</span>
+                                            <span>- {formatCurrency(descuentoPuntosMonto)}</span>
                                         </div>
                                     )}
                                     <div className="border-t border-gray-600 pt-2 mt-2">
                                         <div className="flex justify-between text-lg font-bold">
                                             <span>Total</span>
-                                            <span className="text-green-400">S/ {totalConDescuento.toFixed(2)}</span>
+                                            <span className="text-green-400">{formatCurrency(totalConDescuento)}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -1209,7 +1254,7 @@ const PosOrderModal: React.FC<PosOrderModalProps> = ({ isOpen, onClose, initialO
                                         {isNewOrder 
                                             ? 'REALIZAR PEDIDO'
                                             : isCheckoutMode 
-                                                ? `COBRAR S/ ${totalConDescuento.toFixed(2)}`
+                                                ? `COBRAR ${formatCurrency(totalConDescuento)}`
                                                 : 'ACTUALIZAR PEDIDO'
                                         }
                                     </>

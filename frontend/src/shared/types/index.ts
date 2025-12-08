@@ -1,4 +1,4 @@
-// src/types/index.ts - VERSIÓN COMPLETAMENTE CORREGIDA
+// src/types/index.ts - VERSIÓN COMPLETAMENTE CORREGIDA Y FINAL
 
 // ========== TIPOS EXISTENTES (SIN CAMBIOS) ==========
 
@@ -876,7 +876,7 @@ export interface DashboardOverview {
     ticketPromedio: number;
     
     // Mesas
-    estadoMesas: MesasEstadoData[];
+    estadoMesas: MesasEstadoData[]; // Ej: [{ estado: 'Libre', cantidad: 3 }, ...]
     totalMesas: number;
 
     // Gráficos de Venta
@@ -989,5 +989,36 @@ export const PAGOS_METODO_PAGO_VALUES = {
   Otro: 'Otro' as pagos_metodo_pago,
 } as const;
 
+// ========== ✨ INTERFAZ CLIENTE (ACTUALIZADA) ✨ ==========
+export interface Client {
+  id: number;
+  tenant_id: number;
+  nombre: string;
+  email: string | null;
+  telefono: string | null;
+  puntos_lealtad: number;
+  // ✅ NUEVO: Propiedad de lealtad (opcional)
+  loyalty?: {
+    puntos: number;
+    valor_en_soles: number;
+    puede_canjear: boolean;
+    config: { 
+        puntos_por_sol: number;
+        equivalencia: number;
+        minimo_canje: number;
+    }
+  } | null;
+}
 
-
+// ========== ✨ INTERFAZ PARA ACTUALIZAR ORDEN POS (ACTUALIZADA) ✨ ==========
+export interface UpdateOrderPosData {
+    estado: 'Pagada' | 'Cerrada';
+    monto_pago: number;
+    metodo_pago: pagos_metodo_pago;
+    descuento_monto?: number;
+    cliente_nombre?: string;
+    cliente_telefono?: string;
+    tipo_documento?: string;
+    documento_identidad?: string;
+    puntos_canjeados?: number; // ✅ NUEVO: Puntos canjeados
+}

@@ -81,7 +81,7 @@ export const webOrdersController = {
       const tenantId = req.user?.tenant_id;
       const empleadoId = req.user?.id;
       const orderId = parseInt(req.params.id);
-      const { nuevo_estado, razon_cancelacion } = req.body;
+      const { nuevo_estado, reason } = req.body; // ✅ Aceptar motivo
 
       if (!tenantId) return res.status(403).json({ error: 'Acceso no autorizado' });
       if (!empleadoId) return res.status(401).json({ error: 'Usuario no identificado' });
@@ -152,7 +152,8 @@ export const webOrdersController = {
       const updatedOrder = await webOrdersService.updateOrderStatus(
         tenantId, 
         orderId, 
-        nuevo_estado as webpedidos_estado
+        nuevo_estado as webpedidos_estado,
+        reason // ✅ Pasar motivo al servicio
       );
 
       const tenantConfig = await webOrdersService.getOrderConfig(tenantId);
@@ -166,7 +167,7 @@ export const webOrdersController = {
               break;
             case webpedidos_estado.Cancelado:
               if (tenantConfig.notif_pedido_cancelado) {
-                await emailService.sendOrderCancellation(updatedOrder, tenantConfig, razon_cancelacion);
+                await emailService.sendOrderCancellation(updatedOrder, tenantConfig, reason); // ✅ Pasar motivo al email
               }
               break;
             case webpedidos_estado.ListoParaRecoger:

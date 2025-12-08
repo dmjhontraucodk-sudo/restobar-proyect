@@ -5,23 +5,10 @@ import {
     type CreateOrdenData, 
     type ApiMesa, 
     type ApiOrdenDetalle,
-    type CreateOrdenItem, 
+    type CreateOrdenItem,
+    type UpdateOrderPosData, // ✅ IMPORTADO
+    type Client // ✅ IMPORTADO
 } from '@shared/types';
-
-// Tipos específicos para la actualización de POS (Cierre y Descuento)
-export interface UpdateOrderPosData {
-    estado: 'Pagada' | 'Cerrada'; // El estado final de la Orden
-    monto_pago: number; // Monto que se recibe
-    metodo_pago: 'Efectivo' | 'Tarjeta' | 'Transferencia' | 'Otro';
-    
-    descuento_monto?: number;
-    descuento_porcentaje?: number;
-    
-    cliente_nombre?: string;
-    cliente_telefono?: string;
-    tipo_documento?: string;
-    documento_identidad?: string;
-}
 
 export interface OrdenDetalleConProducto extends ApiOrdenDetalle {
     productos: {
@@ -36,17 +23,6 @@ export interface ApiOrdenPos extends ApiOrden {
 export interface AddItemsToOrderData {
     items: CreateOrdenItem[];
 }
-
-export interface Client {
-    id: number;
-    tenant_id: number;
-    nombre: string;
-    email?: string | null;
-    telefono?: string | null;
-    tipo_documento?: string | null;
-    documento_identidad?: string | null;
-}
-
 
 export const useOrdersApi = () => {
     const { makeRequest } = useDashboardApi();

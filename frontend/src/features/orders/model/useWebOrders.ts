@@ -9,7 +9,7 @@ interface UseWebOrdersReturn {
     isLoading: boolean;
     error: string | null;
     reloadOrders: () => void;
-    updateOrderStatus: (id: number, status: webpedidos_estado) => Promise<void>;
+    updateOrderStatus: (id: number, status: webpedidos_estado, reason?: string) => Promise<void>; // ✅ Aceptar motivo
     assignMotorized: (orderId: number, motorizedId: number) => Promise<void>;
     employees: any[]; // Simplificado para la lista de empleados
 }

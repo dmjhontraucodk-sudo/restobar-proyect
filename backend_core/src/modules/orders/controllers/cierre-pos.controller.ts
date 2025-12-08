@@ -16,6 +16,7 @@ const closeOrderPosSchema = z.object({
     cliente_telefono: z.string().optional(),
     tipo_documento: z.string().optional(),
     documento_identidad: z.string().optional(),
+    puntos_canjeados: z.number().min(0).default(0).optional(), // ✅ NUEVO: Campo para puntos
 }).refine(data => {
     return data.estado === ordenes_estado.Pagada || data.estado === ordenes_estado.Cerrada;
 }, {
@@ -67,6 +68,7 @@ export const cierrePosController = {
                     cliente_telefono: data.cliente_telefono,
                     tipo_documento: data.tipo_documento,
                     documento_identidad: data.documento_identidad,
+                    puntos_canjeados: data.puntos_canjeados, // ✅ PASAR AL SERVICIO
                 }
             );
 
