@@ -475,5 +475,4 @@ export const ReceiptIcon = (props: React.SVGProps<SVGSVGElement>) => (
         <path d="M12 17.5v-11"/>
 
     </svg>
-
 );
