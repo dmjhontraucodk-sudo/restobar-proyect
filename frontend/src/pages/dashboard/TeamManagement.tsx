@@ -5,7 +5,9 @@ import {
     EmployeeTable, 
     EmployeeCard, 
     RolesTab, 
-    AddIncidenciaModal 
+    AddIncidenciaModal,
+    AssignRolesTab,
+    AssignPermissionsTab
 } from '@features/team';
 import { type ApiEmpleado } from '@shared/types';
 import { 
@@ -16,7 +18,8 @@ import {
     ViewGridIcon,
     RefreshIcon,
     PlusIcon,
-    CheckCircleIcon
+    CheckCircleIcon,
+    SettingsIcon
 } from '@shared/ui/Icons';
 
 // Funciones de validación específicas para Perú
@@ -58,7 +61,7 @@ const StatsCard: React.FC<{
     </div>
 );
 
-type TabType = 'empleados' | 'roles';
+type TabType = 'empleados' | 'roles' | 'assign-roles' | 'assign-permissions';
 
 const TeamManagementPage: React.FC = () => {
     const {
@@ -82,7 +85,14 @@ const TeamManagementPage: React.FC = () => {
         updateRol,
         desactivarRol,
         activarRol,
-        registrarIncidencia 
+        updateEmployeeRole,
+        registrarIncidencia,
+        
+        // RBAC Permissions
+        allNavigationItems,
+        rolePermissions,
+        loadRolePermissions,
+        updateRolePermissions,
     } = useTeamManagement();
 
     const [activeTab, setActiveTab] = useState<TabType>('empleados');
@@ -227,79 +237,121 @@ const TeamManagementPage: React.FC = () => {
                                     <ShieldIcon className="w-5 h-5" /> Roles
                                 </button>
                             )}
-                        </nav>
-                    </div>
-
-                    <div className="p-6">
-                        {/* --- TAB EMPLEADOS --- */}
-                        {activeTab === 'empleados' && (
-                            <div className="space-y-6">
-                                {/* Stats Grid */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                    <StatsCard title="Total Empleados" value={stats.total} color="bg-blue-100 text-blue-600" icon={<UsersIcon className="w-6 h-6" />} />
-                                    <StatsCard title="Activos" value={stats.activos} color="bg-green-100 text-green-600" icon={<CheckCircleIcon className="w-6 h-6" />} />
-                                    <StatsCard title="Con Acceso" value={stats.conAcceso} color="bg-purple-100 text-purple-600" icon={<ShieldIcon className="w-6 h-6" />} />
-                                    <StatsCard title="Inactivos" value={stats.inactivos} color="bg-red-100 text-red-600" icon={<XCircleIcon className="w-6 h-6" />} />
-                                </div>
-
-                                {/* Toolbar */}
-                                <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 flex flex-col lg:flex-row justify-between items-center gap-4">
-                                    <span className="text-sm text-gray-500">{empleados.length} miembros en total</span>
-                                    <div className="flex gap-3">
-                                        <div className="bg-white rounded-lg p-1 border flex">
-                                            <button onClick={() => setViewMode('table')} className={`p-2 rounded ${viewMode === 'table' ? 'bg-gray-100' : ''}`}><ViewListIcon className="w-4 h-4" /></button>
-                                            <button onClick={() => setViewMode('grid')} className={`p-2 rounded ${viewMode === 'grid' ? 'bg-gray-100' : ''}`}><ViewGridIcon className="w-4 h-4" /></button>
-                                        </div>
-                                        <button onClick={() => reloadEmpleados()} className="flex items-center gap-2 px-4 py-2 bg-white border rounded-xl hover:bg-gray-50 text-gray-700">
-                                            <RefreshIcon className="w-4 h-4" /> Actualizar
-                                        </button>
-                                        <button onClick={handleOpenCreateModal} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-medium shadow-sm">
-                                            <PlusIcon className="w-4 h-4" /> Nuevo Empleado
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Tabla / Grid */}
-                                {viewMode === 'table' ? (
-                                    <EmployeeTable
-                                        empleados={empleados}
-                                        onEdit={handleOpenEditModal}
-                                        onDelete={desactivarEmpleado}
-                                        onActivate={activarEmpleado}
-                                        onResetPassword={handleResetPassword}
-                                        onAddIncidencia={handleOpenIncidencia} 
-                                    />
-                                ) : (
-                                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                                        {empleados.map(emp => (
-                                            <EmployeeCard 
-                                                key={emp.id} 
-                                                empleado={emp} 
-                                                onEdit={handleOpenEditModal} 
-                                                onDelete={desactivarEmpleado} 
-                                                onActivate={activarEmpleado} 
-                                                onResetPassword={handleResetPassword}
-                                            />
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {/* --- TAB ROLES --- */}
-                        {activeTab === 'roles' && (
-                            <RolesTab 
-                                roles={todosRoles} 
-                                onCreateRol={handleCreateRol} // Usar el handler con validación
-                                onUpdateRol={handleUpdateRol} // Usar el handler con validación
-                                onDesactivarRol={desactivarRol} 
-                                onActivarRol={activarRol} 
-                                puedeGestionarRoles={puedeGestionarRoles} 
-                            />
-                        )}
-                    </div>
-                </div>
-            </div>
+                            {puedeGestionarRoles && (
+                                                                                                <button
+                                                                                                    onClick={() => setActiveTab('assign-roles')}
+                                                                                                    className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
+                                                                                                        activeTab === 'assign-roles' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+                                                                                                    }`}
+                                                                                                >
+                                                                                                    <SettingsIcon className="w-5 h-5" /> Asignar Roles
+                                                                                                </button>
+                                                                                            )}
+                                                                                            {puedeGestionarRoles && (
+                                                                                                <button
+                                                                                                    onClick={() => setActiveTab('assign-permissions')}
+                                                                                                    className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
+                                                                                                        activeTab === 'assign-permissions' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+                                                                                                    }`}
+                                                                                                >
+                                                                                                    <ShieldIcon className="w-5 h-5" /> Asignar Permisos
+                                                                                                </button>
+                                                                                            )}
+                                                                                        </nav>
+                                                                                    </div>
+                                                                
+                                                                                    <div className="p-6">
+                                                                                        {/* --- TAB EMPLEADOS --- */}
+                                                                                        {activeTab === 'empleados' && (
+                                                                                            <div className="space-y-6">
+                                                                                                {/* Stats Grid */}
+                                                                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                                                                                    <StatsCard title="Total Empleados" value={stats.total} color="bg-blue-100 text-blue-600" icon={<UsersIcon className="w-6 h-6" />} />
+                                                                                                    <StatsCard title="Activos" value={stats.activos} color="bg-green-100 text-green-600" icon={<CheckCircleIcon className="w-6 h-6" />} />
+                                                                                                    <StatsCard title="Con Acceso" value={stats.conAcceso} color="bg-purple-100 text-purple-600" icon={<ShieldIcon className="w-6 h-6" />} />
+                                                                                                    <StatsCard title="Inactivos" value={stats.inactivos} color="bg-red-100 text-red-600" icon={<XCircleIcon className="w-6 h-6" />} />
+                                                                                                </div>
+                                                                
+                                                                                                {/* Toolbar */}
+                                                                                                <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 flex flex-col lg:flex-row justify-between items-center gap-4">
+                                                                                                    <span className="text-sm text-gray-500">{empleados.length} miembros en total</span>
+                                                                                                    <div className="flex gap-3">
+                                                                                                        <div className="bg-white rounded-lg p-1 border flex">
+                                                                                                            <button onClick={() => setViewMode('table')} className={`p-2 rounded ${viewMode === 'table' ? 'bg-gray-100' : ''}`}><ViewListIcon className="w-4 h-4" /></button>
+                                                                                                            <button onClick={() => setViewMode('grid')} className={`p-2 rounded ${viewMode === 'grid' ? 'bg-gray-100' : ''}`}><ViewGridIcon className="w-4 h-4" /></button>
+                                                                                                        </div>
+                                                                                                        <button onClick={() => reloadEmpleados()} className="flex items-center gap-2 px-4 py-2 bg-white border rounded-xl hover:bg-gray-50 text-gray-700">
+                                                                                                            <RefreshIcon className="w-4 h-4" /> Actualizar
+                                                                                                        </button>
+                                                                                                        <button onClick={handleOpenCreateModal} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-medium shadow-sm">
+                                                                                                            <PlusIcon className="w-4 h-4" /> Nuevo Empleado
+                                                                                                        </button>
+                                                                                                    </div>
+                                                                                                </div>
+                                                                
+                                                                                                {/* Tabla / Grid */}
+                                                                                                {viewMode === 'table' ? (
+                                                                                                    <EmployeeTable
+                                                                                                        empleados={empleados}
+                                                                                                        onEdit={handleOpenEditModal}
+                                                                                                        onDelete={desactivarEmpleado}
+                                                                                                        onActivate={activarEmpleado}
+                                                                                                        onResetPassword={handleResetPassword}
+                                                                                                        onAddIncidencia={handleOpenIncidencia} 
+                                                                                                    />
+                                                                                                ) : (
+                                                                                                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                                                                                                        {empleados.map(emp => (
+                                                                                                            <EmployeeCard 
+                                                                                                                key={emp.id} 
+                                                                                                                empleado={emp} 
+                                                                                                                onEdit={handleOpenEditModal} 
+                                                                                                                onDelete={desactivarEmpleado} 
+                                                                                                                onActivate={activarEmpleado} 
+                                                                                                                onResetPassword={handleResetPassword}
+                                                                                                            />
+                                                                                                        ))}
+                                                                                                    </div>
+                                                                                                )}
+                                                                                            </div>
+                                                                                        )}
+                                                                
+                                                                                        {/* --- TAB ROLES --- */}
+                                                                                        {activeTab === 'roles' && (
+                                                                                            <RolesTab 
+                                                                                                roles={todosRoles} 
+                                                                                                onCreateRol={handleCreateRol} // Usar el handler con validación
+                                                                                                onUpdateRol={handleUpdateRol} // Usar el handler con validación
+                                                                                                onDesactivarRol={desactivarRol} 
+                                                                                                onActivarRol={activarRol} 
+                                                                                                puedeGestionarRoles={puedeGestionarRoles} 
+                                                                                            />
+                                                                                        )}
+                                                                
+                                                                                        {/* --- TAB ASIGNAR ROLES --- */}
+                                                                                        {activeTab === 'assign-roles' && (
+                                                                                            <AssignRolesTab
+                                                                                                empleados={empleados}
+                                                                                                roles={todosRoles}
+                                                                                                onUpdateRole={updateEmployeeRole}
+                                                                                            />
+                                                                                        )}
+                                                                
+                                                                                        {/* --- TAB ASIGNAR PERMISOS --- */}
+                                                                                        {activeTab === 'assign-permissions' && (
+                                                                                            <AssignPermissionsTab
+                                                                                                roles={todosRoles}
+                                                                                                allNavigationItems={allNavigationItems}
+                                                                                                currentRolePermissions={rolePermissions}
+                                                                                                loadRolePermissions={loadRolePermissions}
+                                                                                                updateRolePermissions={updateRolePermissions}
+                                                                                                isLoading={isLoading}
+                                                                                                error={error}
+                                                                                            />
+                                                                                        )}
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
 
             {/* Modales */}
             <CreateEmployeeModal

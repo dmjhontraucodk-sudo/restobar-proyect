@@ -6,6 +6,7 @@ import { SidebarLink } from "./SidebarLink";
 import * as Icons from "./icons";
 import { type User } from "@app/providers/AuthProvider";
 import { useGlobalConfig } from "@shared/hooks/useGlobalConfig"; // ⭐ NUEVO
+import { ALL_NAVIGATION_ITEMS, type NavigationItem } from '@shared/constants/navigation.constants'; // Import ALL_NAVIGATION_ITEMS
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -99,204 +100,42 @@ const FlyoutNavigationContent: React.FC<{
   onLinkClick?: () => void;
   user: User;
 }> = ({ onLinkClick, user }) => {
+  const userPermissions = user.permissions || []; // Ensure it's an array
+  const isAdmin = user.role === "Administrador";
+
+  // Group navigation items by their 'group' property
+  const groupedNavigationItems = ALL_NAVIGATION_ITEMS.reduce((acc: Record<string, NavigationItem[]>, item: NavigationItem) => {
+    (acc[item.group] = acc[item.group] || []).push(item);
+    return acc;
+  }, {} as Record<string, NavigationItem[]>);
+
   return (
     <nav className="mt-2 flex-1 flex flex-col space-y-1 px-2 pb-4">
-      {/* Grupo 1: Operaciones en Tiempo Real */}
-      <div>
-        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 px-3">
-          Operaciones
-        </h3>
-        <div className="space-y-1">
-          <SidebarLink
-            to="/dashboard"
-            icon={<Icons.HomeIcon />}
-            label="Panel Principal"
-            isCollapsed={false}
-            onClick={onLinkClick}
-          />
-          <SidebarLink
-            to="/dashboard/orders"
-            icon={<Icons.ClipboardListIcon />}
-            label="Pedidos"
-            isCollapsed={false}
-            onClick={onLinkClick}
-          />
-          <SidebarLink
-            to="/dashboard/web-orders"
-            icon={<Icons.GlobeIcon />}
-            label="Pedidos Web"
-            isCollapsed={false}
-            onClick={onLinkClick}
-          />
-          <SidebarLink
-            to="/dashboard/tables"
-            icon={<Icons.TableIcon />}
-            label="Mesas"
-            isCollapsed={false}
-            onClick={onLinkClick}
-          />
-          <SidebarLink
-            to="/dashboard/reservas"
-            icon={<Icons.CalendarIcon />}
-            label="Reservas"
-            isCollapsed={false}
-            onClick={onLinkClick}
-          />
-        </div>
-      </div>
-
-      {/* Grupo 2: Gestión de Menú y Cocina */}
-      <div className="pt-2">
-        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 px-3">
-          Menú & Cocina
-        </h3>
-        <div className="space-y-1">
-          <SidebarLink
-            to="/dashboard/menu"
-            icon={<Icons.UtensilsIcon />}
-            label="Menú Principal"
-            isCollapsed={false}
-            onClick={onLinkClick}
-          />
-          <SidebarLink
-            to="/dashboard/bebidas"
-            icon={<Icons.WineIcon />}
-            label="Bebidas & Bar"
-            isCollapsed={false}
-            onClick={onLinkClick}
-          />
-          <SidebarLink
-            to="/dashboard/kitchen"
-            icon={<Icons.ChefHatIcon />}
-            label="Cocina"
-            isCollapsed={false}
-            onClick={onLinkClick}
-          />
-        </div>
-      </div>
-
-      {/* ✨ GRUPO 3: INVENTARIO (ACTUALIZADO) ✨ */}
-      <div className="pt-2">
-        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 px-3">
-          Inventario
-        </h3>
-        <div className="space-y-1">
-          <SidebarLink
-            to="/dashboard/inventario"
-            icon={<Icons.PackageIcon />}
-            label="Gestión de Inventario"
-            isCollapsed={false}
-            onClick={onLinkClick}
-          />
-          <SidebarLink
-            to="/dashboard/kardex"
-            icon={<Icons.ClipboardListIcon />}
-            label="Kardex Valorizado"
-            isCollapsed={false}
-            onClick={onLinkClick}
-          />
-          <SidebarLink
-            to="/dashboard/compras"
-            icon={<Icons.ShoppingCartIcon />}
-            label="Compras"
-            isCollapsed={false}
-            onClick={onLinkClick}
-          />
-          <SidebarLink
-            to="/dashboard/cierre-inventario"
-            icon={<Icons.ClipboardCheckIcon />}
-            label="Cierre Inventario"
-            isCollapsed={false}
-            onClick={onLinkClick}
-          />
-
-          {/* Solo dejamos Tipos de Gasto porque no está en los tabs */}
-          <div className="ml-2 mt-2 pt-2 border-t border-gray-100">
-            <SidebarLink
-              to="/dashboard/tipos-gasto"
-              icon={<Icons.ListIcon />}
-              label="Tipos de Gasto"
-              isCollapsed={false}
-              onClick={onLinkClick}
-            />
+      {Object.entries(groupedNavigationItems).map(([groupName, items]) => (
+        <div key={groupName} className="pt-2">
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 px-3">
+            {groupName}
+          </h3>
+          <div className="space-y-1">
+            {items
+              .filter((item: NavigationItem) => isAdmin || userPermissions.includes(item.id))
+              .map((item: NavigationItem) => (
+                <SidebarLink
+                  key={item.id}
+                  to={item.path}
+                  icon={
+                    // Dynamically render icon based on id or a mapping
+                    // For now, let's use a generic icon or a switch statement if needed
+                    <Icons.HomeIcon /> // Placeholder, replace with actual icon logic
+                  }
+                  label={item.label}
+                  isCollapsed={false} // Flyout is never collapsed
+                  onClick={onLinkClick}
+                />
+              ))}
           </div>
         </div>
-      </div>
-
-      {/* ✨ GRUPO 4: FINANZAS ✨ */}
-      <div className="pt-2">
-        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 px-3">
-          Finanzas
-        </h3>
-        <div className="space-y-1">
-          <SidebarLink
-            to="/dashboard/caja"
-            icon={<Icons.CurrencyDollarIcon />}
-            label="Caja y Turnos"
-            isCollapsed={false}
-            onClick={onLinkClick}
-          />
-          <SidebarLink
-            to="/dashboard/nomina"
-            icon={<Icons.UsersIcon />}
-            label="Pago de Nómina"
-            isCollapsed={false}
-            onClick={onLinkClick}
-          />
-          <SidebarLink
-            to="/dashboard/gastos"
-            icon={<Icons.TrendingDownIcon />}
-            label="Gastos Operativos"
-            isCollapsed={false}
-            onClick={onLinkClick}
-          />
-          <SidebarLink
-            to="/dashboard/finances"
-            icon={<Icons.DollarSignIcon />}
-            label="Resumen Financiero"
-            isCollapsed={false}
-            onClick={onLinkClick}
-          />
-          <SidebarLink
-            to="/dashboard/reports"
-            icon={<Icons.ChartBarIcon />}
-            label="Reportes"
-            isCollapsed={false}
-            onClick={onLinkClick}
-          />
-        </div>
-      </div>
-
-      {/* Grupo 5: Gestión */}
-      <div className="pt-2">
-        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 px-3">
-          Gestión
-        </h3>
-        <div className="space-y-1">
-          <SidebarLink
-            to="/dashboard/team"
-            icon={<Icons.UsersIcon />}
-            label="Equipo"
-            isCollapsed={false}
-            onClick={onLinkClick}
-          />
-          <SidebarLink
-              to="/dashboard/reviews"
-              icon={<Icons.MessageSquareIcon />}
-              label="Reseñas"
-              isCollapsed={false}
-              onClick={onLinkClick}
-          />          
-          <SidebarLink
-            to="/dashboard/configuration"
-            icon={<Icons.CogIcon />}
-            label="Configuración"
-            isCollapsed={false}
-            onClick={onLinkClick}
-          />
-        </div>
-      </div>
-
+      ))}
       {/* Información del Usuario en el Flyout */}
       {user && (
         <div className="p-2 mx-2 mt-3 bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg border border-gray-200">

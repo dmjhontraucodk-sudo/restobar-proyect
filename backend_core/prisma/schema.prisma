@@ -670,7 +670,7 @@ model roles {
   nombre      String      @unique(map: "nombre") @db.VarChar(50)
   descripcion String?     @db.Text
   activo      Boolean     @default(true)
-  permisos_json String? @db.Text // REQ 4: Permisos detallados para reportes/vistas
+  permissions Json?
 
   empleados   empleados[]
 

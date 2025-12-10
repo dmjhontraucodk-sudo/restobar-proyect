@@ -23,6 +23,58 @@ async function main() {
 
   console.log('✅ Rol Administrador creado/actualizado:', rolAdministrador);
 
+  // Crear rol Gerente
+  const rolGerente = await prisma.roles.upsert({
+    where: { nombre: 'Gerente' },
+    update: { activo: true, permissions: [] },
+    create: {
+      nombre: 'Gerente',
+      descripcion: 'Rol con permisos de gestión y supervisión',
+      activo: true,
+      permissions: []
+    }
+  });
+  console.log('✅ Rol Gerente creado/actualizado:', rolGerente);
+
+  // Crear rol Jefe de Cocina
+  const rolJefeCocina = await prisma.roles.upsert({
+    where: { nombre: 'Jefe de Cocina' },
+    update: { activo: true, permissions: [] },
+    create: {
+      nombre: 'Jefe de Cocina',
+      descripcion: 'Rol para el encargado de la cocina y menú',
+      activo: true,
+      permissions: []
+    }
+  });
+  console.log('✅ Rol Jefe de Cocina creado/actualizado:', rolJefeCocina);
+
+  // Crear rol Host / Anfitrión
+  const rolHost = await prisma.roles.upsert({
+    where: { nombre: 'Host' },
+    update: { activo: true, permissions: [] },
+    create: {
+      nombre: 'Host',
+      descripcion: 'Rol para la gestión de mesas y bienvenida de clientes',
+      activo: true,
+      permissions: []
+    }
+  });
+  console.log('✅ Rol Host creado/actualizado:', rolHost);
+
+  // Crear rol Bartender
+  const rolBartender = await prisma.roles.upsert({
+    where: { nombre: 'Bartender' },
+    update: { activo: true, permissions: [] },
+    create: {
+      nombre: 'Bartender',
+      descripcion: 'Rol para la preparación y servicio de bebidas',
+      activo: true,
+      permissions: []
+    }
+  });
+  console.log('✅ Rol Bartender creado/actualizado:', rolBartender);
+
   // Crear otros roles básicos si lo deseas
   const rolMesero = await prisma.roles.upsert({
     where: { nombre: 'Mesero' },

@@ -1,7 +1,7 @@
 // src/widgets/dashboard-header/ui/UserMenu.tsx
 import { forwardRef } from 'react';
 import { Link } from 'react-router-dom';
-import { UserCircleIcon, SettingsIcon, LogOutIcon } from '../../dashboard-sidebar/ui/icons';
+import { UserCircleIcon,  LogOutIcon } from '../../dashboard-sidebar/ui/icons';
 import { type User } from '@app/providers/AuthProvider';
 
 interface UserMenuProps {
@@ -46,15 +46,7 @@ export const UserMenu = forwardRef<HTMLDivElement, UserMenuProps>(
               Mi Perfil
             </Link>
 
-            {/* ✅ CAMBIAR A /dashboard/configuration */}
-            <Link
-              to="/dashboard/configuration"
-              onClick={onToggle}
-              className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              <SettingsIcon className="w-4 h-4 mr-3" />
-              Configuración
-            </Link>
+
 
             <div className="border-t border-gray-200 mt-2"></div>
 

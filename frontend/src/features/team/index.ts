@@ -1,3 +1,5 @@
+export { AssignRolesTab } from './ui/AssignRolesTab';
+export { AssignPermissionsTab } from './ui/AssignPermissionsTab';
 export { default as AddIncidenciaModal } from './attendance/ui/AddIncidenciaModal';
 export { CreateEmployeeModal } from './employees/ui/CreateEmployeeModal';
 export { EmployeeCard } from './employees/ui/EmployeeCard';

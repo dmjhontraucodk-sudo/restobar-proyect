@@ -15,6 +15,9 @@ import {
   type PagarNominaData,
 } from '@shared/types';
 
+// Define the structure of a navigation item received from the backend
+import { type NavigationItem } from '@shared/constants/navigation.constants';
+
 export const useTeamManagement = () => {
   const [empleados, setEmpleados] = useState<ApiEmpleado[]>([]);
   const [roles, setRoles] = useState<ApiRol[]>([]);
@@ -22,6 +25,8 @@ export const useTeamManagement = () => {
   const [nomina, setNomina] = useState<NominaResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [allNavigationItems, setAllNavigationItems] = useState<NavigationItem[]>([]);
+  const [rolePermissions, setRolePermissions] = useState<string[]>([]);
 
   // Renombrar pagarNomina de useDashboardApi a pagarNominaApi para evitar conflicto
   const { makeRequest, calcularPagoNomina, pagarNomina: pagarNominaApi } = useDashboardApi();
@@ -98,6 +103,74 @@ export const useTeamManagement = () => {
       toast.error("No se pudo cargar la información de nómina.");
     }
   }, [makeRequest, puedeVerSalarios]);
+
+  // ==================== CARGAR ITEMS DE NAVEGACIÓN (PERMISOS DISPONIBLES) ====================
+
+  const loadAllNavigationItems = useCallback(async () => {
+    try {
+      const response = await makeRequest<{ success: boolean; navigationItems: NavigationItem[] }>('/rbac/permissions');
+      if (response.success) {
+        setAllNavigationItems(response.navigationItems);
+      } else {
+        toast.error('Error al cargar ítems de navegación.');
+      }
+    } catch (err: any) {
+      console.error('Error fetching navigation items:', err);
+      toast.error('Error de red al cargar ítems de navegación.');
+    }
+  }, [makeRequest]);
+
+  // ==================== CARGAR PERMISOS DE UN ROL ESPECÍFICO ====================
+
+  const loadRolePermissions = useCallback(async (roleId: number) => {
+    // setIsLoading(true); // Control loading in the component that calls this
+    try {
+      const response = await makeRequest<{ success: boolean; permissions: string[] }>(`/rbac/roles/${roleId}/permissions`);
+      if (response.success) {
+        setRolePermissions(response.permissions);
+      } else {
+        toast.error('Error al cargar permisos del rol.');
+      }
+    } catch (err: any) {
+      console.error(`Error fetching permissions for role ${roleId}:`, err);
+      toast.error('Error de red al cargar permisos del rol.');
+    } finally {
+      // setIsLoading(false);
+    }
+  }, [makeRequest]);
+
+  // ==================== ACTUALIZAR PERMISOS DE ROL ====================
+
+  const updateRolePermissions = useCallback(
+    async (roleId: number, permissions: string[]): Promise<boolean> => {
+      if (!puedeGestionarRoles) {
+        toast.error("No tienes permisos para actualizar permisos de roles");
+        return false;
+      }
+      try {
+        const response = await makeRequest<{ success: boolean; message: string }>(
+          `/rbac/roles/${roleId}/permissions`,
+          {
+            method: 'PUT',
+            body: JSON.stringify({ permissions }),
+          }
+        );
+        if (response.success) {
+          toast.success(response.message || 'Permisos actualizados exitosamente.');
+          // Optionally, reload role specific permissions if needed by the caller
+          return true;
+        } else {
+          toast.error(response.message || 'Error al actualizar permisos.');
+          return false;
+        }
+      } catch (err: any) {
+        console.error(`Error saving permissions for role ${roleId}:`, err);
+        toast.error('Error de red al guardar permisos.');
+        return false;
+      }
+    },
+    [makeRequest, puedeGestionarRoles]
+  );
 
   // ==================== EMPLEADOS ====================
 
@@ -382,6 +455,31 @@ export const useTeamManagement = () => {
     }
   }, [makeRequest]);
 
+  // ================== UPDATE EMPLOYEE ROLE ==================
+  const updateEmployeeRole = useCallback(
+    async (id: number, rol_id: number): Promise<boolean> => {
+      try {
+        const response = await makeRequest<{
+          success: boolean;
+          empleado: ApiEmpleado;
+          message: string;
+        }>(`/employees/${id}`, {
+          method: "PATCH",
+          body: JSON.stringify({ rol_id }),
+        });
+
+        toast.success(response.message || "Rol de empleado actualizado exitosamente");
+        await loadEmpleados();
+        return true;
+      } catch (err: any) {
+        console.error("Error al actualizar el rol del empleado:", err);
+        toast.error(err.message || "Error al actualizar el rol del empleado");
+        return false;
+      }
+    },
+    [makeRequest, loadEmpleados]
+  );
+
   // ==================== ACCIONES DE NÓMINA ====================
 
   const handlePagarNomina = useCallback(async (empleadoId: number, data: PagarNominaData): Promise<boolean> => {
@@ -429,6 +527,7 @@ export const useTeamManagement = () => {
   useEffect(() => {
     loadEmpleados();
     loadRoles();
+    loadAllNavigationItems(); // Load all possible navigation items
     if (puedeGestionarRoles) loadTodosRoles();
     if (puedeVerSalarios) loadNomina();
   }, [
@@ -436,6 +535,7 @@ export const useTeamManagement = () => {
     loadRoles,
     loadTodosRoles,
     loadNomina,
+    loadAllNavigationItems,
     puedeGestionarRoles,
     puedeVerSalarios,
   ]);
@@ -460,6 +560,8 @@ export const useTeamManagement = () => {
     stats,
     puedeGestionarRoles,
     puedeVerSalarios,
+    allNavigationItems, // New: All possible navigation items
+    rolePermissions,    // New: Permissions for the currently selected role
 
     // Acciones - Empleados
     reloadEmpleados: loadEmpleados,
@@ -470,11 +572,16 @@ export const useTeamManagement = () => {
     resetearPassword,
 
     // Acciones - Roles
-    reloadRoles: loadTodosRoles,
+    reloadRoles: loadTodosRoles, // This reloads all roles (active/inactive)
     createRol,
     updateRol,
     desactivarRol,
     activarRol,
+    updateEmployeeRole,
+
+    // Acciones - RBAC (New)
+    loadRolePermissions,    // New: To load permissions for a specific role
+    updateRolePermissions,  // New: To update permissions for a specific role
 
     // Acciones - Nómina
     reloadNomina: loadNomina,

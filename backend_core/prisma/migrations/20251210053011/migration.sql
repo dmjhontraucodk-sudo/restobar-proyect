@@ -535,7 +535,7 @@ CREATE TABLE `roles` (
     `nombre` VARCHAR(50) NOT NULL,
     `descripcion` TEXT NULL,
     `activo` BOOLEAN NOT NULL DEFAULT true,
-    `permisos_json` TEXT NULL,
+    `permissions` JSON NULL,
 
     UNIQUE INDEX `nombre`(`nombre`),
     INDEX `activo_idx`(`activo`),

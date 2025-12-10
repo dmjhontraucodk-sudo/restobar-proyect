@@ -22,6 +22,8 @@ import { clientsRoutes, publicClientsRoutes } from '@modules/clients';
 import { reviewsRoutes, reviewsAdminRoutes } from '@modules/reviews'; //Reseñas
 import { billingRouter } from '@modules/billing';
 import uploadRoutes from '@shared/upload/upload.routes'; // Import the new upload route
+import { rbacRoutes } from '@modules/rbac';
+
 dotenv.config();
 
 const app = express();
@@ -107,6 +109,7 @@ dashboardRouter.use('/catalog', adminCatalogRoutes);
 dashboardRouter.use('/reviews', reviewsAdminRoutes);
 dashboardRouter.use('/clients', clientsRoutes);
 dashboardRouter.use('/billing', billingRouter);
+dashboardRouter.use('/rbac', rbacRoutes);
 dashboardRouter.use('/', tenantRoutes);
 dashboardRouter.use('/', reportsRoutes);
 dashboardRouter.use('/', uploadRoutes); // Use the new upload route

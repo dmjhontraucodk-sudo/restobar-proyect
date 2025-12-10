@@ -2,6 +2,7 @@ import { prisma } from '@shared/database/prisma.service';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { emailService } from '@core/email/email.service';
+import { ALL_NAVIGATION_ITEMS } from '@modules/rbac/constants/navigation.constants';
 
 export const authService = {
     async login(email: string, password: string): Promise<any> {
@@ -21,6 +22,14 @@ export const authService = {
 
             const isPasswordCorrect = await bcrypt.compare(password, empleado.password_hash);
             if (!isPasswordCorrect) throw new Error('Credenciales inválidas');
+
+            let permissions: string[] = [];
+            if (empleado.roles.nombre === 'Administrador') {
+              // Administrador tiene todos los permisos disponibles
+              permissions = ALL_NAVIGATION_ITEMS.map(item => item.id);
+            } else if (empleado.roles && empleado.roles.permissions) {
+                permissions = empleado.roles.permissions as string[];
+            }
 
             const payload = {
                 id: empleado.id,
@@ -42,6 +51,7 @@ export const authService = {
                     name: empleado.nombre || empleado.email.split('@')[0],
                     email: empleado.email,
                     role: empleado.roles.nombre,
+                    permissions, // <--- PERMISOS AÑADIDOS
                     restaurantId: empleado.tenant_id.toString(),
                     tenantName: empleado.tenants.nombre_empresa,
                     tenantSubdomain: empleado.tenants.subdominio,
