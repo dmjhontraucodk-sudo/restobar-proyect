@@ -9,7 +9,7 @@ class PermissionsController {
    * @param req Request de Express.
    * @param res Response de Express.
    */
-  public async getNavigationItems(req: Request, res: Response): Promise<void> {
+  public async getNavigationItems(_req: Request, res: Response): Promise<void> {
     try {
       // Devolver los ALL_NAVIGATION_ITEMS completos, no solo los IDs, para que el frontend tenga labels y paths
       res.status(200).json({ success: true, navigationItems: ALL_NAVIGATION_ITEMS });
