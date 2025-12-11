@@ -109,6 +109,38 @@ const FlyoutNavigationContent: React.FC<{
     return acc;
   }, {} as Record<string, NavigationItem[]>);
 
+  const getIconForId = (id: string) => {
+    switch (id) {
+      case 'operaciones.panel_principal': return <Icons.HomeIcon />;
+      case 'operaciones.pedidos': return <Icons.ClipboardListIcon />;
+      case 'operaciones.pedidos_web': return <Icons.GlobeIcon />;
+      case 'operaciones.mesas': return <Icons.TableIcon />;
+      case 'operaciones.reservas': return <Icons.CalendarIcon />;
+      
+      case 'menu_cocina.menu_principal': return <Icons.UtensilsIcon />;
+      case 'menu_cocina.bebidas_bar': return <Icons.WineIcon />;
+      case 'menu_cocina.cocina': return <Icons.ChefHatIcon />;
+      
+      case 'inventario.gestion': return <Icons.PackageIcon />;
+      case 'inventario.kardex': return <Icons.ClipboardListIcon />;
+      case 'inventario.compras': return <Icons.ShoppingCartIcon />;
+      case 'inventario.cierre': return <Icons.ClipboardCheckIcon />;
+      case 'inventario.tipos_gasto': return <Icons.ListIcon />;
+      
+      case 'finanzas.caja': return <Icons.CurrencyDollarIcon />;
+      case 'finanzas.nomina': return <Icons.UsersIcon />;
+      case 'finanzas.gastos': return <Icons.TrendingDownIcon />;
+      case 'finanzas.resumen': return <Icons.DollarSignIcon />;
+      case 'finanzas.reportes': return <Icons.ChartBarIcon />;
+      
+      case 'gestion.equipo': return <Icons.UsersIcon />;
+      case 'gestion.resenas': return <Icons.MessageSquareIcon />;
+      case 'gestion.configuracion': return <Icons.CogIcon />;
+      
+      default: return <Icons.HomeIcon />;
+    }
+  };
+
   return (
     <nav className="mt-2 flex-1 flex flex-col space-y-1 px-2 pb-4">
       {Object.entries(groupedNavigationItems).map(([groupName, items]) => (
@@ -123,11 +155,7 @@ const FlyoutNavigationContent: React.FC<{
                 <SidebarLink
                   key={item.id}
                   to={item.path}
-                  icon={
-                    // Dynamically render icon based on id or a mapping
-                    // For now, let's use a generic icon or a switch statement if needed
-                    <Icons.HomeIcon /> // Placeholder, replace with actual icon logic
-                  }
+                  icon={getIconForId(item.id)}
                   label={item.label}
                   isCollapsed={false} // Flyout is never collapsed
                   onClick={onLinkClick}

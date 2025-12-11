@@ -5,7 +5,7 @@ import { useAuth } from "@app/providers/AuthProvider";
 import { SidebarLink } from "./SidebarLink";
 import * as Icons from "./icons";
 import { useGlobalConfig } from "@shared/hooks/useGlobalConfig";
-
+ 
 interface NavigationContentProps {
   isCollapsed: boolean;
   onLinkClick?: () => void;
