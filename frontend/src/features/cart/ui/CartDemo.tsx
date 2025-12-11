@@ -188,15 +188,7 @@ export default function CartDemo() {
               <ShoppingBag size={16} />
               Explorar Menú Demo
             </Link>
-            <div className="mt-4">
-              <Link
-                to="/register"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg text-sm transition-colors"
-              >
-                <UserPlus size={16} />
-                Crear mi propio RestoBar
-              </Link>
-            </div>
+            
           </div>
         </div>
         <Footer isDemo={true} />
@@ -221,12 +213,7 @@ export default function CartDemo() {
                 </p>
               </div>
             </div>
-            <Link
-              to="/register"
-              className="text-xs bg-yellow-100 hover:bg-yellow-200 text-yellow-800 px-3 py-1 rounded-full font-medium transition-colors"
-            >
-              Crear cuenta real
-            </Link>
+            
           </div>
         </div>
       </div>
@@ -482,14 +469,7 @@ export default function CartDemo() {
                     Agregar más productos
                   </Link>
 
-                  {/* Botón de Registro destacado */}
-                  <Link
-                    to="/register"
-                    className="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-2.5 rounded-lg transition-colors text-center flex items-center justify-center gap-2 text-sm"
-                  >
-                    <UserPlus size={16} />
-                    Crear mi RestoBar Real
-                  </Link>
+                  
                 </div>
 
                 {/* Garantías DEMO */}

@@ -3,7 +3,6 @@ import { Routes, Route, Navigate } from "react-router-dom";
 
 // --- Páginas Globales (SaaS) ---
 import { Landing } from "@pages/public/landing/LandingPage";
-import RegisterPage from "@pages/public/auth/RegisterPage";
 import { CartDemo } from "@features/cart";
 import { ReservationFormDemo } from "@features/reservations";
 
@@ -75,7 +74,6 @@ const getTenantId = () => {
 const GlobalRoutes = () => (
   <Routes>
     <Route path="/" element={<Landing />} />
-    <Route path="/register" element={<RegisterPage />} />
     <Route path="/cart" element={<CartDemo />} />
     <Route path="/reservar" element={<ReservationFormDemo />} />
     <Route path="*" element={<Navigate to="/" />} />

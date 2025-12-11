@@ -190,18 +190,7 @@ export default function LoginPage() {
 
           </form>
 
-          {/* Enlace de Registro */}
-          <div className="mt-6 pt-4 border-t border-gray-100">
-            <p className="text-center text-sm text-gray-600">
-              ¿No tienes cuenta?{' '}
-              <Link 
-                to="/register" 
-                className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
-              >
-                Regístrate
-              </Link>
-            </p>
-          </div>
+          
         </div>
 
         {/* Footer Mínimo */}

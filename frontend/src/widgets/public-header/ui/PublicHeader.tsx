@@ -167,16 +167,7 @@ export default function Header({
                 )}
               </button>
 
-              {/* Botón de registro en DEMO */}
-              {isDemo && (
-                <Link
-                  to="/register"
-                  className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-green-500/25 transition-all duration-300 transform hover:-translate-y-0.5"
-                >
-                  <UserPlus size={18} />
-                  Crear mi RestoBar
-                </Link>
-              )}
+              
             </nav>
 
             {/* ⭐ Información de Contacto Desktop CON CONFIGURACIÓN */}
@@ -271,17 +262,7 @@ export default function Header({
                   </div>
                 </div>
 
-                {/* Botón de registro en DEMO Mobile */}
-                {isDemo && (
-                  <Link
-                    to="/register"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="w-full flex items-center gap-3 px-4 py-4 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl text-base font-semibold hover:shadow-lg transition-all duration-300"
-                  >
-                    <UserPlus size={18} />
-                    <span>Crear mi RestoBar</span>
-                  </Link>
-                )}
+                
               </div>
             </div>
           )}

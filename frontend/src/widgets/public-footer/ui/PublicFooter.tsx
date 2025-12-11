@@ -168,14 +168,7 @@ export default function Footer({ tenantName, isDemo = false }: FooterProps) {
                 Carrito ({getTotalItems()})
               </button>
               
-              {isDemo && (
-                <Link
-                  to="/register"
-                  className="block text-green-600 hover:text-green-700 font-semibold transition-colors text-sm"
-                >
-                  Crear mi RestoBar
-                </Link>
-              )}
+              
               
               <a
                 href="#"
