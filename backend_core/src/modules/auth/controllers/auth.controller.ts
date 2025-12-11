@@ -14,22 +14,5 @@ export const authController = {
                            error.message === 'Usuario no encontrado' ? 404 : 400;
             res.status(status).json({ error: error.message });
         }
-    },
-
-    async registerTenant(req: Request, res: Response) : Promise<any> {
-        try {
-            const { nombre_empresa, subdominio, email_admin, password } = req.body;
-            if (!nombre_empresa || !subdominio || !email_admin || !password) {
-                return res.status(400).json({ error: 'Faltan campos requeridos' });
-            }
-
-            const tenant = await authService.registerTenant(req.body);
-            res.status(201).json({
-                message: 'Tenant registrado. Revisa tu email para validar la cuenta.',
-                tenantId: tenant.id,
-            });
-        } catch (error: any) {
-            res.status(400).json({ error: error.message });
-        }
     }
 };

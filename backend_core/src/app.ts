@@ -23,6 +23,7 @@ import { reviewsRoutes, reviewsAdminRoutes } from '@modules/reviews'; //Reseñas
 import { billingRouter } from '@modules/billing';
 import uploadRoutes from '@shared/upload/upload.routes'; // Import the new upload route
 import { rbacRoutes } from '@modules/rbac';
+import { provisioningRoutes } from '@modules/provisioning/routes';
 
 dotenv.config();
 
@@ -69,6 +70,9 @@ app.use(express.json());
 app.use(morgan('dev'));
 
 // ==================== RUTAS ====================
+
+// 0. PROVISIONING (Private)
+app.use('/api/provisioning', provisioningRoutes);
 
 // 1. AUTH (Público)
 app.use('/api/auth', authRoutes);

@@ -1,7 +1,6 @@
 import { prisma } from '@shared/database/prisma.service';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { emailService } from '@core/email/email.service';
 import { ALL_NAVIGATION_ITEMS } from '@modules/rbac/constants/navigation.constants';
 
 export const authService = {
@@ -60,54 +59,6 @@ export const authService = {
             };
         } catch (error: any) {
             throw new Error(error.message || 'Error en el login');
-        }
-    },
-
-    async registerTenant(data: any): Promise<any> {
-        try {
-            const { nombre_empresa, subdominio, email_admin, password } = data;
-
-            const existingSubdomain = await prisma.tenants.findUnique({ where: { subdominio } });
-            if (existingSubdomain) throw new Error('Este subdominio ya está en uso.');
-
-            // Comentamos la variable no usada o la eliminamos
-            // const ____existingEmail = await prisma.empleados.findUnique({ 
-            //     where: { 
-            //         tenant_id_email: { tenant_id: 0, email: email_admin }
-            //     }
-            // });
-
-            const salt = await bcrypt.genSalt(10);
-            const password_hash = await bcrypt.hash(password, salt);
-
-            const nuevoTenant = await prisma.tenants.create({
-                data: {
-                    nombre_empresa,
-                    subdominio: subdominio.toLowerCase(),
-                    isActive: false,
-                },
-            });
-
-            const rolPropietario = await prisma.roles.findFirst({ where: { nombre: 'Propietario' } });
-
-            await prisma.empleados.create({
-                data: {
-                    tenant_id: nuevoTenant.id,
-                    email: email_admin,
-                    password_hash: password_hash,
-                    rol_id: rolPropietario?.id || 1,
-                    is_active: true,
-                    requiere_login: true,
-                    es_propietario: true,
-                    debe_cambiar_pass: false,
-                },
-            });
-
-            await emailService.sendRegistrationEmail(email_admin, nombre_empresa).catch(console.error);
-
-            return nuevoTenant;
-        } catch (error: any) {
-            throw new Error(error.message || 'Error registrando tenant');
         }
     }
 };
