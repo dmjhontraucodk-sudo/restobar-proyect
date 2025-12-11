@@ -10,7 +10,7 @@ interface Tab {
     label: string;
     icon: React.ComponentType<any>;
     component: React.ComponentType<any>;
-    color: 'blue' | 'green' | 'purple';
+    color: 'blue' | 'green' | 'purple' | 'red';
 }
 
 const tabs: Tab[] = [

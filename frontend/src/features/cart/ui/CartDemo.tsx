@@ -16,7 +16,6 @@ import {
   DollarSign,
   CheckCircle,
   AlertCircle,
-  UserPlus,
 } from "lucide-react";
 import { useCart } from "@app/providers/CartProvider";
 import { PublicHeader as Header } from "@widgets/public-header";

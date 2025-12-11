@@ -1,5 +1,5 @@
 // src/pages/public/virtual-menu/VirtualMenuPage.tsx
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useWebApi, type ApiMesa } from '@shared/api/useWebApi';
 import { useGlobalConfig } from '@shared/hooks/useGlobalConfig';

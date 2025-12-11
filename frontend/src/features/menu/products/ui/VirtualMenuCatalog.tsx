@@ -1,5 +1,4 @@
 // src/features/menu/products/ui/VirtualMenuCatalog.tsx
-import { useState } from 'react';
 import { Search, Filter, ChevronDown, X } from 'lucide-react';
 import { useRestobarCatalog } from '@features/menu/model/useRestobarCatalog';
 import { useGlobalConfig } from '@shared/hooks/useGlobalConfig';
@@ -21,7 +20,7 @@ export function VirtualMenuCatalog() {
     setShowFilters,
   } = useRestobarCatalog();
 
-  const { formatCurrency } = useGlobalConfig();
+  // const { formatCurrency } = useGlobalConfig();
 
   // Lógica para detectar si hay filtros activos
   const hasActiveFilters = 

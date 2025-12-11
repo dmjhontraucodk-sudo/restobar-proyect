@@ -7,6 +7,7 @@ export interface Producto {
   nombre: string;
   descripcion?: string;
   precio: number;
+  precio_oferta?: number | null; // ✅ NUEVO
   foto_url?: string;
   disponible: boolean;
   visible_en_web: boolean;

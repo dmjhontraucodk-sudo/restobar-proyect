@@ -26,7 +26,7 @@ export function MenuCatalog() {
   } = useRestobarCatalog();
 
   const { addToCart, getTotalItems } = useCart();
-  const { formatCurrency } = useGlobalConfig(); // ✅ USAR HOOK
+  // const { formatCurrency } = useGlobalConfig(); // ✅ USAR HOOK
   const cartItemCount = getTotalItems();
   const navigate = useNavigate();
 
@@ -230,6 +230,7 @@ export function MenuCatalog() {
                 key={product.id} 
                 product={product} 
                 onAddToCart={handleAddToCart}
+                isReadOnly={false}
               />
             ))}
           </div>

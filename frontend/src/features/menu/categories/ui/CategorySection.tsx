@@ -17,7 +17,7 @@ interface CategorySectionProps {
 
 const CategorySection: React.FC<CategorySectionProps> = ({ 
   category, 
-  moneda, // ✅ Recibir
+  // moneda, // ✅ Recibir
   formatCurrency, // ✅ Recibir
   onAddItem,
   onToggleItemStatus,

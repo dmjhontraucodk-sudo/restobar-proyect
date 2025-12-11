@@ -75,6 +75,10 @@ export interface TenantConfig {
   email_stock_critico: string | null;
   resumen_diario_activo: boolean;
   resumen_diario_hora: string | null;
+
+  // ========== 💰 MONEDA ==========
+  moneda_base_codigo?: string;
+  moneda_base_simbolo?: string;
   
   // ========== TIMESTAMPS ==========
   created_at: string;

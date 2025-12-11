@@ -8,7 +8,7 @@ import { PrintButtons } from '@features/orders/web/ui/PrintButtons';
 import { useAuth } from '@app/providers/AuthProvider';
 import { 
     RefreshIcon, GlobeIcon, TruckIcon, ClockIcon, MapPinIcon,
-    UserIcon, ChevronDownIcon, ChevronUpIcon, PhoneIcon, CheckIcon, ShoppingBagIcon, ExclamationCircleIcon, PrinterIcon
+    UserIcon, ChevronDownIcon, ChevronUpIcon, PhoneIcon, ShoppingBagIcon, PrinterIcon
 } from '@shared/ui/Icons';
 import CancelOrderModal from './CancelOrderModal'; // ✅ IMPORTAR MODAL
 import { 

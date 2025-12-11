@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import type { FormEvent, ChangeEvent } from 'react';
 import axios from 'axios';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@app/providers/AuthProvider';
 import { loginSchema } from '@features/auth/model/schemas'; // Schemas might still be in src/schemas for now
 import type { ZodIssue } from 'zod';

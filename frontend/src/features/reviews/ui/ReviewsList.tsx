@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Star, Quote, CheckCircle, User, FileText } from 'lucide-react';
 import { usePublicReviews } from '../model/usePublicReviews';
 import { useWebApi } from '@shared/api/useWebApi';

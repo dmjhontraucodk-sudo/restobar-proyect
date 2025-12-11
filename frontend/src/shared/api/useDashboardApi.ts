@@ -78,6 +78,7 @@ export interface RecipeItem {
 export interface CreateProductData {
   nombre: string;
   precio: number;
+  precio_oferta?: number; // ✅ NUEVO
   categoria_id: number;
   descripcion?: string | null;
   foto_url?: string | null;
@@ -92,6 +93,7 @@ export interface ApiProductWithRecipe {
   nombre: string;
   descripcion: string | null;
   precio: number;
+  precio_oferta?: number | null; // ✅ NUEVO
   foto_url: string | null;
   disponible: boolean | null;
   visible_en_web: boolean | null;
@@ -110,6 +112,7 @@ export interface ApiProduct {
   nombre: string;
   descripcion: string | null;
   precio: number;
+  precio_oferta?: number | null; // ✅ NUEVO
   foto_url: string | null;
   disponible: boolean | null;
   visible_en_web: boolean | null;
@@ -139,6 +142,7 @@ export interface CreateCategoryData {
 export interface UpdateProductData {
   nombre?: string;
   precio?: number;
+  precio_oferta?: number | null; // ✅ NUEVO
   descripcion?: string | null;
   foto_url?: string | null;
   disponible?: boolean;
@@ -149,6 +153,7 @@ export interface UpdateProductData {
 export interface UpdateProductWithRecipeData {
   nombre?: string;
   precio?: number;
+  precio_oferta?: number | null; // ✅ NUEVO
   categoria_id?: number;
   tipo?: TipoCategoria;
   descripcion?: string | null;
