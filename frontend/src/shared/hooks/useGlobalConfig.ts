@@ -61,6 +61,26 @@ export const useGlobalConfig = () => {
           },
         });
 
+        if (response.status === 403) {
+          const data = await response.json();
+          if (data.code === 'TENANT_INACTIVE') {
+            console.log("⛔ Tenant inactivo. Redirigiendo a landing page...");
+            const protocol = window.location.protocol;
+            const port = window.location.port ? `:${window.location.port}` : '';
+            const parts = hostname.split('.');
+            let rootHost = '';
+            if (parts.length > 2) {
+              rootHost = parts.slice(1).join('.');
+            } else if (parts.length === 2 && parts[1] === 'localhost') {
+              rootHost = 'localhost';
+            } else {
+              rootHost = hostname;
+            }
+            window.location.href = `${protocol}//${rootHost}${port}`;
+            return;
+          }
+        }
+
         if (response.ok) {
           const data = await response.json();
           setPublicConfig(data.configuracion || {});

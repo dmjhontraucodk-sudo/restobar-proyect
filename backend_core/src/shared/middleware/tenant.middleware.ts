@@ -5,7 +5,7 @@ export interface TenantInfo {
   id: number;
   subdominio: string;
   configuracion: any;
-  nombre_empresa?: string; 
+  nombre_empresa?: string;
 }
 
 export interface RequestWithTenant extends Request {
@@ -30,17 +30,23 @@ export const tenantMiddleware = async (
       const tenant = await prisma.tenants.findUnique({
         where: {
           subdominio: tenantFromHeader,
-          isActive: true,
         },
         select: { 
           id: true,
           subdominio: true,
           nombre_empresa: true, 
           configuracion: true,
+          isActive: true
         }
       });
 
       if (tenant) {
+        if (!tenant.isActive) {
+          return res.status(403).json({ 
+            error: 'El restaurante está inactivo.',
+            code: 'TENANT_INACTIVE'
+          });
+        }
         req.tenant = tenant;
         return next();
       } else {
@@ -75,31 +81,38 @@ export const tenantMiddleware = async (
     const tenant = await prisma.tenants.findUnique({
       where: {
         subdominio: subdominio,
-        isActive: true,
       },
       select: { 
         id: true,
         subdominio: true,
         nombre_empresa: true, 
         configuracion: true,
+        isActive: true
       }
     });
 
-    if (!tenant) {
+    if (tenant) {
+      if (!tenant.isActive) {
+        return res.status(403).json({ 
+          error: 'El restaurante está inactivo.',
+          code: 'TENANT_INACTIVE'
+        });
+      }
+      req.tenant = {
+        id: tenant.id,
+        subdominio: tenant.subdominio,
+        nombre_empresa: tenant.nombre_empresa, 
+        configuracion: tenant.configuracion,
+      };
+      
+      next();
+      
+    } else {
       return res.status(404).json({ 
         error: 'Restaurante no encontrado.',
         subdominio_buscado: subdominio 
       });
     }
-
-    req.tenant = {
-      id: tenant.id,
-      subdominio: tenant.subdominio,
-      nombre_empresa: tenant.nombre_empresa, 
-      configuracion: tenant.configuracion,
-    };
-    
-    next();
     
   } catch (error) {
     console.error("❌ TENANT MIDDLEWARE - Error:", error);
