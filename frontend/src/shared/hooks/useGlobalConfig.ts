@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@app/providers/AuthProvider";
 import type { TenantConfig } from "../types/tenant-config.types";
+import { getApiUrl } from "@shared/config/env";
 
 /**
  * 🌍 Hook Global para Configuración del Tenant
@@ -55,7 +56,7 @@ export const useGlobalConfig = () => {
 
         console.log(`🔍 Cargando config para tenant: ${subdomain}`);
 
-        const response = await fetch(`http://localhost:3000/api/web/config`, {
+        const response = await fetch(getApiUrl(`/api/web/config`), {
           headers: {
             "X-Tenant-Subdomain": subdomain,
           },
@@ -134,7 +135,7 @@ export const useGlobalConfig = () => {
         const subdomain = window.location.hostname.split(".")[0];
 
         const response = await fetch(
-          "http://localhost:3000/api/dashboard/config",
+          getApiUrl("/api/dashboard/config"),
           {
             headers: {
               Authorization: `Bearer ${token}`,

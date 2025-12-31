@@ -1,8 +1,9 @@
 // src/features/team/ui/api.ts
 import axios from 'axios';
+import { getApiUrl } from '@shared/config/env';
 
 const apiClient = axios.create({
-    baseURL: 'http://localhost:3000/api/dashboard',
+    baseURL: getApiUrl('/api/dashboard'),
     headers: {
         'Content-Type': 'application/json',
     }

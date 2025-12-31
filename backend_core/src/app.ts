@@ -121,9 +121,9 @@ dashboardRouter.use('/', uploadRoutes); // Use the new upload route
 app.use('/api/dashboard', dashboardRouter);
 
 // ==================== DIAGNÓSTICO ====================
-app.get('/health', (_req: Request, res: Response) => {
-  res.json({ 
-    status: 'OK', 
+app.get('/api/health', (_req: Request, res: Response) => {
+  res.json({
+    status: 'OK',
     timestamp: new Date().toISOString(),
     service: 'Backend Core (Refactored)',
     environment: process.env.NODE_ENV
@@ -131,7 +131,7 @@ app.get('/health', (_req: Request, res: Response) => {
 });
 
 app.use('*', (_req: Request, res: Response) => {
-  res.status(404).json({ 
+  res.status(404).json({
     error: 'Ruta no encontrada',
     path: _req.originalUrl,
     method: _req.method
@@ -140,7 +140,7 @@ app.use('*', (_req: Request, res: Response) => {
 
 app.use((error: any, _req: Request, res: Response, __next: NextFunction) => {
   console.error('💥 GLOBAL ERROR:', error);
-  res.status(500).json({ 
+  res.status(500).json({
     error: 'Error interno del servidor',
     message: process.env.NODE_ENV === 'development' ? error.message : undefined
   });

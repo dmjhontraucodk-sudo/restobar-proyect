@@ -1,0 +1,117 @@
+# Docker Compose - Restobar Project
+# Configuración para despliegue en Portainer
+
+services:
+  # ==================== DATABASE ====================
+  restobar-db:
+    image: mysql:8.0
+    container_name: restobar-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - restobar_mysql_data:/var/lib/mysql
+    ports:
+      - "3307:3306"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p${DB_ROOT_PASSWORD}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - restobar-network
+
+  # ==================== BACKEND ====================
+  restobar-server:
+    build:
+      context: ./backend_core
+      dockerfile: Dockerfile
+    container_name: restobar-server
+    restart: unless-stopped
+    depends_on:
+      restobar-db:
+        condition: service_healthy
+    environment:
+      # Database
+      DATABASE_URL: mysql://${DB_USER}:${DB_PASSWORD}@restobar-db:3306/${DB_NAME}
+      # Server
+      PORT: 3000
+      NODE_ENV: production
+      JWT_SECRET: ${JWT_SECRET}
+      # CORS
+      ROOT_DOMAIN: ${ROOT_DOMAIN}
+      FRONTEND_URL: ${FRONTEND_URL}
+      # Cloudinary
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+      # Email (Resend)
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      # Facturación
+      FACTILIZA_API_TOKEN: ${FACTILIZA_API_TOKEN}
+      # Provisioning
+      PROVISIONING_API_KEY: ${PROVISIONING_API_KEY}
+      ALLOWED_PROVISIONING_IPS: ${ALLOWED_PROVISIONING_IPS}
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://localhost:3000/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - restobar-network
+
+  # ==================== FRONTEND ====================
+  restobar-client:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL}
+    container_name: restobar-client
+    restart: unless-stopped
+    depends_on:
+      restobar-server:
+        condition: service_healthy
+    ports:
+      - "80:80"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    networks:
+      - restobar-network
+
+# ==================== VOLUMES ====================
+volumes:
+  restobar_mysql_data:
+    driver: local
+
+# ==================== NETWORKS ====================
+networks:
+  restobar-network:
+    driver: bridge
