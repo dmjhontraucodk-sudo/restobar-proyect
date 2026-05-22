@@ -291,7 +291,7 @@ export const useDashboardApi = () => {
     [makeRequest]
   );
 
-  const uploadImage = useCallback(
+    const uploadImage = useCallback(
     async (file: File): Promise<{ url: string }> => {
       const formData = new FormData();
       formData.append("image", file);
@@ -356,23 +356,7 @@ export const useDashboardApi = () => {
     [makeRequest]
   );
 
-  // DEPRECADO: Usar getProductosInventario
-  const getInsumos = useCallback((): Promise<Insumo[]> => {
-    return makeRequest<Insumo[]>("/insumos");
-  }, [makeRequest]);
-
-  // DEPRECADO: Usar createProductoInventario
-  const createInsumo = useCallback(
-    (insumoData: CreateInsumoData): Promise<Insumo> => {
-      return makeRequest<Insumo>("/insumos", {
-        method: "POST",
-        body: JSON.stringify(insumoData),
-      });
-    },
-    [makeRequest]
-  );
-
-  const createCategory = useCallback(
+      const createCategory = useCallback(
     (categoryData: CreateCategoryData): Promise<ApiCategory> => {
       return makeRequest<ApiCategory>("/catalog/categories", {
         method: "POST",
@@ -880,8 +864,6 @@ export const useDashboardApi = () => {
     getProductById,
     updateProductWithRecipe,
     uploadImage,
-    getInsumos, // DEPRECADO
-    createInsumo, // DEPRECADO
     createCategory,
     getCategories,
     getOrdenes,

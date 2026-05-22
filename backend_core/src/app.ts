@@ -30,41 +30,22 @@ dotenv.config();
 const app = express();
 
 // --- Configuración de CORS ---
-const FRONTEND_PORT = (process.env.FRONTEND_URL || 'http://localhost:5174').split(':').pop();
-const ROOT_DOMAIN = process.env.ROOT_DOMAIN || 'localhost';
-
 const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-    try {
-      const originUrl = new URL(origin);
-      const hostname = originUrl.hostname;
-      const port = originUrl.port;
-      const isPortAllowed = (port === FRONTEND_PORT);
-      const isHostnameAllowed = (hostname === ROOT_DOMAIN || hostname.endsWith(`.${ROOT_DOMAIN}`));
-
-      if (isPortAllowed && isHostnameAllowed) {
-        callback(null, true);
-      } else {
-        console.log('❌ CORS BLOCKED:', origin);
-        callback(new Error('Origen no permitido por CORS'));
-      }
-    } catch (e) {
-      console.log('❌ CORS ERROR:', origin);
-      callback(new Error('Origen inválido'));
+    // Si no hay origen (Postman) o es cualquier variante de localhost, permitir
+    if (!origin || origin.includes('localhost')) {
+      return callback(null, true);
     }
+    
+    console.error('❌ CORS BLOCKED:', origin);
+    return callback(new Error('Origen no permitido por CORS'));
   },
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-Subdomain', 'X-Requested-With', 'Accept'],
-  exposedHeaders: ['X-Tenant-Subdomain']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-Subdomain', 'Accept'],
 };
 
 app.use(cors(corsOptions));
-app.use((_req: Request, res: Response, __next: NextFunction) => {
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Tenant-Subdomain, X-Requested-With, Accept');
-  res.header('Access-Control-Expose-Headers', 'X-Tenant-Subdomain');
-  __next();
-});
 
 app.use(express.json());
 app.use(morgan('dev'));
