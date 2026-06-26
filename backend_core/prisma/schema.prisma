@@ -252,7 +252,7 @@ model productos {
   descripcion    String?  @db.Text
   precio         Decimal  @db.Decimal(10, 2)
   precio_oferta  Decimal? @db.Decimal(10, 2) // REQ 7: Precio promocional
-  foto_url       String?  @db.VarChar(2048)
+  foto_url       String?  @db.LongText
   disponible     Boolean? @default(true)
   visible_en_web Boolean? @default(false)
   es_vegetariano Boolean? @default(false)
@@ -261,6 +261,7 @@ model productos {
   es_picante     Boolean? @default(false)
   es_recomendado Boolean? @default(false)
   es_nuevo       Boolean? @default(false)
+  activo         Boolean  @default(true)
 
   producto_inventario_id Int?
   motivo_no_disponible   String? @db.VarChar(255) // REQ 8
@@ -349,7 +350,7 @@ model tenant_config {
 
   // ========== 🏢 INFORMACIÓN DEL NEGOCIO ==========
   nombre_negocio      String? @db.VarChar(255)
-  logo_url            String? @db.VarChar(2048)
+  logo_url            String? @db.LongText
   eslogan             String? @db.VarChar(500)
   tipo_negocio        String? @default("Restaurante") @db.VarChar(100)
   ruc                 String? @db.VarChar(20)
@@ -684,7 +685,7 @@ model eventos {
   titulo       String    @db.VarChar(255)
   descripcion  String?   @db.Text
   fecha_evento DateTime? @db.DateTime(0)
-  imagen_url   String?   @db.VarChar(2048)
+  imagen_url   String?   @db.LongText
   created_at   DateTime  @default(now()) @db.Timestamp(0)
 
   tenants tenants @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "eventos_ibfk_1")
@@ -697,7 +698,7 @@ model galeriafotos {
   tenant_id   Int
   titulo      String? @db.VarChar(255)
   descripcion String? @db.Text
-  foto_url    String  @db.VarChar(2048)
+  foto_url    String  @db.LongText
   orden       Int?    @default(0)
 
   tenants tenants @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "galeriafotos_ibfk_1")

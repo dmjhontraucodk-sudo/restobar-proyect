@@ -124,9 +124,8 @@ export const catalogService = {
   // ==================== PRODUCTOS ====================
 
   async getProducts(tenantId: number, tipo?: TipoCategoria) {
-    const where: any = { tenant_id: tenantId };
-    
-    // Filtrar por tipo de categoría si se especifica
+    const where: any = { tenant_id: tenantId, activo: true };
+
     if (tipo) {
         where.categoriasmenu = { tipo };
     }
@@ -205,8 +204,13 @@ export const catalogService = {
     const product = await this.getProductById(tenantId, id);
     if (!product) throw new Error('Producto no encontrado');
 
-    return await prisma.productos.delete({
-      where: { id }
+    return await prisma.productos.update({
+      where: { id },
+      data: {
+        activo: false,
+        disponible: false,
+        visible_en_web: false,
+      },
     });
   }
 };

@@ -2,15 +2,15 @@
 import React from "react";
 import { useMenuManagement } from "@features/menu/model/useMenuManagement";
 import { useGlobalConfig } from "@shared/hooks/useGlobalConfig"; // ✅ IMPORTAR
-import { 
-  MenuHeader, 
-  CategorySection, 
-  AddCategoryModal, 
-  AddPlatoModal 
+import {
+  MenuHeader,
+  CategorySection,
+  AddCategoryModal,
+  AddPlatoModal,
+  ConfirmDeleteModal,
 } from "@features/menu";
 import { FilterIcon, RotateCcwIcon } from "@shared/ui/Icons";
-import toast from "react-hot-toast";
-import { type Category, type MenuItem, type TipoCategoria } from '@shared/types';
+import { type Category, type TipoCategoria } from '@shared/types';
 
 interface MenuManagementPageProps {
   tipo: TipoCategoria;
@@ -65,7 +65,12 @@ const MenuManagementPage: React.FC<MenuManagementPageProps> = ({ tipo }) => {
     handleSaveItem,
     handleToggleItemStatus,
     handleToggleWebVisibility,
+    handleDeleteItem,
+    handleConfirmDelete,
+    handleCancelDelete,
     handleCloseModal,
+    itemToDelete,
+    isDeleting,
   } = useMenuManagement(tipo);
 
   const pageTitle =
@@ -180,9 +185,7 @@ const MenuManagementPage: React.FC<MenuManagementPageProps> = ({ tipo }) => {
                 onToggleItemStatus={handleToggleItemStatus}
                 onToggleWebVisibility={handleToggleWebVisibility}
                 onEditItem={handleEditItem}
-                onDeleteItem={(item: MenuItem) =>
-                  toast.error(`Borrar "${item.name}" no implementado.`)
-                }
+                onDeleteItem={handleDeleteItem}
               />
             ))
           ) : (
@@ -263,6 +266,14 @@ const MenuManagementPage: React.FC<MenuManagementPageProps> = ({ tipo }) => {
         onRemoveImage={handleRemoveImage}
         isSubmitting={isSubmitting}
         onSubmit={handleSaveItem}
+      />
+
+      <ConfirmDeleteModal
+        isOpen={!!itemToDelete}
+        itemName={itemToDelete?.name ?? ''}
+        isDeleting={isDeleting}
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
       />
     </div>
   );

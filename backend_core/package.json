@@ -7,7 +7,9 @@
     "build": "tsc",
     "build:strict": "tsc",
     "start": "node dist/server.js",
-    "prisma:reset": "npx prisma migrate reset --schema=./prisma/schema.prisma"
+    "prisma:reset": "npx prisma migrate reset --schema=./prisma/schema.prisma",
+    "seed": "ts-node -r tsconfig-paths/register create_seed.ts",
+    "admin": "ts-node -r tsconfig-paths/register create_admin.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.18.0",

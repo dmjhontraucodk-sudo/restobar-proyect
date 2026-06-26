@@ -278,6 +278,15 @@ export const useDashboardApi = () => {
     [makeRequest]
   );
 
+  const deleteProduct = useCallback(
+    (productId: number | string): Promise<void> => {
+      return makeRequest<void>(`/catalog/products/${productId}`, {
+        method: "DELETE",
+      });
+    },
+    [makeRequest]
+  );
+
   const updateProductWithRecipe = useCallback(
     (
       productId: number | string,
@@ -297,40 +306,25 @@ export const useDashboardApi = () => {
       formData.append("image", file);
 
       try {
-        console.log("📤 Subiendo imagen a Cloudinary...", {
+        console.log("📤 Subiendo imagen...", {
           name: file.name,
           size: file.size,
           type: file.type,
         });
 
-        const response = await makeRequest<{
-          url: string;
-          public_id?: string;
-          secure_url?: string;
-        }>("/upload-image", {
+        const response = await makeRequest<{ url: string }>("/upload-image", {
           method: "POST",
           body: formData,
         });
 
-        let finalUrl = response.url;
+        const finalUrl = response.url;
 
-        if (response.secure_url) {
-          finalUrl = response.secure_url;
-        }
-
-        if (!finalUrl || !finalUrl.includes("cloudinary.com")) {
-          console.error("❌ URL de Cloudinary inválida:", finalUrl);
+        if (!finalUrl || !finalUrl.startsWith("data:image/")) {
+          console.error("❌ Respuesta de imagen inválida:", finalUrl);
           throw new Error("La URL de la imagen no es válida");
         }
 
-        if (finalUrl.startsWith("http://")) {
-          finalUrl = finalUrl.replace("http://", "https://");
-        }
-
-        console.log("✅ Imagen subida exitosamente:", {
-          url: finalUrl,
-          public_id: response.public_id,
-        });
+        console.log("✅ Imagen subida exitosamente");
 
         return { url: finalUrl };
       } catch (err: any) {
@@ -343,8 +337,6 @@ export const useDashboardApi = () => {
           err.message.includes("Network")
         ) {
           errorMessage = "Error de conexión al subir la imagen";
-        } else if (err.message.includes("cloudinary")) {
-          errorMessage = "Error del servicio de imágenes";
         } else if (err.message.includes("URL")) {
           errorMessage = "La imagen subida no es válida";
         }
@@ -863,6 +855,7 @@ export const useDashboardApi = () => {
     updateProduct,
     getProductById,
     updateProductWithRecipe,
+    deleteProduct,
     uploadImage,
     createCategory,
     getCategories,

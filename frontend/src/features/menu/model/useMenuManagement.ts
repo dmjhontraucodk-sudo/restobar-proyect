@@ -75,6 +75,7 @@ export const useMenuManagement = (tipo: TipoCategoria = "COMIDA") => {
     createCategory,
     updateProduct,
     updateProductWithRecipe,
+    deleteProduct,
     uploadImage,
     getProductosInventario,
     error: apiError,
@@ -92,6 +93,8 @@ export const useMenuManagement = (tipo: TipoCategoria = "COMIDA") => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmittingCategory, setIsSubmittingCategory] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<MenuItem | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showItemModal, setShowItemModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -324,6 +327,39 @@ export const useMenuManagement = (tipo: TipoCategoria = "COMIDA") => {
       toast.error(`Error al actualizar: ${err.message}`);
       setCategories(originalCategories);
     }
+  };
+
+  const handleDeleteItem = (item: MenuItem) => {
+    setItemToDelete(item);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!itemToDelete) return;
+
+    const originalCategories = [...categories];
+    setIsDeleting(true);
+
+    setCategories(prev =>
+      prev.map(cat => ({
+        ...cat,
+        items: cat.items.filter(i => i.id !== itemToDelete.id),
+      }))
+    );
+
+    try {
+      await deleteProduct(itemToDelete.id);
+      toast.success(`"${itemToDelete.name}" eliminado del menú`);
+      setItemToDelete(null);
+    } catch (err: any) {
+      toast.error(`Error al eliminar: ${err.message}`);
+      setCategories(originalCategories);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    if (!isDeleting) setItemToDelete(null);
   };
 
   // --- H. HANDLERS DEL MODAL DE CATEGORÍA (CORREGIDO) ---
@@ -560,6 +596,8 @@ export const useMenuManagement = (tipo: TipoCategoria = "COMIDA") => {
     isSubmitting,
     isSubmittingCategory,
     isUploading,
+    itemToDelete,
+    isDeleting,
     showCategoryModal,
     categoryName,
     showItemModal,
@@ -610,6 +648,9 @@ export const useMenuManagement = (tipo: TipoCategoria = "COMIDA") => {
     handleSaveItem,
     handleToggleItemStatus,
     handleToggleWebVisibility,
+    handleDeleteItem,
+    handleConfirmDelete,
+    handleCancelDelete,
     handleCloseModal,
   };
 };
