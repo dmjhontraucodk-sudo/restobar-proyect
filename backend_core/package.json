@@ -8,8 +8,9 @@
     "build:strict": "tsc",
     "start": "node dist/server.js",
     "prisma:reset": "npx prisma migrate reset --schema=./prisma/schema.prisma",
-    "seed": "ts-node -r tsconfig-paths/register create_seed.ts",
-    "admin": "ts-node -r tsconfig-paths/register create_admin.ts"
+    "seed": "ts-node -r tsconfig-paths/register src/scripts/create_seed.ts",
+    "admin": "ts-node -r tsconfig-paths/register src/scripts/create_admin.ts",
+    "admin:tenantb": "ts-node -r tsconfig-paths/register src/scripts/create_admin_tenantb.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.18.0",
